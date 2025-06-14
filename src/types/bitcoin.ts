@@ -34,4 +34,13 @@ export interface ChartConfig {
   color: string;
   showVolume?: boolean;
   logScale?: boolean;
+}
+
+// Dashboard metric card types
+export interface MetricCard {
+  title: string;
+  value: string;
+  change: string;
+  changeType: 'positive' | 'negative' | 'neutral';
+  description: string;
 } 
