@@ -53,6 +53,20 @@ const mockMetrics: MetricCard[] = [
     change: "+3.2%",
     changeType: "positive",
     description: "Daily active addresses"
+  },
+  {
+    title: "Hash Rate",
+    value: "432.5 EH/s",
+    change: "+1.1%",
+    changeType: "positive",
+    description: "Current network hash rate"
+  },
+  {
+    title: "Difficulty",
+    value: "79.5T",
+    change: "+0.5%",
+    changeType: "positive",
+    description: "Current mining difficulty"
   }
 ]
 
@@ -86,11 +100,20 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {metrics.map((metric, index) => {
-            const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity]
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {metrics.slice(0, 8).map((metric, index) => {
+            const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
-            
+            // Format large numbers to short form
+            const formatValue = (value: string) => {
+              const num = Number(value.replace(/[^\d.]/g, ""));
+              if (isNaN(num)) return value;
+              if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+              if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+              if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+              if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+              return value;
+            };
             return (
               <Card key={metric.title} className="border-border">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -100,7 +123,7 @@ export default function Dashboard() {
                   <Icon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metric.value}</div>
+                  <div className="text-2xl font-bold">{formatValue(metric.value)}</div>
                   <div className="flex items-center text-xs text-muted-foreground">
                     {metric.changeType === 'positive' ? (
                       <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
