@@ -78,22 +78,113 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Test BRK API connection
-        const response = await brkClient.fetchMetrics()
-        if (response.success) {
-          console.log("BRK API connected successfully")
-          // TODO: Process real data when available
-        } else {
-          console.warn("BRK API not available, using mock data")
-        }
+        // Fetch daily close price and market cap history from the working endpoints
+        const [priceHistory, marketCapHistory] = await Promise.all([
+          brkClient.fetchDailyCloseHistory(2920),
+          brkClient.fetchMarketCapHistory(2920)
+        ]);
+        // Helper to format numbers
+        const formatNumber = (num: number, isMoney = true) => {
+          if (isNaN(num)) return 'N/A';
+          if (isMoney) {
+            if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+            if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+            if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+            if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+            return `$${num.toLocaleString()}`;
+          } else {
+            if (num >= 1e12) return `${(num / 1e12).toFixed(2)}T`;
+            if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+            if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+            if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
+            return num.toLocaleString();
+          }
+        };
+        // Helper to calculate 30-day change
+        const calcChange = (arr: number[] | undefined, isPercent = true): { change: string; changeType: 'positive' | 'negative' | 'neutral' } => {
+          if (!arr || arr.length < 31) return { change: 'N/A', changeType: 'neutral' };
+          const latest = arr[arr.length - 1];
+          const prev = arr[arr.length - 31];
+          if (prev === 0) return { change: 'N/A', changeType: 'neutral' };
+          const diff = latest - prev;
+          const pct = (diff / prev) * 100;
+          let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+          if (diff > 0) changeType = 'positive';
+          else if (diff < 0) changeType = 'negative';
+          return {
+            change: isPercent ? `${diff >= 0 ? '+' : ''}${pct.toFixed(2)}%` : `${diff >= 0 ? '+' : ''}${diff.toFixed(2)}`,
+            changeType
+          };
+        };
+        // Fetch all required metrics for the new card layout
+        // Only price is real for now, others are placeholders or N/A
+        // TODO: Wire up real endpoints for realized price, true market mean, mayer multiple, etc.
+        const realMetrics: MetricCard[] = [
+          // Top row
+          {
+            title: 'Bitcoin Price',
+            value: priceHistory.length > 0 ? formatNumber(priceHistory[priceHistory.length - 1]) : 'N/A',
+            ...calcChange(priceHistory),
+            description: 'Current BTC/USD price'
+          },
+          {
+            title: 'Realized Price',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'Realized price per BTC'
+          },
+          {
+            title: 'True Market Mean',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'True market mean price'
+          },
+          {
+            title: 'Mayer Multiple',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'Mayer Multiple ratio'
+          },
+          // Second row
+          {
+            title: 'Market Value',
+            value: marketCapHistory.length > 0 ? formatNumber(marketCapHistory[marketCapHistory.length - 1]) : 'N/A',
+            ...calcChange(marketCapHistory),
+            description: 'Total market value (USD)'
+          },
+          {
+            title: 'Realized Value',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'Total realized value (USD)'
+          },
+          {
+            title: 'MVRV Ratio',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'Market Value / Realized Value'
+          },
+          {
+            title: 'STH MVRV Ratio',
+            value: 'N/A',
+            change: 'N/A',
+            changeType: 'neutral',
+            description: 'Short-term holder MVRV ratio'
+          }
+        ];
+        setMetrics(realMetrics);
       } catch (err) {
-        console.warn("Using mock data due to API error:", err)
+        setError('Failed to fetch price data');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-
-    fetchData()
+    fetchData();
   }, [])
 
   return (

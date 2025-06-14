@@ -89,6 +89,20 @@ class BRKClient {
       };
     }
   }
+
+  // Fetch daily close price history from the working endpoint
+  async fetchDailyCloseHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=close&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch daily close price history');
+    return await response.json();
+  }
+
+  // Fetch market cap history from the working endpoint
+  async fetchMarketCapHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=marketcap&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch market cap history');
+    return await response.json();
+  }
 }
 
 export const brkClient = new BRKClient();
