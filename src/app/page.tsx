@@ -7,6 +7,8 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } f
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
+import { Button } from "@/components/ui/button"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 // Mock data for initial display
 const mockMetrics: MetricCard[] = [
@@ -83,19 +85,6 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Bitcoin Analytics Dashboard</h1>
-            <p className="text-muted-foreground">
-              Real-time Bitcoin on-chain metrics and market analysis
-            </p>
-          </div>
-          <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-            Live Data
-          </Badge>
-        </div>
-
         {/* Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {metrics.map((metric, index) => {
