@@ -1,10 +1,101 @@
-# ClarionChain: Bitcoin Research Kit (BRK) Data Collection System
+# ClarionChain.io
 
-A comprehensive Bitcoin data collection and monitoring system that extracts on-chain metrics from a local BRK instance and stores them in DigitalOcean PostgreSQL with sophisticated statistical analysis.
+ClarionChain is a next-generation Bitcoin on-chain analytics and AI insights platform, hosted on Vercel. It connects to your private BRK (Bitcoin Research Kit) instance to pull advanced Bitcoin on-chain metrics, and delivers actionable insights, AI-driven analysis, and professional-grade charting for both casual users and pro analysts.
+
+---
+
+## 🚀 What is ClarionChain?
+
+ClarionChain is not just a dashboard for displaying Bitcoin metrics. It is an **AI-powered analytics platform** that:
+- **Connects to your BRK instance** (via secure tunnel) to access the full universe of Bitcoin on-chain data.
+- **Provides advanced statistical tools** (like a full z-score suite) for deep market analysis.
+- **Integrates AI** to deliver instant, actionable insights—so users don't have to manually sift through dozens of charts.
+- **Empowers both casual users and professional analysts** with a seamless, modern, dark-mode web experience.
+
+---
+
+## 🎯 Key Features
+- **AI Insights:** Ask questions or get instant summaries from an integrated AI trained on Bitcoin on-chain data and market structure.
+- **Z-Score Suite:** Multi-timeframe z-score analytics (30d, 90d, 1y, 2y, 8y, etc.) for all major metrics.
+- **Pro Charting:** Interactive, high-performance charts for all metrics, with both quick-glance and deep-dive modes.
+- **Customizable Dashboards:** Save, share, and organize your favorite metrics and chart layouts.
+- **Real-Time Data:** Live updates from your BRK instance, securely tunneled for privacy and performance.
+- **Analyst Workbench:** Advanced tools for power users, including custom metric creation, overlays, and export options.
+- **Modern UI:** Built with Next.js, shadcn/ui, Tailwind CSS, and Plotly for a beautiful, responsive, and accessible experience.
 
 ---
 
 ## 🏗️ System Architecture
+
+```
+Bitcoin Network
+    ↓
+Your BRK Instance (private, secure)
+    ↓
+ClarionChain (Vercel-hosted frontend)
+    ↓
+AI Insights Engine + Charting Suite
+    ↓
+User (web, mobile, pro analyst)
+```
+
+---
+
+## ⚡ Quick Start
+
+1. **Deploy ClarionChain to Vercel** (or run locally for development)
+2. **Connect your BRK instance** (via secure tunnel or public endpoint)
+3. **Configure your API endpoint** in the app settings or `.env.local`
+4. **Start exploring Bitcoin on-chain data with AI-powered insights!**
+
+---
+
+## 📊 Example Use Cases
+- **Get a daily AI summary** of Bitcoin's on-chain health and market structure
+- **Ask the AI**: "What is the current MVRV z-score and what does it mean?"
+- **View all major metrics** (price, market cap, volume, realized cap, STH/CTH, etc.) in one place
+- **Deep-dive with pro charts** or let the AI surface the most important trends
+- **Export charts and insights** for research or publication
+
+---
+
+## 🔒 Security & Best Practices
+- No credentials or secrets are ever stored in the codebase
+- All sensitive config is managed via environment variables (see `.env.example`)
+- Secure, read-only access to your BRK instance
+- Open-source, auditable codebase
+
+---
+
+## 🛠️ Tech Stack
+- **Frontend:** Next.js, React, shadcn/ui, Tailwind CSS, Plotly.js
+- **AI/Insights:** Integrated with OpenAI or custom LLMs (configurable)
+- **Data Source:** Your private BRK instance (self-hosted, secure)
+- **Hosting:** Vercel (or self-hosted)
+
+---
+
+## 📄 License
+MIT License. See LICENSE file for details.
+
+---
+
+## 👤 Author & Contact
+ClarionChain is developed and maintained by [tjw74](https://github.com/tjw74). For questions, support, or partnership inquiries, please open an issue or contact via GitHub.
+
+---
+
+## 📝 Legacy & Advanced Documentation
+For advanced usage, BRK collector details, and API examples, see the legacy documentation below (from My_README.md):
+
+<details>
+<summary>Click to expand legacy BRK/collector documentation</summary>
+
+# Bitcoin Research Kit (BRK) Data Collection System
+
+A comprehensive Bitcoin data collection and monitoring system that extracts on-chain metrics from a local BRK instance and stores them in DigitalOcean PostgreSQL with sophisticated statistical analysis.
+
+## System Architecture
 
 ```
 Bitcoin Network
@@ -18,7 +109,7 @@ DigitalOcean PostgreSQL (29,990+ rows collected)
 BRK Controller Web Interface (Real-time Monitoring)
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 dc_brk/
@@ -32,144 +123,11 @@ dc_brk/
 └── README.md                 # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start, Features, Metrics, Security, Performance, Advanced Usage, Monitoring, License, API Guide
 
-### 1. Prerequisites
-- Python 3.8+ with required packages
-- Node.js 18+ for web interface
-- Local BRK instance running on 127.0.0.1:3110
-- DigitalOcean PostgreSQL database
+(See full My_README.md for details)
 
-### 2. Environment Setup
-```bash
-# Set required environment variables
-export DB_URL_DO="your_digitalocean_postgres_connection_string"
-export BRK_BASE_URL="http://127.0.0.1:3110"
-```
-
-### 3. Generate Metrics Configuration
-```bash
-# Auto-discover available metrics from BRK instance
-python brk_collector.py --generate-config essential
-```
-
-### 4. Start Data Collection
-```bash
-# Collect essential metrics with real-time progress tracking
-python brk_collector.py --priority essential
-```
-
-### 5. Launch Web Interface
-```bash
-cd brk-controller
-npm install
-npm run dev
-```
-Visit: http://localhost:3000
-
-## 🎯 Key Features
-- **Auto-discovery**: Discovers 9,002+ available metrics from BRK instance
-- **Priority-based collection**: Essential, Important, Extended, or All metrics
-- **Real-time progress tracking**: JSON-based progress monitoring
-- **Statistical analysis**: 9 z-score time windows (30d, 90d, 1y, 2y, 8y, etc.)
-- **Incremental updates**: Only collects new data since last run
-- **Robust error handling**: Retry logic and connection management
-- **Real-time monitoring**: Live status cards with health indicators
-- **Collection control**: Start/stop data collection with progress bars
-- **Database statistics**: Table counts, row counts, data freshness
-- **System health**: BRK instance status, database connectivity
-- **Responsive UI**: Dark mode, modern design with Tailwind CSS
-- **Z-score calculations**: Multi-timeframe statistical analysis
-- **Derived metrics**: MVRV ratios, STH metrics computed from base data
-- **Data quality checks**: Missing value detection and reporting
-- **Performance optimization**: Batch processing and connection pooling
-
-## 📊 Metrics Coverage
-- **Essential Metrics (14 metrics)**: OHLC price data with volume, market cap, realized cap, supply metrics, STH analysis, profit/loss ratios, risk indicators
-- **Full Coverage (9,002+ metrics)**: All Bitcoin on-chain metrics from BRK instance, lazy calculation, 2-3GB storage for complete collection
-
-## 🔒 Security & Best Practices
-- **No credentials in code**: Uses environment variables exclusively
-- **GitHub-safe**: Comprehensive .gitignore protection
-- **SSL/TLS**: Secure database connections to DigitalOcean
-- **Error isolation**: Failed metrics don't stop collection
-- **Progress persistence**: Resumable collection processes
-
-## 📈 Performance
-- **5,998 days** of historical data (2009-01-03 to current)
-- **29,990+ rows** successfully collected and stored
-- **Fast API responses**: ~7ms from local BRK instance
-- **Efficient storage**: Optimized PostgreSQL schema with indexes
-
-## 🛠️ Advanced Usage
-- See My_README.md for advanced collection modes, configuration management, and requirements.
-
-## 🔍 Monitoring & Debugging
-- **Collection progress**: Real-time percentage and current metric
-- **System health**: BRK instance connectivity and response times
-- **Database status**: Connection health and table statistics
-- **Error tracking**: Failed metrics and retry attempts
-
-## 📄 License
-Private project for Bitcoin on-chain data analysis and research.
-
----
-
-**Built with**: Python, PostgreSQL, Next.js, React, Tailwind CSS, TypeScript
-
-# BRK API Data Access Guide
-
-This guide explains how to retrieve data from your BRK API instance at `brk.openonchain.dev` for use in your frontend applications.
-
----
-
-## 1. Basic GET Request (with curl)
-Fetch a list of available vector indexes:
-```bash
-curl https://brk.openonchain.dev/api/vecs/indexes
-```
-- **What it does:** Returns a list of all vector indexes available from the BRK API.
-
-## 2. Fetch All Metrics
-Retrieve all available metrics:
-```bash
-curl https://brk.openonchain.dev/api/metrics
-```
-- **What it does:** Returns a JSON array of all metrics tracked by your BRK instance.
-
-## 3. Fetch a Specific Metric
-Get data for a specific metric:
-```bash
-curl "https://brk.openonchain.dev/api/metrics/<metric_name>"
-```
-- **What it does:** Returns the data for the metric you specify. Replace `<metric_name>` with the actual metric name (e.g., `price_btc_usd`).
-
-## 4. Fetch Data in Python
-Example using the `requests` library:
-```python
-import requests
-response = requests.get("https://brk.openonchain.dev/api/vecs/indexes")
-data = response.json()
-print(data)
-```
-- **What it does:** Fetches the vector indexes and prints them as a Python object.
-
-## 5. Fetch Data in JavaScript (Frontend Example)
-```javascript
-fetch('https://brk.openonchain.dev/api/vecs/indexes')
-  .then(response => response.json())
-  .then(data => console.log(data));
-```
-- **What it does:** Fetches the vector indexes and logs them to the browser console.
-
-## 6. Notes
-- All requests should use `https://brk.openonchain.dev` as the base URL.
-- Endpoints and parameters may vary; check your BRK API documentation for more details.
-- No authentication is required unless you have configured it.
-
----
-
-**Use these examples as templates for your frontend or backend code to pull and display BRK data.**
+</details>
 
 ---
 
