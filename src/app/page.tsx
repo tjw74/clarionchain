@@ -118,6 +118,14 @@ export default function Dashboard() {
             changeType
           };
         };
+        // Calculate MVRV Ratio and its 30-day change
+        let mvrvRatioArr: number[] = [];
+        if (marketCapHistory.length === realizedCapHistory.length && marketCapHistory.length > 0) {
+          mvrvRatioArr = marketCapHistory.map((mv, i) => {
+            const rv = realizedCapHistory[i];
+            return rv && rv !== 0 ? mv / rv : NaN;
+          });
+        }
         // Fetch all required metrics for the new card layout
         // Only price is real for now, others are placeholders or N/A
         // TODO: Wire up real endpoints for realized price, true market mean, mayer multiple, etc.
@@ -164,9 +172,8 @@ export default function Dashboard() {
           },
           {
             title: 'MVRV Ratio',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
+            value: mvrvRatioArr.length > 0 && !isNaN(mvrvRatioArr[mvrvRatioArr.length - 1]) ? mvrvRatioArr[mvrvRatioArr.length - 1].toFixed(2) : 'N/A',
+            ...calcChange(mvrvRatioArr, false),
             description: 'Market Value / Realized Value'
           },
           {
