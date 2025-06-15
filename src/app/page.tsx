@@ -78,10 +78,11 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch daily close price and market cap history from the working endpoints
-        const [priceHistory, marketCapHistory] = await Promise.all([
+        // Fetch daily close price, market cap, and realized price history from the working endpoints
+        const [priceHistory, marketCapHistory, realizedPriceHistory] = await Promise.all([
           brkClient.fetchDailyCloseHistory(2920),
-          brkClient.fetchMarketCapHistory(2920)
+          brkClient.fetchMarketCapHistory(2920),
+          brkClient.fetchRealizedPriceHistory(2920)
         ]);
         // Helper to format numbers
         const formatNumber = (num: number, isMoney = true) => {
@@ -129,9 +130,8 @@ export default function Dashboard() {
           },
           {
             title: 'Realized Price',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
+            value: realizedPriceHistory.length > 0 ? formatNumber(realizedPriceHistory[realizedPriceHistory.length - 1]) : 'N/A',
+            ...calcChange(realizedPriceHistory),
             description: 'Realized price per BTC'
           },
           {

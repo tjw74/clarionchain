@@ -96,6 +96,7 @@ function calcChange(arr: number[] | undefined, isPercent = true): { change: stri
 }
 
 export function useBitcoinMetrics() {
+  console.log('useBitcoinMetrics hook started');
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,69 +104,81 @@ export function useBitcoinMetrics() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [priceHistory, marketCapHistory] = await Promise.all([
-          brkClient.fetchDailyCloseHistory(2920),
-          brkClient.fetchMarketCapHistory(2920),
+        console.log('Fetching all metrics from BRK...');
+        const [priceRes, marketCapRes, realizedCapRes, realizedPriceRes] = await Promise.all([
+          fetch('https://brk.openonchain.dev/api/query?index=height&values=close&from=-1'),
+          fetch('https://brk.openonchain.dev/api/query?index=height&values=marketcap&from=-1'),
+          fetch('https://brk.openonchain.dev/api/query?index=height&values=realized-cap&from=-1'),
+          fetch('https://brk.openonchain.dev/api/query?index=height&values=realized-price&from=-1'),
         ]);
+        let price = 'N/A';
+        let marketCap = 'N/A';
+        let realizedCap = 'N/A';
+        let realizedPrice = 'N/A';
+        // Price
+        if (priceRes.ok) {
+          const arr = await priceRes.json();
+          console.log('Price API response:', arr);
+          if (Array.isArray(arr) && arr.length > 0) price = formatNumber(arr[arr.length - 1]);
+        } else {
+          console.error('Price fetch failed:', priceRes.status);
+        }
+        // Market Cap
+        if (marketCapRes.ok) {
+          const arr = await marketCapRes.json();
+          console.log('Market Cap API response:', arr);
+          if (Array.isArray(arr) && arr.length > 0) marketCap = formatNumber(arr[arr.length - 1]);
+        } else {
+          console.error('Market Cap fetch failed:', marketCapRes.status);
+        }
+        // Realized Cap
+        if (realizedCapRes.ok) {
+          const arr = await realizedCapRes.json();
+          console.log('Realized Cap API response:', arr);
+          if (Array.isArray(arr) && arr.length > 0) realizedCap = formatNumber(arr[arr.length - 1]);
+        } else {
+          console.error('Realized Cap fetch failed:', realizedCapRes.status);
+        }
+        // Realized Price
+        if (realizedPriceRes.ok) {
+          const arr = await realizedPriceRes.json();
+          if (Array.isArray(arr) && arr.length > 0) realizedPrice = formatNumber(arr[arr.length - 1]);
+        }
+        // Assign metrics to cards
         const realMetrics: MetricCard[] = [
           {
             title: 'Bitcoin Price',
-            value: priceHistory.length > 0 ? formatNumber(priceHistory[priceHistory.length - 1]) : 'N/A',
-            ...calcChange(priceHistory),
+            value: price,
+            change: 'N/A',
+            changeType: 'neutral',
             description: 'Current BTC/USD price',
           },
           {
-            title: 'Realized Price',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
-            description: 'Realized price per BTC',
-          },
-          {
-            title: 'True Market Mean',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
-            description: 'True market mean price',
-          },
-          {
-            title: 'Mayer Multiple',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
-            description: 'Mayer Multiple ratio',
-          },
-          {
             title: 'Market Value',
-            value: marketCapHistory.length > 0 ? formatNumber(marketCapHistory[marketCapHistory.length - 1]) : 'N/A',
-            ...calcChange(marketCapHistory),
+            value: marketCap,
+            change: 'N/A',
+            changeType: 'neutral',
             description: 'Total market value (USD)',
           },
           {
             title: 'Realized Value',
-            value: 'N/A',
+            value: realizedCap,
             change: 'N/A',
             changeType: 'neutral',
             description: 'Total realized value (USD)',
           },
           {
-            title: 'MVRV Ratio',
-            value: 'N/A',
+            title: 'Realized Price',
+            value: realizedPrice,
             change: 'N/A',
             changeType: 'neutral',
-            description: 'Market Value / Realized Value',
-          },
-          {
-            title: 'STH MVRV Ratio',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
-            description: 'Short-term holder MVRV ratio',
+            description: 'Realized price per BTC',
           },
         ];
         setMetrics(realMetrics);
       } catch (err) {
-        setError('Failed to fetch price data');
+        console.error('Error in useBitcoinMetrics:', err);
+        setError('Failed to fetch BRK data');
         setMetrics(mockMetrics);
       } finally {
         setLoading(false);
