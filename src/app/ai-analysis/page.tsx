@@ -117,7 +117,6 @@ export default function AIAnalysisPage() {
   return (
     <DashboardLayout 
       title="AI Analysis"
-      description="AI-powered insights and analysis of Bitcoin on-chain data"
     >
       <div className="space-y-6">
         <div className="space-y-6">
