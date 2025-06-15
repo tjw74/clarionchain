@@ -102,7 +102,7 @@ export default function DashboardLayout({ children, title, description }: Dashbo
               />
               <div className="flex flex-col">
                 <span className="text-lg font-semibold">ClarionChain</span>
-                <span className="text-xs text-muted-foreground">Bitcoin Analytics</span>
+                <span className="text-xs text-muted-foreground ml-0.5">Bitcoin Analytics</span>
               </div>
             </div>
           </SidebarHeader>
