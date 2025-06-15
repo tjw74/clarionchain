@@ -6,21 +6,44 @@ const Select = ({ children, value, onValueChange }: {
   value?: string
   onValueChange?: (value: string) => void
 }) => {
+  const [isOpen, setIsOpen] = React.useState(false)
+  
   return (
     <div className="relative">
-      {React.Children.map(children, child => 
-        React.isValidElement(child) 
-          ? React.cloneElement(child, { value, onValueChange } as any)
-          : child
-      )}
+      {React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+          if (child.type === SelectTrigger) {
+            return React.cloneElement(child, { 
+              value, 
+              onValueChange, 
+              onClick: () => setIsOpen(!isOpen),
+              isOpen 
+            } as any)
+          }
+          if (child.type === SelectContent) {
+            return isOpen ? React.cloneElement(child, { 
+              value, 
+              onValueChange: (newValue: string) => {
+                onValueChange?.(newValue)
+                setIsOpen(false)
+              }
+            } as any) : null
+          }
+        }
+        return child
+      })}
     </div>
   )
 }
 
 const SelectTrigger = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { value?: string; onValueChange?: (value: string) => void }
->(({ className, children, value, onValueChange, ...props }, ref) => (
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { 
+    value?: string; 
+    onValueChange?: (value: string) => void;
+    isOpen?: boolean;
+  }
+>(({ className, children, value, onValueChange, isOpen, ...props }, ref) => (
   <button
     ref={ref}
     className={cn(
@@ -30,17 +53,34 @@ const SelectTrigger = React.forwardRef<
     {...props}
   >
     {children}
+    <svg
+      className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
   </button>
 ))
 SelectTrigger.displayName = "SelectTrigger"
 
-const SelectValue = ({ placeholder }: { placeholder?: string }) => (
-  <span className="text-muted-foreground">{placeholder}</span>
+const SelectValue = ({ placeholder, value }: { placeholder?: string; value?: string }) => (
+  <span className={value ? "text-foreground" : "text-muted-foreground"}>
+    {value || placeholder}
+  </span>
 )
 
-const SelectContent = ({ children }: { children: React.ReactNode }) => (
-  <div className="relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-    {children}
+const SelectContent = ({ children, onValueChange }: { 
+  children: React.ReactNode;
+  onValueChange?: (value: string) => void;
+}) => (
+  <div className="absolute top-full left-0 z-50 min-w-full overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md mt-1">
+    {React.Children.map(children, child =>
+      React.isValidElement(child) 
+        ? React.cloneElement(child, { onValueChange } as any)
+        : child
+    )}
   </div>
 )
 
