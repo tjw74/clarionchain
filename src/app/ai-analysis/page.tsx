@@ -52,12 +52,12 @@ export default function AIAnalysisPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>
-                  <Select value={provider} onValueChange={setProvider}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue value={provider} placeholder="Select" />
-                    </SelectTrigger>
+                                      <Select value={provider} onValueChange={setProvider}>
+                      <SelectTrigger className="w-52">
+                        <SelectValue value={provider} placeholder="Select" />
+                      </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="openai">OpenAI</SelectItem>
+                      <SelectItem value="openai">OpenAI - GPT-4.1</SelectItem>
                       <SelectItem value="anthropic">Anthropic</SelectItem>
                     </SelectContent>
                   </Select>

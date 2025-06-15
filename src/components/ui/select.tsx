@@ -8,6 +8,21 @@ const Select = ({ children, value, onValueChange }: {
 }) => {
   const [isOpen, setIsOpen] = React.useState(false)
   
+  // Find the display text for the selected value
+  const getDisplayText = () => {
+    let displayText = value
+    React.Children.forEach(children, child => {
+      if (React.isValidElement(child) && child.type === SelectContent) {
+        React.Children.forEach((child.props as any).children, item => {
+          if (React.isValidElement(item) && (item.props as any).value === value) {
+            displayText = (item.props as any).children
+          }
+        })
+      }
+    })
+    return displayText
+  }
+  
   return (
     <div className="relative">
       {React.Children.map(children, child => {
@@ -17,7 +32,8 @@ const Select = ({ children, value, onValueChange }: {
               value, 
               onValueChange, 
               onClick: () => setIsOpen(!isOpen),
-              isOpen 
+              isOpen,
+              displayText: getDisplayText()
             } as any)
           }
           if (child.type === SelectContent) {
@@ -42,19 +58,20 @@ const SelectTrigger = React.forwardRef<
     value?: string; 
     onValueChange?: (value: string) => void;
     isOpen?: boolean;
+    displayText?: string;
   }
->(({ className, children, value, onValueChange, isOpen, ...props }, ref) => (
+>(({ className, children, value, onValueChange, isOpen, displayText, ...props }, ref) => (
   <button
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-9 w-full items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-left",
       className
     )}
     {...props}
   >
-    {children}
+    <span className="truncate">{displayText || children}</span>
     <svg
-      className={cn("h-4 w-4 transition-transform", isOpen && "rotate-180")}
+      className={cn("h-4 w-4 transition-transform ml-2 flex-shrink-0", isOpen && "rotate-180")}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
