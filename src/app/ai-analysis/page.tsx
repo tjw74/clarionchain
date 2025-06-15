@@ -129,11 +129,8 @@ export default function AIAnalysisPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Chart Workbench
+                Workbench
               </CardTitle>
-              <CardDescription>
-                Select metrics and analyze Bitcoin on-chain data
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <BitcoinChart ref={chartRef} />
