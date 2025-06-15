@@ -305,7 +305,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
   } as any
 
   const config = {
-    displayModeBar: true,
+    displayModeBar: 'hover',
     displaylogo: false,
     modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
     responsive: true,
@@ -313,6 +313,30 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
 
   return (
     <div ref={containerRef} className="w-full h-full">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .modebar {
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .modebar-group {
+            background: transparent !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .modebar-btn {
+            background: transparent !important;
+            border: none !important;
+            margin: 2px 0 !important;
+          }
+          .modebar-btn:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+          }
+        `
+      }} />
       <Plot
         data={plotData}
         layout={{
