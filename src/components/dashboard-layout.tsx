@@ -32,6 +32,8 @@ import {
 
 interface DashboardLayoutProps {
   children: ReactNode
+  title?: string
+  description?: string
 }
 
 const navigation = [
@@ -82,7 +84,7 @@ const navigation = [
   },
 ]
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   const pathname = usePathname()
 
   return (
@@ -134,7 +136,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex-1 flex flex-col">
           <header className="flex h-16 items-center gap-4 border-b border-border px-6">
             <SidebarTrigger />
-            <div className="flex-1" />
+            {title && (
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {description && (
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                )}
+              </div>
+            )}
+            {!title && <div className="flex-1" />}
           </header>
           
           <main className="flex-1 p-6">

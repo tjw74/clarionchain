@@ -115,15 +115,11 @@ export default function AIAnalysisPage() {
   }
 
   return (
-    <DashboardLayout>
+    <DashboardLayout 
+      title="AI Analysis"
+      description="AI-powered insights and analysis of Bitcoin on-chain data"
+    >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">AI Analysis</h1>
-          <p className="text-muted-foreground">
-            AI-powered insights and analysis of Bitcoin on-chain data
-          </p>
-        </div>
-
         <div className="space-y-6">
           <Card className="border-border">
             <CardHeader>
