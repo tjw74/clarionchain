@@ -129,10 +129,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <header className="flex h-16 items-center gap-4 border-b border-border px-6">
             <SidebarTrigger />
             <div className="flex-1" />
-            <Button variant="outline" size="sm">
-              <DollarSign className="mr-2 h-4 w-4" />
-              Connect Data
-            </Button>
           </header>
           
           <main className="flex-1 p-6">
