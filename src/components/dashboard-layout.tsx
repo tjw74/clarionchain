@@ -134,7 +134,7 @@ export default function DashboardLayout({ children, title, description }: Dashbo
         </Sidebar>
         
         <div className="flex-1 flex flex-col">
-          <header className="flex h-16 items-center gap-4 border-b border-border px-6">
+          <header className="flex h-16 items-start gap-4 border-b border-border pl-11 pr-6 pt-4">
             <SidebarTrigger />
             {title && (
               <div className="flex-1">
