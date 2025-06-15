@@ -89,16 +89,41 @@ export default function AIAnalysisPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {analysis && (
-                <div className="space-y-3">
-                  <Label>AI Response</Label>
-                  <Textarea
-                    value={analysis}
-                    readOnly
-                    className="min-h-[150px] resize-none"
-                  />
+              <div className="space-y-4">
+                {/* Chat Messages Area */}
+                <div className="border rounded-md p-4 min-h-[200px] max-h-[400px] overflow-y-auto bg-muted/20">
+                  {analysis ? (
+                    <div className="space-y-4">
+                      <div className="flex justify-end">
+                        <div className="bg-primary text-primary-foreground rounded-lg px-3 py-2 max-w-[80%]">
+                          <p className="text-sm">Analyze the current chart data</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <div className="bg-muted rounded-lg px-3 py-2 max-w-[80%]">
+                          <p className="text-sm">{analysis}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <p className="text-sm">AI conversation will appear here...</p>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Chat Input Area */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ask a follow-up question about the analysis..."
+                    className="flex-1"
+                    disabled={!analysis}
+                  />
+                  <Button size="sm" disabled={!analysis}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
               </CardContent>
             </Card>
         </div>
