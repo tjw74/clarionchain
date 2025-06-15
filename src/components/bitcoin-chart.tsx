@@ -227,7 +227,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     plot_bgcolor: 'rgba(0,0,0,0)',
     font: { color: '#ffffff' },
     height: 450,
-    margin: { l: 60, r: 60, t: 60, b: 60 },
+    margin: { l: 60, r: 60, t: 20, b: 60 },
     
     // Subplot configuration
     grid: { rows: 2, columns: 1, pattern: 'independent', roworder: 'top to bottom' },
