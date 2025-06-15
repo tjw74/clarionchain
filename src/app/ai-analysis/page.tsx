@@ -27,88 +27,85 @@ export default function AIAnalysisPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Chart Workbench
-                </CardTitle>
-                <CardDescription>
-                  Select metrics and analyze Bitcoin on-chain data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BitcoinChart />
-              </CardContent>
-            </Card>
-          </div>
+        <div className="space-y-6">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Chart Workbench
+              </CardTitle>
+              <CardDescription>
+                Select metrics and analyze Bitcoin on-chain data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BitcoinChart />
+            </CardContent>
+          </Card>
 
-          <div className="lg:col-span-1">
-            <Card className="border-border h-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
                   <Brain className="h-5 w-5" />
-                  AI Analysis
-                </CardTitle>
-                <CardDescription>
-                  Configure AI and get insights
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <Label htmlFor="provider">AI Provider</Label>
-                  <Select value={provider} onValueChange={setProvider}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                      <SelectItem value="anthropic">Anthropic</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <CardTitle>AI Analysis</CardTitle>
+                    <CardDescription>Configure AI and get insights</CardDescription>
+                  </div>
                 </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="apiKey">API Key</Label>
-                  <Input
-                    id="apiKey"
-                    type="password"
-                    placeholder="Enter your API key"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  disabled={!apiKey || isAnalyzing}
-                  onClick={() => {
-                    setIsAnalyzing(true)
-                    setTimeout(() => {
-                      setAnalysis("AI analysis will be implemented here...")
-                      setIsAnalyzing(false)
-                    }, 2000)
-                  }}
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  {isAnalyzing ? "Analyzing..." : "Analyze Chart"}
-                </Button>
-
-                {analysis && (
-                  <div className="space-y-3">
-                    <Label>AI Response</Label>
-                    <Textarea
-                      value={analysis}
-                      readOnly
-                      className="min-h-[200px] resize-none"
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>
+                    <Select value={provider} onValueChange={setProvider}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="anthropic">Anthropic</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="apiKey" className="text-sm font-medium">API Key:</Label>
+                    <Input
+                      id="apiKey"
+                      type="password"
+                      placeholder="Enter key"
+                      className="w-40"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
                     />
                   </div>
-                )}
+                  <Button 
+                    disabled={!apiKey || isAnalyzing}
+                    onClick={() => {
+                      setIsAnalyzing(true)
+                      setTimeout(() => {
+                        setAnalysis("AI analysis will be implemented here...")
+                        setIsAnalyzing(false)
+                      }, 2000)
+                    }}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {isAnalyzing ? "Analyzing..." : "Analyze"}
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {analysis && (
+                <div className="space-y-3">
+                  <Label>AI Response</Label>
+                  <Textarea
+                    value={analysis}
+                    readOnly
+                    className="min-h-[150px] resize-none"
+                  />
+                </div>
+              )}
               </CardContent>
             </Card>
-          </div>
         </div>
       </div>
     </DashboardLayout>

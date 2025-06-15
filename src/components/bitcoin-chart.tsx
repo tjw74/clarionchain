@@ -84,7 +84,7 @@ export default function BitcoinChart() {
 
   if (!isClient || !data) {
     return (
-      <div className="h-[600px] flex items-center justify-center bg-muted/50 rounded-md">
+      <div className="h-[450px] flex items-center justify-center bg-muted/50 rounded-md">
         <p className="text-muted-foreground">Loading chart...</p>
       </div>
     )
@@ -139,14 +139,10 @@ export default function BitcoinChart() {
   ] as any
 
   const layout = {
-    title: {
-      text: 'Bitcoin On-Chain Analysis',
-      font: { color: '#ffffff', size: 18 },
-    },
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     font: { color: '#ffffff' },
-    height: 600,
+    height: 450,
     margin: { l: 60, r: 60, t: 60, b: 60 },
     
     // Subplot configuration
@@ -240,7 +236,7 @@ export default function BitcoinChart() {
           autosize: true,
         }}
         config={config}
-        style={{ width: '100%', height: '600px' }}
+        style={{ width: '100%', height: '450px' }}
         revision={revision}
         useResizeHandler={true}
       />
