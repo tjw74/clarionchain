@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { Brain, Settings, Send } from "lucide-react"
+import { Brain, Settings, Send, Loader2 } from "lucide-react"
 import { useState, useRef } from "react"
 import BitcoinChart, { BitcoinChartRef } from "@/components/bitcoin-chart"
 
@@ -174,7 +174,11 @@ export default function AIAnalysisPage() {
                   disabled={!apiKey || isAnalyzing}
                   onClick={analyzeChart}
                 >
-                  <Send className="mr-2 h-4 w-4" />
+                  {isAnalyzing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
                   {isAnalyzing ? "Analyzing..." : "Analyze"}
                 </Button>
               </div>
@@ -199,7 +203,14 @@ export default function AIAnalysisPage() {
                       {isAnalyzing && (
                         <div className="flex justify-start">
                           <div className="bg-muted rounded-lg px-3 py-2">
-                            <p className="text-sm text-muted-foreground">AI is analyzing...</p>
+                            <div className="flex items-center gap-1">
+                              <Brain className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -231,7 +242,11 @@ export default function AIAnalysisPage() {
                     onClick={sendFollowUp}
                     disabled={messages.length === 0 || isAnalyzing || !followUpInput.trim()}
                   >
-                    <Send className="h-4 w-4" />
+                    {isAnalyzing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
