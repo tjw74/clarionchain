@@ -239,6 +239,8 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       showgrid: true,
       gridcolor: '#374151',
       color: '#9ca3af',
+      showticklabels: false,
+      matches: 'x2',
     },
     yaxis: {
       domain: [0.4, 1],
@@ -258,6 +260,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       showgrid: true,
       gridcolor: '#374151',
       color: '#9ca3af',
+      matches: 'x',
     },
     yaxis2: {
       domain: [0, 0.35],
@@ -277,31 +280,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       font: { color: '#ffffff' },
     },
     
-    // Add horizontal reference lines for Z-score
-    shapes: [
-      // Overbought line
-      {
-        type: 'line',
-        x0: dates[0],
-        x1: dates[dates.length - 1],
-        y0: 7,
-        y1: 7,
-        xref: 'x2',
-        yref: 'y2',
-        line: { color: '#ef4444', width: 1, dash: 'dash' },
-      },
-      // Oversold line
-      {
-        type: 'line',
-        x0: dates[0],
-        x1: dates[dates.length - 1],
-        y0: -1,
-        y1: -1,
-        xref: 'x2',
-        yref: 'y2',
-        line: { color: '#22c55e', width: 1, dash: 'dash' },
-      },
-    ],
+
   } as any
 
   const config = {
@@ -309,6 +288,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     displaylogo: false,
     modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
     responsive: true,
+    scrollZoom: true,
   } as any
 
   return (
