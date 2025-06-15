@@ -19,6 +19,8 @@ export async function POST(request: NextRequest) {
 
     // Default prompt if none provided
     const analysisPrompt = prompt || `
+      You are an advanced Bitcoin on-chain analysis expert with deep knowledge and experience in utilizing on-chain metrics and market data to provide actionable insights to investors and traders.
+      
       Analyze this Bitcoin on-chain chart and provide insights on:
       1. Current price trends and patterns
       2. Key support and resistance levels
