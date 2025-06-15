@@ -78,11 +78,12 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch daily close price, market cap, and realized price history from the working endpoints
-        const [priceHistory, marketCapHistory, realizedPriceHistory] = await Promise.all([
+        // Fetch daily close price, market cap, realized price, and realized cap history from the working endpoints
+        const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory] = await Promise.all([
           brkClient.fetchDailyCloseHistory(2920),
           brkClient.fetchMarketCapHistory(2920),
-          brkClient.fetchRealizedPriceHistory(2920)
+          brkClient.fetchRealizedPriceHistory(2920),
+          brkClient.fetchRealizedCapHistory(2920)
         ]);
         // Helper to format numbers
         const formatNumber = (num: number, isMoney = true) => {
@@ -157,9 +158,8 @@ export default function Dashboard() {
           },
           {
             title: 'Realized Value',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
+            value: realizedCapHistory.length > 0 ? formatNumber(realizedCapHistory[realizedCapHistory.length - 1]) : 'N/A',
+            ...calcChange(realizedCapHistory),
             description: 'Total realized value (USD)'
           },
           {
