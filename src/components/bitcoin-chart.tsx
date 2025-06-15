@@ -1,10 +1,14 @@
 "use client"
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import dynamic from 'next/dynamic'
 
 // Dynamically import Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
+
+export interface BitcoinChartRef {
+  captureImage: () => Promise<string>
+}
 
 // Generate realistic dummy data
 const generateDummyData = () => {
@@ -43,11 +47,91 @@ const generateDummyData = () => {
   return { dates, prices, realizedPrices, mvrvRatios, zScores }
 }
 
-export default function BitcoinChart() {
+const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
   const [data, setData] = useState<any>(null)
   const [isClient, setIsClient] = useState(false)
   const [revision, setRevision] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+  const plotlyRef = useRef<any>(null)
+
+  useImperativeHandle(ref, () => ({
+    captureImage: async () => {
+      if (!plotlyRef.current) {
+        throw new Error('Chart not ready')
+      }
+      
+      try {
+        // Wait a bit to ensure chart is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Use Plotly's downloadImage functionality but capture the result
+        return new Promise<string>((resolve, reject) => {
+          // Create a temporary canvas to capture the SVG
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'))
+            return
+          }
+          
+          // Set canvas size
+          canvas.width = 1200
+          canvas.height = 450
+          
+          // Fill with black background
+          ctx.fillStyle = '#000000'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          
+          // Find the SVG element in the plot
+          const svgElement = plotlyRef.current.querySelector('svg')
+          
+          if (!svgElement) {
+            reject(new Error('SVG element not found'))
+            return
+          }
+          
+          // Clone the SVG to avoid modifying the original
+          const svgClone = svgElement.cloneNode(true) as SVGElement
+          
+          // Set explicit dimensions
+          svgClone.setAttribute('width', '1200')
+          svgClone.setAttribute('height', '450')
+          
+          // Convert SVG to data URL
+          const svgData = new XMLSerializer().serializeToString(svgClone)
+          const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+          const svgUrl = URL.createObjectURL(svgBlob)
+          
+          // Create image and draw to canvas
+          const img = new Image()
+          img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+            URL.revokeObjectURL(svgUrl)
+            
+            const imageData = canvas.toDataURL('image/png', 0.9)
+            
+            if (!imageData || imageData === 'data:,') {
+              reject(new Error('Failed to generate image data'))
+            } else {
+              resolve(imageData)
+            }
+          }
+          
+          img.onerror = () => {
+            URL.revokeObjectURL(svgUrl)
+            reject(new Error('Failed to load SVG image'))
+          }
+          
+          img.src = svgUrl
+        })
+        
+      } catch (error) {
+        console.error('Failed to capture chart image:', error)
+        throw new Error(`Failed to capture chart image: ${(error as Error).message}`)
+      }
+    }
+  }))
 
   useEffect(() => {
     setIsClient(true)
@@ -239,7 +323,17 @@ export default function BitcoinChart() {
         style={{ width: '100%', height: '450px' }}
         revision={revision}
         useResizeHandler={true}
+        onInitialized={(figure, graphDiv) => {
+          plotlyRef.current = graphDiv
+        }}
+        onUpdate={(figure, graphDiv) => {
+          plotlyRef.current = graphDiv
+        }}
       />
     </div>
   )
-} 
+})
+
+BitcoinChart.displayName = 'BitcoinChart'
+
+export default BitcoinChart 
