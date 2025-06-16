@@ -201,7 +201,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       type: 'scatter' as const,
       mode: 'lines' as const,
       name: 'Market Value',
-      line: { color: '#3b82f6', width: 2 }, // Blue
+      line: { color: '#3b82f6', width: 1 }, // Blue
       xaxis: 'x',
       yaxis: 'y',
     },
@@ -211,7 +211,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       type: 'scatter' as const,
       mode: 'lines' as const,
       name: 'Realized Value',
-      line: { color: '#eab308', width: 2 }, // Yellow
+      line: { color: '#eab308', width: 1 }, // Yellow
       xaxis: 'x',
       yaxis: 'y',
     },
@@ -222,7 +222,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       type: 'scatter' as const,
       mode: 'lines' as const,
       name: 'MVRV Ratio',
-      line: { color: '#ffffff', width: 2 }, // White
+      line: { color: '#ffffff', width: 1 }, // White
       xaxis: 'x2',
       yaxis: 'y2',
     },
@@ -256,6 +256,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       gridcolor: '#374151',
       color: '#9ca3af',
       type: 'log', // Log scale for values
+      side: 'right',
     },
     
     // Bottom subplot (oscillators)
@@ -277,6 +278,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       color: '#9ca3af',
       zeroline: true,
       zerolinecolor: '#6b7280',
+      side: 'right',
     },
     
     legend: {
