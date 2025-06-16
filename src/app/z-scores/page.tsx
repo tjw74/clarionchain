@@ -144,68 +144,110 @@ export default function ZScoresPage() {
       
       if (relevantData.length < 30) return 0 // Need minimum data points
       
-      const mean = relevantData.reduce((sum, val) => sum + val, 0) / relevantData.length
-      const variance = relevantData.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / relevantData.length
+      // Filter out invalid values (NaN, Infinity, null, undefined)
+      const validData = relevantData.filter(val => val != null && isFinite(val))
+      if (validData.length < 30) return 0
+      
+      const mean = validData.reduce((sum, val) => sum + val, 0) / validData.length
+      const variance = validData.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / validData.length
       const stdDev = Math.sqrt(variance)
       
-      if (stdDev === 0) return 0
-      return (values[currentIndex] - mean) / stdDev
+      if (stdDev === 0 || !isFinite(stdDev)) return 0
+      
+      const currentValue = values[currentIndex]
+      if (!isFinite(currentValue)) return 0
+      
+      return (currentValue - mean) / stdDev
     }
     
-    // Extract price values for calculations
+    // Helper function to safely divide with validation
+    const safeDivide = (numerator: number, denominator: number): number => {
+      if (!isFinite(numerator) || !isFinite(denominator) || denominator === 0) return 0
+      const result = numerator / denominator
+      return isFinite(result) ? result : 0
+    }
+    
+    // Extract and align data arrays to match priceData length
+    const dataLength = priceData.length
+    console.log('Price data length:', dataLength)
+    console.log('Other metrics lengths:', Object.keys(otherMetrics).map(key => `${key}: ${otherMetrics[key]?.length || 0}`))
+    
+    // Align all arrays to the same length as priceData (take the last N elements)
     const prices = priceData.map(item => item.price)
-    const realizedPrices = otherMetrics.realizedPrice || []
-    const marketCaps = otherMetrics.marketCap || []
-    const realizedCaps = otherMetrics.realizedCap || []
-    const soprValues = otherMetrics.sopr || []
-    const sthSupply = otherMetrics.sthMarketCap || [] // This is actually STH supply
-    const sthRealizedCaps = otherMetrics.sthRealizedCap || []
-    const supplyInProfit = otherMetrics.supplyInProfit || []
-    const supplyInLoss = otherMetrics.supplyInLoss || []
+    const realizedPrices = (otherMetrics.realizedPrice || []).slice(-dataLength)
+    const marketCaps = (otherMetrics.marketCap || []).slice(-dataLength)
+    const realizedCaps = (otherMetrics.realizedCap || []).slice(-dataLength)
+    const soprValues = (otherMetrics.sopr || []).slice(-dataLength)
+    const sthSupplyData = (otherMetrics.sthMarketCap || []).slice(-dataLength) // Correctly named: STH supply in satoshis
+    const sthRealizedCaps = (otherMetrics.sthRealizedCap || []).slice(-dataLength)
+    const supplyInProfit = (otherMetrics.supplyInProfit || []).slice(-dataLength)
+    const supplyInLoss = (otherMetrics.supplyInLoss || []).slice(-dataLength)
+    
+    console.log('Aligned array lengths:', {
+      prices: prices.length,
+      realizedPrices: realizedPrices.length,
+      marketCaps: marketCaps.length,
+      realizedCaps: realizedCaps.length,
+      sopr: soprValues.length,
+      sthSupply: sthSupplyData.length,
+      sthRealizedCaps: sthRealizedCaps.length,
+      supplyInProfit: supplyInProfit.length,
+      supplyInLoss: supplyInLoss.length
+    })
+    
+    // Pre-calculate derived metric arrays (PERFORMANCE FIX)
+    const mayerRatioArray = prices.map((price, i) => {
+      const realizedPrice = realizedPrices[i] || 0
+      return safeDivide(price, realizedPrice)
+    })
+    
+    const mvrvRatioArray = marketCaps.map((marketCap, i) => {
+      const realizedCap = realizedCaps[i] || 0
+      return safeDivide(marketCap, realizedCap)
+    })
+    
+    const sthMarketValueArray = prices.map((price, i) => {
+      const sthSupplyBTC = (sthSupplyData[i] || 0) / 100000000 // Convert satoshis to BTC
+      return sthSupplyBTC * price
+    })
+    
+    const sellSideRiskArray = prices.map((price, i) => {
+      const sthSupplyBTC = (sthSupplyData[i] || 0) / 100000000
+      const sthMarketValue = sthSupplyBTC * price
+      const sthRealizedValue = sthRealizedCaps[i] || 0
+      return safeDivide(sthMarketValue, sthRealizedValue)
+    })
     
     return priceData.map((item, index) => {
-      // Calculate derived metrics
+      // Get aligned data points
       const price = prices[index] || 0
       const realizedPrice = realizedPrices[index] || 0
       const marketCap = marketCaps[index] || 0
       const realizedCap = realizedCaps[index] || 0
       const sopr = soprValues[index] || 0
-      const sthSupplyBTC = (sthSupply[index] || 0) / 100000000 // Convert satoshis to BTC
-      const sthMarketValue = sthSupplyBTC * price
+      const sthSupplyBTC = (sthSupplyData[index] || 0) / 100000000
+      const sthMarketValue = sthMarketValueArray[index]
       const sthRealizedValue = sthRealizedCaps[index] || 0
       const supplyProfit = supplyInProfit[index] || 0
       const supplyLoss = supplyInLoss[index] || 0
       
-      // Calculate ratios
-      const mvrvRatio = realizedCap > 0 ? marketCap / realizedCap : 0
-      const mayerRatio = realizedPrice > 0 ? price / realizedPrice : 0
-      const sellSideRisk = sthRealizedValue > 0 ? sthMarketValue / sthRealizedValue : 0
+      // Calculate ratios with safe division
+      const mvrvRatio = safeDivide(marketCap, realizedCap)
+      const mayerRatio = safeDivide(price, realizedPrice)
+      const sellSideRisk = safeDivide(sthMarketValue, sthRealizedValue)
       
-      // Calculate Z-scores
+      // Calculate Z-scores using pre-calculated arrays
       const zScores = {
         price: calculateZScore(prices, index),
         realizedPrice: calculateZScore(realizedPrices, index),
-        mayerRatio: calculateZScore(prices.map((p, i) => {
-          const rp = realizedPrices[i] || 0
-          return rp > 0 ? p / rp : 0
-        }), index),
+        mayerRatio: calculateZScore(mayerRatioArray, index),
         marketValue: calculateZScore(marketCaps, index),
         realizedValue: calculateZScore(realizedCaps, index),
-        mvrvRatio: calculateZScore(marketCaps.map((mc, i) => {
-          const rc = realizedCaps[i] || 0
-          return rc > 0 ? mc / rc : 0
-        }), index),
+        mvrvRatio: calculateZScore(mvrvRatioArray, index),
         sopr: calculateZScore(soprValues, index),
-        sthMarketValue: calculateZScore(prices.map((p, i) => {
-          const supply = (sthSupply[i] || 0) / 100000000
-          return supply * p
-        }), index),
+        sthMarketValue: calculateZScore(sthMarketValueArray, index),
         sthRealizedValue: calculateZScore(sthRealizedCaps, index),
-        sellSideRisk: calculateZScore(prices.map((p, i) => {
-          const supply = (sthSupply[i] || 0) / 100000000
-          const sthRealCap = sthRealizedCaps[i] || 0
-          return sthRealCap > 0 ? (supply * p) / sthRealCap : 0
-        }), index),
+        sellSideRisk: calculateZScore(sellSideRiskArray, index),
         supplyInProfit: calculateZScore(supplyInProfit, index),
         supplyInLoss: calculateZScore(supplyInLoss, index),
       }
