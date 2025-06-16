@@ -35,6 +35,10 @@ interface ZScoreChartProps {
 
 export default function ZScoreChart({ zScores, metrics }: ZScoreChartProps) {
   const chartRef = useRef<ChartJS<'bar'>>(null)
+  
+  // Debug logging
+  console.log('ZScoreChart received zScores:', zScores)
+  console.log('ZScoreChart metrics:', metrics.length)
 
   // Get color based on Z-score value
   const getZScoreColor = (zScore: number): string => {
@@ -146,6 +150,19 @@ export default function ZScoreChart({ zScores, metrics }: ZScoreChartProps) {
       chart.update('none') // Update without animation for real-time feel
     }
   }, [zScores, metrics])
+
+  const hasData = Object.keys(zScores).length > 0 && Object.values(zScores).some(score => score !== 0)
+
+  if (!hasData) {
+    return (
+      <div className="h-96 w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg text-muted-foreground">Loading Z-scores...</div>
+          <div className="text-sm text-muted-foreground mt-2">Hover over price chart to see metrics</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-96 w-full">

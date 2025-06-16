@@ -46,9 +46,13 @@ export default function ZScoresPage() {
       setLoading(true)
       setError(null)
 
-      // Fetch all required data from BRK API
+      // Fetch price data first to get the chart working
+      console.log('Starting data fetch...')
+      const priceHistory = await brkClient.fetchPriceHistory()
+      console.log('Price history fetched:', priceHistory.length, 'items')
+      
+      // Fetch other data
       const [
-        priceHistory,
         realizedPriceHistory,
         marketCapHistory,
         realizedCapHistory,
@@ -58,7 +62,6 @@ export default function ZScoresPage() {
         supplyInProfitHistory,
         supplyInLossHistory
       ] = await Promise.all([
-        brkClient.fetchPriceHistory(),
         brkClient.fetchRealizedPriceHistory(),
         brkClient.fetchMarketCapHistory(),
         brkClient.fetchRealizedCapHistory(),
@@ -68,6 +71,8 @@ export default function ZScoresPage() {
         brkClient.fetchSupplyInProfitHistory(),
         brkClient.fetchSupplyInLossHistory()
       ])
+      
+      console.log('All data fetched successfully')
 
       // Filter data from Jan 1, 2015 onwards
       const startDate = new Date('2015-01-01')
@@ -104,6 +109,7 @@ export default function ZScoresPage() {
     } catch (err) {
       setError('Failed to fetch Z-Score data')
       console.error('Z-Score data fetch error:', err)
+      console.error('Error details:', err)
     } finally {
       setLoading(false)
     }

@@ -34,6 +34,12 @@ interface PriceChartProps {
 
 export default function PriceChart({ data, onHover }: PriceChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null)
+  
+  // Debug logging
+  console.log('PriceChart received data:', data.length, 'items')
+  if (data.length > 0) {
+    console.log('Sample data:', data.slice(0, 3))
+  }
 
   // Throttled hover handler for performance
   const throttledHover = useCallback(
@@ -48,14 +54,14 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
   )
 
   const chartData = {
-    labels: data.map(item => {
+    labels: data.length > 0 ? data.map(item => {
       const date = new Date(item.timestamp)
       return date.getFullYear().toString()
-    }),
+    }) : ['No Data'],
     datasets: [
       {
         label: 'Bitcoin Price',
-        data: data.map(item => item.price),
+        data: data.length > 0 ? data.map(item => item.price) : [0],
         borderColor: '#f59e0b',
         backgroundColor: 'rgba(245, 158, 11, 0.1)',
         borderWidth: 2,
@@ -139,6 +145,17 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         hoverRadius: 8
       }
     }
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="h-96 w-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg text-muted-foreground">Loading price data...</div>
+          <div className="text-sm text-muted-foreground mt-2">Fetching Bitcoin price history</div>
+        </div>
+      </div>
+    )
   }
 
   return (
