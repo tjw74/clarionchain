@@ -7,6 +7,13 @@ import { brkClient } from '@/lib/api/brkClient'
 // Dynamically import Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
 
+// Extend window type for Plotly
+declare global {
+  interface Window {
+    Plotly: any
+  }
+}
+
 export interface BitcoinChartRef {
   captureImage: () => Promise<string>
 }
@@ -143,31 +150,21 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     fetchMVRVData()
   }, [])
 
-  // Add resize observer to trigger chart resize when container changes
+  // Force re-render when container size changes
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || !isClient) return
 
-    const resizeObserver = new ResizeObserver(() => {
-      // Add a small delay to ensure the container has finished resizing
-      setTimeout(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Force a complete re-render by updating revision
         setRevision(prev => prev + 1)
-      }, 100)
+      }
     })
 
     resizeObserver.observe(containerRef.current)
 
-    // Also listen for window resize events
-    const handleWindowResize = () => {
-      setTimeout(() => {
-        setRevision(prev => prev + 1)
-      }, 100)
-    }
-
-    window.addEventListener('resize', handleWindowResize)
-
     return () => {
       resizeObserver.disconnect()
-      window.removeEventListener('resize', handleWindowResize)
     }
   }, [isClient])
 
@@ -310,7 +307,6 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     font: { color: '#ffffff' },
-    height: 500,
     margin: { l: 60, r: 60, t: 5, b: 40 },
     
     // Subplot configuration
@@ -380,10 +376,11 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
     responsive: true,
     scrollZoom: true,
+    autosizable: true,
   } as any
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full" style={{ containerType: 'inline-size' }}>
       <style dangerouslySetInnerHTML={{
         __html: `
           .modebar {
@@ -406,25 +403,31 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
           .modebar-btn:hover {
             background: rgba(255, 255, 255, 0.1) !important;
           }
+          .plotly-chart-container {
+            container-type: inline-size;
+            width: 100%;
+          }
         `
       }} />
-      <Plot
-        data={plotData}
-        layout={{
-          ...layout,
-          autosize: true,
-        }}
-        config={config}
-                  style={{ width: '100%', height: '500px' }}
-        revision={revision}
-        useResizeHandler={true}
-        onInitialized={(figure, graphDiv) => {
-          plotlyRef.current = graphDiv
-        }}
-        onUpdate={(figure, graphDiv) => {
-          plotlyRef.current = graphDiv
-        }}
-      />
+      <div className="plotly-chart-container">
+        <Plot
+          data={plotData}
+          layout={{
+            ...layout,
+            autosize: true,
+          }}
+          config={config}
+          style={{ width: '100%', height: '500px' }}
+          revision={revision}
+          useResizeHandler={true}
+          onInitialized={(figure, graphDiv) => {
+            plotlyRef.current = graphDiv
+          }}
+          onUpdate={(figure, graphDiv) => {
+            plotlyRef.current = graphDiv
+          }}
+        />
+      </div>
     </div>
   )
 })

@@ -120,14 +120,14 @@ export default function AIAnalysisPage() {
     >
       <div className="space-y-6">
         <div className="space-y-6">
-          <Card className="border-border">
+          <Card className="border-border w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
                 Workbench
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <BitcoinChart ref={chartRef} />
             </CardContent>
           </Card>
