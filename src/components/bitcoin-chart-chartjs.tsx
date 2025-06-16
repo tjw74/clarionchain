@@ -396,6 +396,19 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         pointHoverRadius: 4,
         yAxisID: 'y',
       },
+      {
+        label: 'Center Line',
+        data: Array(dates.length).fill(1),
+        borderColor: '#ffffff',
+        backgroundColor: 'transparent',
+        borderWidth: 0.5,
+        borderDash: [5, 5],
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        yAxisID: 'y',
+        showlegend: false,
+      },
     ],
   }
 
