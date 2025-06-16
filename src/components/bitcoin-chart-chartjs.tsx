@@ -256,6 +256,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   const topSubplotTicks = calculateLogTicks([...marketValues, ...realizedValues])
 
+  // Calculate dynamic USD axis configuration for Market Value and Realized Value
+  const allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
+  const minUSD = Math.min(...allUSDValues)
+  const maxUSD = Math.max(...allUSDValues)
+  const usdRange = maxUSD - minUSD
+  const usdPaddedMin = Math.max(0, minUSD - (usdRange * 0.1)) // 10% padding, but not below 0
+  const usdPaddedMax = maxUSD + (usdRange * 0.1) // 10% padding
+  const usdStepSize = (usdPaddedMax - usdPaddedMin) / 8 // 8 evenly spaced intervals
+
   const chartData = {
     labels: dates,
     datasets: [
@@ -346,13 +355,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         },
       },
       y: {
-        type: 'logarithmic' as const,
+        type: 'linear' as const,
         position: 'right' as const,
         grid: {
           color: '#374151',
         },
         ticks: {
           color: '#9ca3af',
+          stepSize: usdStepSize,
           callback: function(value: any) {
             return formatUSDValue(value)
           },
@@ -360,6 +370,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         title: {
           display: false,
         },
+        min: usdPaddedMin,
+        max: usdPaddedMax,
       },
       y1: {
         type: 'linear' as const,
