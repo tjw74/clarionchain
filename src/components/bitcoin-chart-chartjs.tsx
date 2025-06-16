@@ -385,8 +385,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         },
         ticks: {
           color: '#9ca3af',
+          minRotation: 0,
+          maxRotation: 0,
+          font: {
+            family: 'monospace',
+            size: 12,
+          },
           callback: function(value: any) {
-            return formatUSDValue(value)
+            return formatUSDValue(value).padStart(10, ' ')
           },
         },
         title: {
@@ -450,6 +456,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         },
         ticks: {
           color: '#9ca3af',
+          minRotation: 0,
+          maxRotation: 0,
+          font: {
+            family: 'monospace',
+            size: 12,
+          },
+          callback: function(value: any) {
+            return value.toString().padStart(10, ' ')
+          },
         },
         title: {
           display: false,
