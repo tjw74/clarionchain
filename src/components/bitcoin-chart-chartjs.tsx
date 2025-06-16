@@ -57,6 +57,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   const [isClient, setIsClient] = useState(false)
   const [chartKey, setChartKey] = useState(0) // Force chart recreation
   const chartRef = useRef<ChartJS<'line'> | null>(null)
+  const ratioChartRef = useRef<ChartJS<'line'> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   
   // Get sidebar state
@@ -135,6 +136,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         chartRef.current.resize()
         console.log('Chart resize completed')
       }
+      if (ratioChartRef.current) {
+        ratioChartRef.current.resize()
+        console.log('Ratio chart resize completed')
+      }
     }, 250) // Wait for sidebar animation
     
     return () => clearTimeout(timer)
@@ -153,6 +158,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         if (chartRef.current) {
           chartRef.current.resize()
           console.log('Chart resize called')
+        }
+        if (ratioChartRef.current) {
+          ratioChartRef.current.resize()
+          console.log('Ratio chart resize called')
         }
       }, 100) // Shorter delay since CSS should handle the main issue
     }
@@ -280,7 +289,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   
   const usdLogTicks = generateLogTicks()
 
-  const chartData = {
+  // Main chart data (MV + RV only)
+  const mainChartData = {
     labels: dates,
     datasets: [
       {
@@ -305,6 +315,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         pointHoverRadius: 4,
         yAxisID: 'y',
       },
+    ],
+  }
+
+  // Ratio chart data (MVRV Ratio only)
+  const ratioChartData = {
+    labels: dates,
+    datasets: [
       {
         label: 'MVRV Ratio',
         data: mvrvRatios,
@@ -314,12 +331,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         fill: false,
         pointRadius: 0,
         pointHoverRadius: 4,
-        yAxisID: 'y1',
+        yAxisID: 'y',
       },
     ],
   }
 
-  const options = {
+  // Main chart options (MV + RV)
+  const mainChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -328,14 +346,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     },
     plugins: {
       legend: {
-        position: 'top' as const,
-        align: 'center' as const,
-        labels: {
-          color: '#ffffff',
-          usePointStyle: true,
-          padding: 20,
-        },
-        fullSize: false,
+        display: false,
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -347,11 +358,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           label: function(context: any) {
             const label = context.dataset.label || ''
             const value = context.parsed.y
-            if (context.datasetIndex < 2) {
-              return `${label}: ${formatUSDValue(value)}`
-            } else {
-              return `${label}: ${value.toFixed(2)}`
-            }
+            return `${label}: ${formatUSDValue(value)}`
           }
         }
       },
@@ -391,11 +398,55 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           axis.ticks = usdLogTicks.map((value: number) => ({ value }))
         },
       },
-      y1: {
-        type: 'linear' as const,
-        position: 'left' as const,
+    },
+  }
+
+  // Ratio chart options
+  const ratioChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#374151',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.dataset.label || ''
+            const value = context.parsed.y
+            return `${label}: ${value.toFixed(2)}`
+          }
+        }
+      },
+    },
+    scales: {
+      x: {
+        type: 'time' as const,
+        time: {
+          unit: 'year' as const,
+        },
         grid: {
-          drawOnChartArea: false,
+          color: '#374151',
+        },
+        ticks: {
+          color: '#9ca3af',
+          maxTicksLimit: 10,
+        },
+      },
+      y: {
+        type: 'linear' as const,
+        position: 'right' as const,
+        grid: {
+          color: '#374151',
         },
         ticks: {
           color: '#9ca3af',
@@ -433,21 +484,22 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             </div>
           </div>
         </div>
-        {/* Chart area */}
-        <div className="flex-1 px-4 pb-4">
+        {/* Main Chart area (MV + RV) */}
+        <div className="flex-1 px-4 pb-2">
           <Line
             key={chartKey}
             ref={chartRef}
-            data={chartData}
-            options={{
-              ...options,
-              plugins: {
-                ...options.plugins,
-                legend: {
-                  display: false, // Hide Chart.js legend since we're using custom
-                },
-              },
-            }}
+            data={mainChartData}
+            options={mainChartOptions}
+          />
+        </div>
+        {/* Ratio Chart area */}
+        <div className="h-48 px-4 pb-4">
+          <Line
+            key={`ratio-${chartKey}`}
+            ref={ratioChartRef}
+            data={ratioChartData}
+            options={ratioChartOptions}
           />
         </div>
       </div>
