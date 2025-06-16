@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
-import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import {
   ChartConfig,
@@ -95,8 +92,8 @@ const sthChartConfig = {
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [, setLoading] = useState(true)
+  const [, setError] = useState<string | null>(null)
   const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number}>>([])
   const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number}>>([])
 
@@ -183,8 +180,8 @@ export default function Dashboard() {
         }
 
         // Calculate 200-day Moving Average and Mayer Multiple
-        let ma200Arr: number[] = [];
-        let mayerMultipleArr: number[] = [];
+        const ma200Arr: number[] = [];
+        const mayerMultipleArr: number[] = [];
         if (priceHistory.length >= 200) {
           priceHistory.forEach((price, index) => {
             if (index < 199) {
@@ -200,7 +197,7 @@ export default function Dashboard() {
         }
 
         // Calculate STH MVRV Ratio (STH Market Value / STH Realized Cap)
-        let sthMvrvRatioArr: number[] = [];
+        const sthMvrvRatioArr: number[] = [];
         if (priceHistory.length > 0 && sthSupplyHistory.length > 0 && sthRealizedCapHistory.length > 0) {
           const minLength = Math.min(priceHistory.length, sthSupplyHistory.length, sthRealizedCapHistory.length);
           for (let i = 0; i < minLength; i++) {
@@ -274,7 +271,7 @@ export default function Dashboard() {
           }
         ];
         setMetrics(realMetrics);
-      } catch (err) {
+      } catch {
         setError('Failed to fetch price data');
       } finally {
         setLoading(false);
