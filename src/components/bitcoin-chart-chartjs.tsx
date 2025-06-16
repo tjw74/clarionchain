@@ -537,42 +537,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       intersect: false,
     },
     onHover: (event: any, elements: any, chart: any) => {
-      const mainTooltip = document.getElementById('main-tooltip')
-      const ratioTooltip = document.getElementById('ratio-tooltip')
-      
-      if (elements.length > 0 && mainTooltip && ratioTooltip) {
-        const activeIndex = elements[0].index
-        const date = dates[activeIndex]
-        
-        // Update main chart tooltip
-        const mainDatasets = currentConfig.mainChart.datasets
-        let mainContent = `<div class="text-center font-mono text-xs">${date} | `
-        mainDatasets.forEach((dataset, i) => {
-          const value = dataset.data[activeIndex]
-          if (value !== undefined) {
-            mainContent += `${dataset.label}: ${formatUSDValue(value)}`
-            if (i < mainDatasets.length - 1) mainContent += ' | '
-          }
-        })
-        mainContent += '</div>'
-        mainTooltip.innerHTML = mainContent
-        
-        // Update ratio chart tooltip
-        const ratioDatasets = currentConfig.ratioChart.datasets
-        let ratioContent = `<div class="text-center font-mono text-xs">${date} | `
-        ratioDatasets.forEach((dataset, i) => {
-          const value = dataset.data[activeIndex]
-          if (value !== undefined) {
-            ratioContent += `${dataset.label}: ${value.toFixed(2)}`
-            if (i < ratioDatasets.length - 1) ratioContent += ' | '
-          }
-        })
-        ratioContent += '</div>'
-        ratioTooltip.innerHTML = ratioContent
-      } else if (mainTooltip && ratioTooltip) {
-        // Reset to default when not hovering
-        mainTooltip.innerHTML = '<div class="text-center">Hover over chart for details</div>'
-        ratioTooltip.innerHTML = '<div class="text-center">Hover over chart for details</div>'
+      // Sync tooltip with ratio chart
+      if (ratioChartRef.current) {
+        if (elements.length > 0) {
+          const activeIndex = elements[0].index
+          ratioChartRef.current.setActiveElements([{
+            datasetIndex: 0,
+            index: activeIndex
+          }])
+          ratioChartRef.current.tooltip?.setActiveElements([{
+            datasetIndex: 0,
+            index: activeIndex
+          }], { x: event.x, y: event.y })
+        } else {
+          // Clear ratio chart tooltip when cursor leaves main chart
+          ratioChartRef.current.setActiveElements([])
+          ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        }
+        ratioChartRef.current.update('none')
       }
     },
     plugins: {
@@ -580,7 +562,23 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         display: false,
       },
       tooltip: {
-        enabled: false,
+        backgroundColor: 'rgba(59, 130, 246, 0.9)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderWidth: 0,
+        position: 'nearest' as const,
+        yAlign: 'bottom' as const,
+        caretPadding: 10,
+        callbacks: {
+          title: function(context: any) {
+            return dates[context[0].dataIndex]
+          },
+          label: function(context: any) {
+            const label = context.dataset.label || ''
+            const value = context.parsed.y
+            return `${label}: ${formatUSDValue(value)}`
+          }
+        }
       },
     },
     scales: {
@@ -637,42 +635,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       intersect: false,
     },
     onHover: (event: any, elements: any, chart: any) => {
-      const mainTooltip = document.getElementById('main-tooltip')
-      const ratioTooltip = document.getElementById('ratio-tooltip')
-      
-      if (elements.length > 0 && mainTooltip && ratioTooltip) {
-        const activeIndex = elements[0].index
-        const date = dates[activeIndex]
-        
-        // Update main chart tooltip
-        const mainDatasets = currentConfig.mainChart.datasets
-        let mainContent = `<div class="text-center font-mono text-xs">${date} | `
-        mainDatasets.forEach((dataset, i) => {
-          const value = dataset.data[activeIndex]
-          if (value !== undefined) {
-            mainContent += `${dataset.label}: ${formatUSDValue(value)}`
-            if (i < mainDatasets.length - 1) mainContent += ' | '
-          }
-        })
-        mainContent += '</div>'
-        mainTooltip.innerHTML = mainContent
-        
-        // Update ratio chart tooltip
-        const ratioDatasets = currentConfig.ratioChart.datasets
-        let ratioContent = `<div class="text-center font-mono text-xs">${date} | `
-        ratioDatasets.forEach((dataset, i) => {
-          const value = dataset.data[activeIndex]
-          if (value !== undefined) {
-            ratioContent += `${dataset.label}: ${value.toFixed(2)}`
-            if (i < ratioDatasets.length - 1) ratioContent += ' | '
-          }
-        })
-        ratioContent += '</div>'
-        ratioTooltip.innerHTML = ratioContent
-      } else if (mainTooltip && ratioTooltip) {
-        // Reset to default when not hovering
-        mainTooltip.innerHTML = '<div class="text-center">Hover over chart for details</div>'
-        ratioTooltip.innerHTML = '<div class="text-center">Hover over chart for details</div>'
+      // Sync tooltip with main chart
+      if (chartRef.current) {
+        if (elements.length > 0) {
+          const activeIndex = elements[0].index
+          chartRef.current.setActiveElements([
+            { datasetIndex: 0, index: activeIndex }, // Market Value
+            { datasetIndex: 1, index: activeIndex }  // Realized Value
+          ])
+          chartRef.current.tooltip?.setActiveElements([
+            { datasetIndex: 0, index: activeIndex },
+            { datasetIndex: 1, index: activeIndex }
+          ], { x: event.x, y: event.y })
+        } else {
+          // Clear main chart tooltip when cursor leaves ratio chart
+          chartRef.current.setActiveElements([])
+          chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        }
+        chartRef.current.update('none')
       }
     },
     plugins: {
@@ -680,7 +660,23 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         display: false,
       },
       tooltip: {
-        enabled: false,
+        backgroundColor: 'rgba(59, 130, 246, 0.9)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderWidth: 0,
+        position: 'nearest' as const,
+        yAlign: 'bottom' as const,
+        caretPadding: 10,
+        callbacks: {
+          title: function(context: any) {
+            return dates[context[0].dataIndex]
+          },
+          label: function(context: any) {
+            const label = context.dataset.label || ''
+            const value = context.parsed.y
+            return `${label}: ${value.toFixed(2)}`
+          }
+        }
       },
     },
     scales: {
@@ -743,16 +739,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             ))}
           </div>
         </div>
-        {/* Main Chart area with fixed tooltip */}
-        <div className="flex-1 px-4 pb-2 relative">
-          {/* Fixed tooltip for main chart */}
-          <div 
-            id="main-tooltip"
-            className="absolute top-2 left-2 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
-            style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}
-          >
-            <div className="text-center">Hover over chart for details</div>
-          </div>
+        {/* Main Chart area */}
+        <div className="flex-1 px-4 pb-2">
           <Line
             key={chartKey}
             ref={chartRef}
@@ -760,16 +748,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             options={mainChartOptions}
           />
         </div>
-        {/* Ratio Chart area with fixed tooltip */}
-        <div className="h-48 px-4 pb-4 relative">
-          {/* Fixed tooltip for ratio chart */}
-          <div 
-            id="ratio-tooltip"
-            className="absolute top-2 left-2 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
-            style={{ backgroundColor: 'rgba(59, 130, 246, 0.15)' }}
-          >
-            <div className="text-center">Hover over chart for details</div>
-          </div>
+        {/* Ratio Chart area */}
+        <div className="h-48 px-4 pb-4">
           <Line
             key={`ratio-${chartKey}`}
             ref={ratioChartRef}
