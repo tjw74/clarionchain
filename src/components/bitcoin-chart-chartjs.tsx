@@ -345,13 +345,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       x: {
         type: 'time' as const,
         time: {
-          unit: 'month' as const,
+          unit: 'year' as const,
         },
         grid: {
           color: '#374151',
         },
         ticks: {
           color: '#9ca3af',
+          maxTicksLimit: 10,
         },
       },
       y: {
