@@ -65,13 +65,76 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   useImperativeHandle(ref, () => ({
     captureImage: async () => {
-      if (!chartRef.current) {
-        throw new Error('Chart not ready')
+      if (!chartRef.current || !ratioChartRef.current) {
+        throw new Error('Charts not ready')
       }
       
       try {
-        const canvas = chartRef.current.canvas
-        return canvas.toDataURL('image/png', 0.9)
+        // Get both canvases
+        const mainCanvas = chartRef.current.canvas
+        const ratioCanvas = ratioChartRef.current.canvas
+        
+        // Create a combined canvas
+        const combinedCanvas = document.createElement('canvas')
+        const ctx = combinedCanvas.getContext('2d')
+        
+        if (!ctx) {
+          throw new Error('Could not get canvas context')
+        }
+        
+        // Set combined canvas dimensions (main chart height + ratio chart height + legend space)
+        const legendHeight = 48 // Height of legend area
+        const totalHeight = mainCanvas.height + ratioCanvas.height + legendHeight
+        const totalWidth = Math.max(mainCanvas.width, ratioCanvas.width)
+        
+        combinedCanvas.width = totalWidth
+        combinedCanvas.height = totalHeight
+        
+        // Fill with dark background to match the chart theme
+        ctx.fillStyle = '#000000'
+        ctx.fillRect(0, 0, totalWidth, totalHeight)
+        
+        // Draw legend area
+        ctx.fillStyle = '#ffffff'
+        ctx.font = '14px system-ui, -apple-system, sans-serif'
+        ctx.textAlign = 'center'
+        
+        const legendY = 30
+        const legendCenterX = totalWidth / 2
+        
+        // Draw legend items
+        const legendItems = [
+          { color: '#3b82f6', label: 'Market Value' },
+          { color: '#eab308', label: 'Realized Value' },
+          { color: '#ffffff', label: 'MVRV Ratio' }
+        ]
+        
+        const itemSpacing = 120
+        const startX = legendCenterX - (legendItems.length - 1) * itemSpacing / 2
+        
+        legendItems.forEach((item, index) => {
+          const x = startX + index * itemSpacing
+          
+          // Draw colored circle
+          ctx.fillStyle = item.color
+          ctx.beginPath()
+          ctx.arc(x - 30, legendY, 6, 0, 2 * Math.PI)
+          ctx.fill()
+          
+          // Draw label
+          ctx.fillStyle = '#ffffff'
+          ctx.fillText(item.label, x, legendY + 5)
+        })
+        
+        // Draw main chart (Market Value + Realized Value)
+        ctx.drawImage(mainCanvas, 0, legendHeight)
+        
+        // Draw ratio chart below main chart
+        ctx.drawImage(ratioCanvas, 0, legendHeight + mainCanvas.height)
+        
+        // Return the combined image as data URL
+        return combinedCanvas.toDataURL('image/png', 0.9)
+        
       } catch (error) {
         console.error('Failed to capture chart image:', error)
         throw new Error(`Failed to capture chart image: ${(error as Error).message}`)
