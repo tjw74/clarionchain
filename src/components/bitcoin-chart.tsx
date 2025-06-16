@@ -192,6 +192,68 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
 
   const { dates, marketValues, realizedValues, mvrvRatios } = data
 
+  // Calculate dynamic Y-axis ticks for log scale
+  const calculateLogTicks = (values: number[]) => {
+    const minVal = Math.min(...values.filter(v => v > 0))
+    const maxVal = Math.max(...values)
+    
+    // Work in log space
+    const logMin = Math.log10(minVal)
+    const logMax = Math.log10(maxVal)
+    
+    // Add 5% padding in log space
+    const logRange = logMax - logMin
+    const paddedLogMin = logMin - (logRange * 0.05)
+    const paddedLogMax = logMax + (logRange * 0.05)
+    
+    // Create 5 evenly spaced ticks in log space
+    const tickvals = []
+    for (let i = 0; i <= 4; i++) {
+      const logTick = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 4)
+      const tickValue = Math.pow(10, logTick)
+      
+      // Round to appropriate precision based on magnitude
+      let roundedValue
+      if (tickValue >= 1e12) {
+        roundedValue = Math.round(tickValue / 1e10) * 1e10 // Round to nearest 10B
+      } else if (tickValue >= 1e11) {
+        roundedValue = Math.round(tickValue / 1e9) * 1e9 // Round to nearest 1B
+      } else if (tickValue >= 1e10) {
+        roundedValue = Math.round(tickValue / 1e8) * 1e8 // Round to nearest 100M
+      } else if (tickValue >= 1e9) {
+        roundedValue = Math.round(tickValue / 1e7) * 1e7 // Round to nearest 10M
+      } else {
+        roundedValue = Math.round(tickValue / 1e6) * 1e6 // Round to nearest 1M
+      }
+      
+      tickvals.push(roundedValue)
+    }
+    
+    return tickvals
+  }
+
+  // Calculate ticks for top subplot (combine MV and RV data)
+  const topSubplotTicks = calculateLogTicks([...marketValues, ...realizedValues])
+
+  // Format USD values with appropriate units
+  const formatUSDValue = (value: number) => {
+    if (value >= 1e12) {
+      const formatted = (value / 1e12).toFixed(2)
+      return `$${formatted.replace(/\.?0+$/, '')}T`
+    } else if (value >= 1e9) {
+      const formatted = (value / 1e9).toFixed(2)
+      return `$${formatted.replace(/\.?0+$/, '')}B`
+    } else if (value >= 1e6) {
+      const formatted = (value / 1e6).toFixed(2)
+      return `$${formatted.replace(/\.?0+$/, '')}M`
+    } else if (value >= 1e3) {
+      const formatted = (value / 1e3).toFixed(2)
+      return `$${formatted.replace(/\.?0+$/, '')}K`
+    } else {
+      return `$${value.toFixed(2).replace(/\.?0+$/, '')}`
+    }
+  }
+
   // Create subplot configuration
   const plotData = [
     // Top subplot - Market Value and Realized Value
@@ -226,6 +288,22 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       xaxis: 'x2',
       yaxis: 'y2',
     },
+    // Center line for MVRV Ratio at y=1
+    {
+      x: [dates[0], dates[dates.length - 1]],
+      y: [1, 1],
+      type: 'scatter' as const,
+      mode: 'lines' as const,
+      name: 'Center Line',
+      line: { 
+        color: '#6b7280', 
+        width: 1, 
+        dash: 'dot' 
+      },
+      xaxis: 'x2',
+      yaxis: 'y2',
+      showlegend: false,
+    },
   ] as any
 
   const layout = {
@@ -257,6 +335,9 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
       color: '#9ca3af',
       type: 'log', // Log scale for values
       side: 'right',
+      tickvals: topSubplotTicks,
+      tickmode: 'array',
+      ticktext: topSubplotTicks.map(formatUSDValue),
     },
     
     // Bottom subplot (oscillators)
