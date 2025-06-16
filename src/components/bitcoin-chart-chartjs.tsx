@@ -740,7 +740,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           {/* Fixed tooltip for main chart */}
           <div 
             id="main-tooltip"
-            className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
+            className="absolute top-2 left-2 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
+            style={{ backgroundColor: 'rgba(59, 130, 246, 0.7)' }}
           >
             <div className="text-center">Hover over chart for details</div>
           </div>
@@ -756,7 +757,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           {/* Fixed tooltip for ratio chart */}
           <div 
             id="ratio-tooltip"
-            className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
+            className="absolute top-2 left-2 text-white text-sm px-3 py-2 rounded border border-gray-600 z-10 min-w-[200px]"
+            style={{ backgroundColor: 'rgba(59, 130, 246, 0.7)' }}
           >
             <div className="text-center">Hover over chart for details</div>
           </div>
