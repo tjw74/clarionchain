@@ -376,9 +376,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         yRange: [0.5, 2.0]
       },
       legend: [
-        { color: '#3b82f6', label: 'BTC Price' },
-        { color: '#eab308', label: '200-Day MA' },
-        { color: '#ffffff', label: 'Price/MA200 Ratio' }
+        { color: '#3b82f6', label: 'Price' },
+        { color: '#eab308', label: '200DMA' },
+        { color: '#ffffff', label: 'Mayer Ratio' }
       ]
     }
   }
