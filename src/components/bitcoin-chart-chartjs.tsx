@@ -569,6 +569,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       y: {
         type: 'logarithmic' as const,
         position: 'right' as const,
+        display: true,
         grid: {
           color: '#374151',
         },
