@@ -541,6 +541,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       if (ratioChartRef.current) {
         if (elements.length > 0) {
           const activeIndex = elements[0].index
+          // Set active elements for main chart (both datasets)
+          chart.setActiveElements([
+            { datasetIndex: 0, index: activeIndex }, // Market Value
+            { datasetIndex: 1, index: activeIndex }  // Realized Value
+          ])
+          // Sync with ratio chart
           ratioChartRef.current.setActiveElements([{
             datasetIndex: 0,
             index: activeIndex
