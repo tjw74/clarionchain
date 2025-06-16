@@ -305,11 +305,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     plugins: {
       legend: {
         position: 'top' as const,
+        align: 'center' as const,
         labels: {
           color: '#ffffff',
           usePointStyle: true,
           padding: 20,
         },
+        fullSize: false,
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -387,13 +389,41 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     // Without this, flexbox prevents shrinking below content size
     <div ref={containerRef} className="w-full min-w-0">
       {/* Chart Container - styled to match AI component */}
-      <div className="border rounded-md p-4 h-[680px] bg-muted/20 min-w-0">
-        <Line
-          key={chartKey}
-          ref={chartRef}
-          data={chartData}
-          options={options}
-        />
+      <div className="border rounded-md bg-muted/20 min-w-0 h-[680px] flex flex-col">
+        {/* Legend area - centered vertically with uniform spacing */}
+        <div className="flex justify-center items-center h-12 px-4 pt-2">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <span className="text-white text-sm">Market Value</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <span className="text-white text-sm">Realized Value</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-white"></div>
+              <span className="text-white text-sm">MVRV Ratio</span>
+            </div>
+          </div>
+        </div>
+        {/* Chart area */}
+        <div className="flex-1 px-4 pb-4">
+          <Line
+            key={chartKey}
+            ref={chartRef}
+            data={chartData}
+            options={{
+              ...options,
+              plugins: {
+                ...options.plugins,
+                legend: {
+                  display: false, // Hide Chart.js legend since we're using custom
+                },
+              },
+            }}
+          />
+        </div>
       </div>
     </div>
   )
