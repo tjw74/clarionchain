@@ -390,9 +390,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef>((props, ref) => {
     // This allows the chart container to shrink when sidebar reopens
     // Without this, flexbox prevents shrinking below content size
     <div ref={containerRef} className="w-full space-y-4 min-w-0">
-      {/* Metric Selection */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Bitcoin Analytics</h3>
+      {/* Metric Selection - positioned to align with Workbench title */}
+      <div className="flex items-center justify-end">
         <Select value={selectedMetric} onValueChange={(value: string) => setSelectedMetric(value as MetricType)}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -407,8 +406,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef>((props, ref) => {
         </Select>
       </div>
 
-      {/* Chart Container - min-w-0 essential for responsive shrinking */}
-      <div className="w-full h-[500px] bg-muted/20 rounded-lg p-4 min-w-0">
+      {/* Chart Container - styled to match AI component */}
+      <div className="border rounded-md p-4 h-[600px] bg-muted/20 min-w-0">
         <Line
           key={chartKey}
           ref={chartRef}
