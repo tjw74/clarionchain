@@ -358,9 +358,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           },
         },
         title: {
-          display: true,
-          text: 'Value (USD)',
-          color: '#9ca3af',
+          display: false,
         },
       },
       y1: {
@@ -373,9 +371,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           color: '#9ca3af',
         },
         title: {
-          display: true,
-          text: 'MVRV Ratio',
-          color: '#9ca3af',
+          display: false,
         },
         min: 0,
         max: 5,
