@@ -133,7 +133,7 @@ export default function DashboardLayout({ children, title, description }: Dashbo
           </SidebarFooter>
         </Sidebar>
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="flex h-16 items-center gap-4 border-b border-border px-6">
             <SidebarTrigger />
             {title && (
@@ -147,7 +147,7 @@ export default function DashboardLayout({ children, title, description }: Dashbo
             {!title && <div className="flex-1" />}
           </header>
           
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-6 min-w-0">
             {children}
           </main>
         </div>

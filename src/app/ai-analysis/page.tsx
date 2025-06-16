@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { Brain, Settings, Send, Loader2 } from "lucide-react"
 import { useState, useRef } from "react"
-import BitcoinChart, { BitcoinChartRef } from "@/components/bitcoin-chart"
+import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-chartjs"
 
 export default function AIAnalysisPage() {
   const [apiKey, setApiKey] = useState("")
@@ -127,8 +127,8 @@ export default function AIAnalysisPage() {
                 Workbench
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
-              <BitcoinChart ref={chartRef} />
+            <CardContent className="p-6 min-w-0">
+              <BitcoinChartJS ref={chartRef} />
             </CardContent>
           </Card>
 
