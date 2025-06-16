@@ -408,7 +408,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef>((props, ref) => {
       </div>
 
       {/* Chart Container - min-w-0 essential for responsive shrinking */}
-      <div className="w-full h-[500px] bg-black rounded-lg p-4 min-w-0">
+      <div className="w-full h-[500px] bg-muted/20 rounded-lg p-4 min-w-0">
         <Line
           key={chartKey}
           ref={chartRef}
