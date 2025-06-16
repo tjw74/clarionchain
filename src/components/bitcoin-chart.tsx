@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react'
 import dynamic from 'next/dynamic'
+import { brkClient } from '@/lib/api/brkClient'
 
 // Dynamically import Plotly to avoid SSR issues
 const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
@@ -10,42 +11,7 @@ export interface BitcoinChartRef {
   captureImage: () => Promise<string>
 }
 
-// Generate realistic dummy data
-const generateDummyData = () => {
-  const days = 365 * 2 // 2 years of data
-  const startDate = new Date('2022-01-01')
-  const dates: string[] = []
-  const prices: number[] = []
-  const realizedPrices: number[] = []
-  const mvrvRatios: number[] = []
-  const zScores: number[] = []
 
-  for (let i = 0; i < days; i++) {
-    const date = new Date(startDate)
-    date.setDate(date.getDate() + i)
-    dates.push(date.toISOString().split('T')[0])
-
-    // Generate realistic Bitcoin price data with volatility
-    const basePrice = 30000 + Math.sin(i / 100) * 15000 + Math.random() * 5000
-    const volatility = Math.sin(i / 50) * 0.1 + 0.05
-    const price = Math.max(15000, basePrice * (1 + (Math.random() - 0.5) * volatility))
-    prices.push(price)
-
-    // Realized price grows more slowly and smoothly
-    const realizedPrice = 20000 + (i / days) * 25000 + Math.sin(i / 200) * 3000
-    realizedPrices.push(realizedPrice)
-
-    // MVRV ratio = price / realized price
-    const mvrv = price / realizedPrice
-    mvrvRatios.push(mvrv)
-
-    // Z-score oscillates between -2 and 8 with realistic patterns
-    const zScore = Math.sin(i / 80) * 2 + Math.cos(i / 120) * 1.5 + (Math.random() - 0.5) * 0.5
-    zScores.push(Math.max(-2.5, Math.min(8, zScore)))
-  }
-
-  return { dates, prices, realizedPrices, mvrvRatios, zScores }
-}
 
 const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
   const [data, setData] = useState<any>(null)
@@ -135,7 +101,46 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
 
   useEffect(() => {
     setIsClient(true)
-    setData(generateDummyData())
+    
+    // Fetch MVRV data from BRK API
+    const fetchMVRVData = async () => {
+      try {
+        // Fetch 8 years of data (2920 days)
+        const [marketCapHistory, realizedCapHistory] = await Promise.all([
+          brkClient.fetchMarketCapHistory(2920),
+          brkClient.fetchRealizedCapHistory(2920)
+        ])
+
+        if (marketCapHistory.length > 0 && realizedCapHistory.length > 0) {
+          // Generate dates for the last 8 years
+          const dates: string[] = []
+          const endDate = new Date()
+          for (let i = marketCapHistory.length - 1; i >= 0; i--) {
+            const date = new Date(endDate)
+            date.setDate(date.getDate() - i)
+            dates.push(date.toISOString().split('T')[0])
+          }
+
+          // Calculate MVRV Ratio
+          const mvrvRatios = marketCapHistory.map((mv, i) => {
+            const rv = realizedCapHistory[i]
+            return rv && rv !== 0 ? mv / rv : 0
+          })
+
+          setData({
+            dates,
+            marketValues: marketCapHistory,
+            realizedValues: realizedCapHistory,
+            mvrvRatios
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch MVRV data:', error)
+        setData(null)
+      }
+    }
+
+    fetchMVRVData()
   }, [])
 
   // Add resize observer to trigger chart resize when container changes
@@ -166,7 +171,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     }
   }, [isClient])
 
-  if (!isClient || !data) {
+  if (!isClient) {
     return (
       <div className="h-[450px] flex items-center justify-center bg-muted/50 rounded-md">
         <p className="text-muted-foreground">Loading chart...</p>
@@ -174,49 +179,50 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     )
   }
 
-  const { dates, prices, realizedPrices, mvrvRatios, zScores } = data
+  if (!data) {
+    return (
+      <div className="h-[450px] flex items-center justify-center bg-muted/50 rounded-md">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-2">Loading MVRV Analysis Chart...</p>
+          <p className="text-sm text-muted-foreground">Fetching 8-year rolling window data</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { dates, marketValues, realizedValues, mvrvRatios } = data
 
   // Create subplot configuration
   const plotData = [
-    // Top subplot - Price metrics
+    // Top subplot - Market Value and Realized Value
     {
       x: dates,
-      y: prices,
+      y: marketValues,
       type: 'scatter' as const,
       mode: 'lines' as const,
-      name: 'Bitcoin Price',
-      line: { color: '#f7931a', width: 2 },
+      name: 'Market Value',
+      line: { color: '#3b82f6', width: 2 }, // Blue
       xaxis: 'x',
       yaxis: 'y',
     },
     {
       x: dates,
-      y: realizedPrices,
+      y: realizedValues,
       type: 'scatter' as const,
       mode: 'lines' as const,
-      name: 'Realized Price',
-      line: { color: '#8b5cf6', width: 2 },
+      name: 'Realized Value',
+      line: { color: '#eab308', width: 2 }, // Yellow
       xaxis: 'x',
       yaxis: 'y',
     },
+    // Bottom subplot - MVRV Ratio
     {
       x: dates,
-      y: mvrvRatios.map((ratio: number) => ratio * 10000), // Scale for visibility
+      y: mvrvRatios,
       type: 'scatter' as const,
       mode: 'lines' as const,
-      name: 'MVRV Ratio (×10k)',
-      line: { color: '#10b981', width: 1 },
-      xaxis: 'x',
-      yaxis: 'y',
-    },
-    // Bottom subplot - Z-Score oscillator
-    {
-      x: dates,
-      y: zScores,
-      type: 'scatter' as const,
-      mode: 'lines' as const,
-      name: 'MVRV Z-Score',
-      line: { color: '#f59e0b', width: 2 },
+      name: 'MVRV Ratio',
+      line: { color: '#ffffff', width: 2 }, // White
       xaxis: 'x2',
       yaxis: 'y2',
     },
@@ -245,11 +251,11 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     yaxis: {
       domain: [0.4, 1],
       anchor: 'x',
-      title: 'Price (USD)',
+      title: 'Value (USD)',
       showgrid: true,
       gridcolor: '#374151',
       color: '#9ca3af',
-      type: 'log', // Log scale for price
+      type: 'log', // Log scale for values
     },
     
     // Bottom subplot (oscillators)
@@ -265,7 +271,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     yaxis2: {
       domain: [0, 0.35],
       anchor: 'x2',
-      title: 'Z-Score',
+      title: 'MVRV Ratio',
       showgrid: true,
       gridcolor: '#374151',
       color: '#9ca3af',
