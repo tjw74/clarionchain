@@ -365,7 +365,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       },
       y1: {
         type: 'linear' as const,
-        position: 'right' as const,
+        position: 'left' as const,
         grid: {
           drawOnChartArea: false,
         },
