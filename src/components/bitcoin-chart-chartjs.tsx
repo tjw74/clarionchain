@@ -373,7 +373,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           }
         ],
         centerLine: 1.0,
-        yRange: [0.5, 2.0]
+        yRange: [0.5, 2.5]
       },
       legend: [
         { color: '#3b82f6', label: 'Price' },
@@ -658,6 +658,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       y: {
         type: 'linear' as const,
         position: 'right' as const,
+        display: true,
         grid: {
           color: '#374151',
         },
@@ -670,7 +671,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             size: 12,
           },
           callback: function(value: any) {
-            return value.toString().padStart(10, ' ')
+            return value.toString().padStart(6, ' ')
           },
         },
         title: {
