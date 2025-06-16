@@ -445,6 +445,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         bodyColor: '#ffffff',
         borderColor: '#374151',
         borderWidth: 1,
+        position: 'nearest' as const,
+        yAlign: 'bottom' as const,
+        caretPadding: 10,
         callbacks: {
           label: function(context: any) {
             const label = context.dataset.label || ''
@@ -531,6 +534,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         bodyColor: '#ffffff',
         borderColor: '#374151',
         borderWidth: 1,
+        position: 'nearest' as const,
+        yAlign: 'bottom' as const,
+        caretPadding: 10,
         callbacks: {
           label: function(context: any) {
             const label = context.dataset.label || ''
