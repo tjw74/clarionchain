@@ -138,6 +138,55 @@ class BRKClient {
     if (!response.ok) throw new Error('Failed to fetch STH supply history');
     return await response.json();
   }
+
+  // Fetch price history with timestamps for Z-Score analysis
+  async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
+    const [prices, dates] = await Promise.all([
+      this.fetchDailyCloseHistory(days),
+      this.fetchDateIndex(days)
+    ]);
+    
+    return prices.map((price, index) => ({
+      timestamp: dates[index],
+      price: price
+    }));
+  }
+
+  // Fetch date index for timestamps
+  async fetchDateIndex(days: number = 10000): Promise<string[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=dateindex&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch date index');
+    return await response.json();
+  }
+
+  // Fetch SOPR history (correct endpoint)
+  async fetchSOPRHistory(days: number = 10000): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=spent-output-profit-ratio&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch SOPR history');
+    return await response.json();
+  }
+
+  // Fetch STH Market Cap history (calculated from STH supply * price)
+  async fetchSTHMarketCapHistory(days: number = 10000): Promise<number[]> {
+    // STH Market Cap = STH Supply * Price, we'll calculate this in the component
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=sth-supply&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch STH supply for market cap calculation');
+    return await response.json();
+  }
+
+  // Fetch Supply in Profit history (correct endpoint)
+  async fetchSupplyInProfitHistory(days: number = 10000): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=supply-in-profit&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch supply in profit history');
+    return await response.json();
+  }
+
+  // Fetch Supply in Loss history (correct endpoint)
+  async fetchSupplyInLossHistory(days: number = 10000): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=supply-in-loss&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch supply in loss history');
+    return await response.json();
+  }
 }
 
 export const brkClient = new BRKClient();

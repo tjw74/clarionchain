@@ -48,6 +48,11 @@ const navigation = [
     icon: Brain,
   },
   {
+    name: "Z Scores",
+    href: "/z-scores",
+    icon: BarChart3,
+  },
+  {
     name: "Price Analysis",
     href: "/price",
     icon: TrendingUp,
