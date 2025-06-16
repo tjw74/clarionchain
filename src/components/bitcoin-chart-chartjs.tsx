@@ -553,6 +553,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           // Clear ratio chart tooltip when cursor leaves main chart
           ratioChartRef.current.setActiveElements([])
           ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+          // Force tooltip to hide
+          if (ratioChartRef.current.tooltip) {
+            ratioChartRef.current.tooltip.opacity = 0
+          }
         }
         ratioChartRef.current.update('none')
       }
@@ -651,6 +655,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           // Clear main chart tooltip when cursor leaves ratio chart
           chartRef.current.setActiveElements([])
           chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+          // Force tooltip to hide
+          if (chartRef.current.tooltip) {
+            chartRef.current.tooltip.opacity = 0
+          }
         }
         chartRef.current.update('none')
       }
