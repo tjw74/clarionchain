@@ -373,7 +373,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           }
         ],
         centerLine: 1.0,
-        yRange: [0.5, 2.5]
+        yRange: [0.5, 3.0]
       },
       legend: [
         { color: '#3b82f6', label: 'Price' },
