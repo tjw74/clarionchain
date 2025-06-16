@@ -103,13 +103,15 @@ export default function Dashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch daily close price, market cap, realized price, realized cap, and STH realized price history from the working endpoints
-        const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory, sthRealizedPriceHistory] = await Promise.all([
+        // Fetch daily close price, market cap, realized price, realized cap, STH realized price, STH realized cap, and STH supply history from the working endpoints
+        const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory, sthRealizedPriceHistory, sthRealizedCapHistory, sthSupplyHistory] = await Promise.all([
           brkClient.fetchDailyCloseHistory(2920), // 8 years of data
           brkClient.fetchMarketCapHistory(2920),
           brkClient.fetchRealizedPriceHistory(2920),
           brkClient.fetchRealizedCapHistory(2920),
-          brkClient.fetchSTHRealizedPriceHistory(2920)
+          brkClient.fetchSTHRealizedPriceHistory(2920),
+          brkClient.fetchSTHRealizedCapHistory(2920),
+          brkClient.fetchSTHSupplyHistory(2920)
         ]);
 
         // Prepare chart data for 8-year rolling window
@@ -196,6 +198,26 @@ export default function Dashboard() {
             }
           });
         }
+
+        // Calculate STH MVRV Ratio (STH Market Value / STH Realized Cap)
+        let sthMvrvRatioArr: number[] = [];
+        if (priceHistory.length > 0 && sthSupplyHistory.length > 0 && sthRealizedCapHistory.length > 0) {
+          const minLength = Math.min(priceHistory.length, sthSupplyHistory.length, sthRealizedCapHistory.length);
+          for (let i = 0; i < minLength; i++) {
+            const price = priceHistory[i];
+            const sthSupplySatoshis = sthSupplyHistory[i];
+            const sthRealizedCap = sthRealizedCapHistory[i];
+            
+            if (price && sthSupplySatoshis && sthRealizedCap && sthRealizedCap !== 0) {
+              // Convert satoshis to BTC (divide by 100,000,000)
+              const sthSupplyBTC = sthSupplySatoshis / 100000000;
+              const sthMarketValue = price * sthSupplyBTC;
+              sthMvrvRatioArr.push(sthMarketValue / sthRealizedCap);
+            } else {
+              sthMvrvRatioArr.push(NaN);
+            }
+          }
+        }
         // Fetch all required metrics for the new card layout
         // Only price is real for now, others are placeholders or N/A
         // TODO: Wire up real endpoints for realized price, true market mean, mayer multiple, etc.
@@ -246,9 +268,8 @@ export default function Dashboard() {
           },
           {
             title: 'STH MVRV Ratio',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
+            value: sthMvrvRatioArr.length > 0 && !isNaN(sthMvrvRatioArr[sthMvrvRatioArr.length - 1]) ? sthMvrvRatioArr[sthMvrvRatioArr.length - 1].toFixed(2) : 'N/A',
+            ...calcChange(sthMvrvRatioArr, false),
             description: 'Short-term holder MVRV ratio'
           }
         ];
@@ -311,7 +332,12 @@ export default function Dashboard() {
             const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
             // Format large numbers to short form
-            const formatValue = (value: string) => {
+            const formatValue = (value: string, title: string) => {
+              // Don't format ratio values - they should display as-is
+              if (title.includes('Ratio') || title.includes('Multiple')) {
+                return value;
+              }
+              
               const num = Number(value.replace(/[^\d.]/g, ""));
               if (isNaN(num)) return value;
               if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
@@ -329,7 +355,7 @@ export default function Dashboard() {
                   <Icon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{formatValue(metric.value)}</div>
+                  <div className="text-2xl font-bold">{formatValue(metric.value, metric.title)}</div>
                   <div className="flex items-center text-xs text-muted-foreground">
                     {metric.changeType === 'positive' ? (
                       <TrendingUp className="mr-1 h-3 w-3 text-green-500" />

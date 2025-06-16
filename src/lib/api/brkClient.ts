@@ -124,6 +124,20 @@ class BRKClient {
     if (!response.ok) throw new Error('Failed to fetch STH realized price history');
     return await response.json();
   }
+
+  // Fetch STH realized cap history from the working endpoint
+  async fetchSTHRealizedCapHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=sth-realized-cap&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch STH realized cap history');
+    return await response.json();
+  }
+
+  // Fetch STH supply history from the working endpoint
+  async fetchSTHSupplyHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=sth-supply&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch STH supply history');
+    return await response.json();
+  }
 }
 
 export const brkClient = new BRKClient();
