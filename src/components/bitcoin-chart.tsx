@@ -310,8 +310,8 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)',
     font: { color: '#ffffff' },
-    height: 450,
-    margin: { l: 60, r: 60, t: 20, b: 60 },
+    height: 500,
+    margin: { l: 60, r: 60, t: 5, b: 40 },
     
     // Subplot configuration
     grid: { rows: 2, columns: 1, pattern: 'independent', roworder: 'top to bottom' },
@@ -364,8 +364,10 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
     
     legend: {
       orientation: 'h',
-      y: -0.1,
-      x: 0,
+      yanchor: 'bottom',
+      y: 1.02,
+      xanchor: 'center',
+      x: 0.5,
       font: { color: '#ffffff' },
     },
     
@@ -413,7 +415,7 @@ const BitcoinChart = forwardRef<BitcoinChartRef>((props, ref) => {
           autosize: true,
         }}
         config={config}
-        style={{ width: '100%', height: '450px' }}
+                  style={{ width: '100%', height: '500px' }}
         revision={revision}
         useResizeHandler={true}
         onInitialized={(figure, graphDiv) => {
