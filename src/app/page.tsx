@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
@@ -9,6 +9,13 @@ import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
 import { Button } from "@/components/ui/button"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart"
 
 // Mock data for initial display
 const mockMetrics: MetricCard[] = [
@@ -70,21 +77,44 @@ const mockMetrics: MetricCard[] = [
   }
 ]
 
+// Chart configuration for Bitcoin price
+const priceChartConfig = {
+  price: {
+    label: "Bitcoin Price",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig
+
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number}>>([])
 
   useEffect(() => {
     async function fetchData() {
       try {
         // Fetch daily close price, market cap, realized price, and realized cap history from the working endpoints
         const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory] = await Promise.all([
-          brkClient.fetchDailyCloseHistory(2920),
+          brkClient.fetchDailyCloseHistory(2920), // 8 years of data
           brkClient.fetchMarketCapHistory(2920),
           brkClient.fetchRealizedPriceHistory(2920),
           brkClient.fetchRealizedCapHistory(2920)
         ]);
+
+        // Prepare chart data for 8-year rolling window
+        if (priceHistory.length > 0) {
+          const chartData = priceHistory.map((price, index) => {
+            const date = new Date()
+            date.setDate(date.getDate() - (priceHistory.length - 1 - index))
+            return {
+              date: date.toISOString().split('T')[0],
+              price: price
+            }
+          })
+          setPriceChartData(chartData)
+        }
+
         // Helper to format numbers
         const formatNumber = (num: number, isMoney = true) => {
           if (isNaN(num)) return 'N/A';
@@ -194,6 +224,25 @@ export default function Dashboard() {
     fetchData();
   }, [])
 
+  // Calculate price trend for footer
+  const calculatePriceTrend = () => {
+    if (priceChartData.length < 2) return { percentage: 0, period: '' }
+    
+    const latest = priceChartData[priceChartData.length - 1]?.price || 0
+    const monthAgo = priceChartData[priceChartData.length - 31]?.price || 0
+    
+    if (monthAgo === 0) return { percentage: 0, period: '' }
+    
+    const change = ((latest - monthAgo) / monthAgo) * 100
+    return { 
+      percentage: Math.abs(change), 
+      period: 'this month',
+      isPositive: change > 0
+    }
+  }
+
+  const priceTrend = calculatePriceTrend()
+
   return (
     <DashboardLayout 
       title="Dashboard"
@@ -253,16 +302,76 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Price Chart</CardTitle>
               <CardDescription>
-                Bitcoin price trend over the last 30 days
+                Bitcoin price trend over the last 8 years
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/50 rounded-md">
-                <p className="text-muted-foreground">
-                  Interactive chart will be rendered here
-                </p>
-              </div>
+              <ChartContainer config={priceChartConfig} className="h-48 w-full">
+                <AreaChart
+                  accessibilityLayer
+                  data={priceChartData}
+                  margin={{
+                    left: 12,
+                    right: 12,
+                  }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(value: any) => {
+                      const date = new Date(value)
+                      return date.getFullYear().toString()
+                    }}
+                  />
+                  <ChartTooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent 
+                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Bitcoin Price"]}
+                      labelFormatter={(label: any) => {
+                        const date = new Date(label)
+                        return date.toLocaleDateString()
+                      }}
+                    />} 
+                  />
+                  <defs>
+                    <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="var(--color-price)"
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="var(--color-price)"
+                        stopOpacity={0.1}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    dataKey="price"
+                    type="natural"
+                    fill="url(#fillPrice)"
+                    fillOpacity={0.4}
+                    stroke="var(--color-price)"
+                  />
+                </AreaChart>
+              </ChartContainer>
             </CardContent>
+            <CardFooter>
+              <div className="flex w-full items-start gap-2 text-sm">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    {priceTrend.isPositive ? 'Trending up' : 'Trending down'} by {priceTrend.percentage.toFixed(1)}% {priceTrend.period} <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                    8-year rolling window
+                  </div>
+                </div>
+              </div>
+            </CardFooter>
           </Card>
           
           <Card className="border-border">
