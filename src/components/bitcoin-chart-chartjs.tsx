@@ -546,24 +546,28 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         
         // Update main chart tooltip
         const mainDatasets = currentConfig.mainChart.datasets
-        let mainContent = `<div class="text-center font-mono text-xs mb-1">${date}</div>`
+        let mainContent = `<div class="text-center font-mono text-xs">${date} | `
         mainDatasets.forEach((dataset, i) => {
           const value = dataset.data[activeIndex]
           if (value !== undefined) {
-            mainContent += `<div class="flex justify-between"><span>${dataset.label}:</span><span>${formatUSDValue(value)}</span></div>`
+            mainContent += `${dataset.label}: ${formatUSDValue(value)}`
+            if (i < mainDatasets.length - 1) mainContent += ' | '
           }
         })
+        mainContent += '</div>'
         mainTooltip.innerHTML = mainContent
         
         // Update ratio chart tooltip
         const ratioDatasets = currentConfig.ratioChart.datasets
-        let ratioContent = `<div class="text-center font-mono text-xs mb-1">${date}</div>`
+        let ratioContent = `<div class="text-center font-mono text-xs">${date} | `
         ratioDatasets.forEach((dataset, i) => {
           const value = dataset.data[activeIndex]
           if (value !== undefined) {
-            ratioContent += `<div class="flex justify-between"><span>${dataset.label}:</span><span>${value.toFixed(2)}</span></div>`
+            ratioContent += `${dataset.label}: ${value.toFixed(2)}`
+            if (i < ratioDatasets.length - 1) ratioContent += ' | '
           }
         })
+        ratioContent += '</div>'
         ratioTooltip.innerHTML = ratioContent
       } else if (mainTooltip && ratioTooltip) {
         // Reset to default when not hovering
@@ -642,24 +646,28 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         
         // Update main chart tooltip
         const mainDatasets = currentConfig.mainChart.datasets
-        let mainContent = `<div class="text-center font-mono text-xs mb-1">${date}</div>`
+        let mainContent = `<div class="text-center font-mono text-xs">${date} | `
         mainDatasets.forEach((dataset, i) => {
           const value = dataset.data[activeIndex]
           if (value !== undefined) {
-            mainContent += `<div class="flex justify-between"><span>${dataset.label}:</span><span>${formatUSDValue(value)}</span></div>`
+            mainContent += `${dataset.label}: ${formatUSDValue(value)}`
+            if (i < mainDatasets.length - 1) mainContent += ' | '
           }
         })
+        mainContent += '</div>'
         mainTooltip.innerHTML = mainContent
         
         // Update ratio chart tooltip
         const ratioDatasets = currentConfig.ratioChart.datasets
-        let ratioContent = `<div class="text-center font-mono text-xs mb-1">${date}</div>`
+        let ratioContent = `<div class="text-center font-mono text-xs">${date} | `
         ratioDatasets.forEach((dataset, i) => {
           const value = dataset.data[activeIndex]
           if (value !== undefined) {
-            ratioContent += `<div class="flex justify-between"><span>${dataset.label}:</span><span>${value.toFixed(2)}</span></div>`
+            ratioContent += `${dataset.label}: ${value.toFixed(2)}`
+            if (i < ratioDatasets.length - 1) ratioContent += ' | '
           }
         })
+        ratioContent += '</div>'
         ratioTooltip.innerHTML = ratioContent
       } else if (mainTooltip && ratioTooltip) {
         // Reset to default when not hovering
