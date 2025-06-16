@@ -561,6 +561,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         ratioChartRef.current.update('none')
       }
     },
+    onLeave: (event: any, chart: any) => {
+      // Clear both tooltips when cursor leaves main chart area completely
+      if (ratioChartRef.current) {
+        ratioChartRef.current.setActiveElements([])
+        ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        if (ratioChartRef.current.tooltip) {
+          ratioChartRef.current.tooltip.opacity = 0
+        }
+        ratioChartRef.current.update('none')
+      }
+      // Clear main chart tooltip
+      chart.setActiveElements([])
+      chart.tooltip?.setActiveElements([], { x: 0, y: 0 })
+      if (chart.tooltip) {
+        chart.tooltip.opacity = 0
+      }
+      chart.update('none')
+    },
     plugins: {
       legend: {
         display: false,
@@ -662,6 +680,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         }
         chartRef.current.update('none')
       }
+    },
+    onLeave: (event: any, chart: any) => {
+      // Clear both tooltips when cursor leaves ratio chart area completely
+      if (chartRef.current) {
+        chartRef.current.setActiveElements([])
+        chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        if (chartRef.current.tooltip) {
+          chartRef.current.tooltip.opacity = 0
+        }
+        chartRef.current.update('none')
+      }
+      // Clear ratio chart tooltip
+      chart.setActiveElements([])
+      chart.tooltip?.setActiveElements([], { x: 0, y: 0 })
+      if (chart.tooltip) {
+        chart.tooltip.opacity = 0
+      }
+      chart.update('none')
     },
     plugins: {
       legend: {
