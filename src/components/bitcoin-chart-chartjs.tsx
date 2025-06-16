@@ -256,14 +256,29 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   const topSubplotTicks = calculateLogTicks([...marketValues, ...realizedValues])
 
-  // Calculate dynamic USD axis configuration for Market Value and Realized Value
+  // Calculate dynamic USD axis configuration for Market Value and Realized Value (logarithmic with even spacing)
   const allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
   const minUSD = Math.min(...allUSDValues)
   const maxUSD = Math.max(...allUSDValues)
-  const usdRange = maxUSD - minUSD
-  const usdPaddedMin = Math.max(0, minUSD - (usdRange * 0.1)) // 10% padding, but not below 0
-  const usdPaddedMax = maxUSD + (usdRange * 0.1) // 10% padding
-  const usdStepSize = (usdPaddedMax - usdPaddedMin) / 8 // 8 evenly spaced intervals
+  
+  // Calculate logarithmic range with even visual spacing
+  const logMin = Math.log10(minUSD)
+  const logMax = Math.log10(maxUSD)
+  const logRange = logMax - logMin
+  const paddedLogMin = logMin - (logRange * 0.1) // 10% padding
+  const paddedLogMax = logMax + (logRange * 0.1) // 10% padding
+  
+  // Generate evenly spaced logarithmic ticks
+  const generateLogTicks = () => {
+    const ticks = []
+    for (let i = 0; i <= 8; i++) {
+      const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 8)
+      ticks.push(Math.pow(10, logValue))
+    }
+    return ticks
+  }
+  
+  const usdLogTicks = generateLogTicks()
 
   const chartData = {
     labels: dates,
@@ -356,14 +371,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         },
       },
       y: {
-        type: 'linear' as const,
+        type: 'logarithmic' as const,
         position: 'right' as const,
         grid: {
           color: '#374151',
         },
         ticks: {
           color: '#9ca3af',
-          stepSize: usdStepSize,
           callback: function(value: any) {
             return formatUSDValue(value)
           },
@@ -371,8 +385,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         title: {
           display: false,
         },
-        min: usdPaddedMin,
-        max: usdPaddedMax,
+        min: Math.pow(10, paddedLogMin),
+        max: Math.pow(10, paddedLogMax),
+        afterBuildTicks: function(axis: any) {
+          axis.ticks = usdLogTicks.map((value: number) => ({ value }))
+        },
       },
       y1: {
         type: 'linear' as const,
