@@ -44,6 +44,9 @@ interface ChartData {
   marketValues: number[]
   realizedValues: number[]
   mvrvRatios: number[]
+  priceValues?: number[]
+  priceMA200?: number[]
+  priceRatios?: number[]
 }
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
@@ -103,11 +106,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         const legendCenterX = totalWidth / 2
         
         // Draw legend items
-        const legendItems = [
-          { color: '#3b82f6', label: 'Market Value' },
-          { color: '#eab308', label: 'Realized Value' },
-          { color: '#ffffff', label: 'MVRV Ratio' }
-        ]
+        const legendItems = currentConfig.legend
         
         const itemSpacing = 120
         const startX = legendCenterX - (legendItems.length - 1) * itemSpacing / 2
@@ -145,46 +144,85 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   useEffect(() => {
     setIsClient(true)
     
-    // Fetch MVRV data from BRK API
-    const fetchMVRVData = async () => {
+    // Fetch data based on selected metric
+    const fetchData = async () => {
       try {
-        // Fetch 8 years of data (2920 days)
-        const [marketCapHistory, realizedCapHistory] = await Promise.all([
-          brkClient.fetchMarketCapHistory(2920),
-          brkClient.fetchRealizedCapHistory(2920)
-        ])
+        if (selectedMetric === 'mvrv') {
+          // Fetch MVRV data from BRK API
+          const [marketCapHistory, realizedCapHistory] = await Promise.all([
+            brkClient.fetchMarketCapHistory(2920),
+            brkClient.fetchRealizedCapHistory(2920)
+          ])
 
-        if (marketCapHistory.length > 0 && realizedCapHistory.length > 0) {
-          // Generate dates for the last 8 years
-          const dates: string[] = []
-          const endDate = new Date()
-          for (let i = marketCapHistory.length - 1; i >= 0; i--) {
-            const date = new Date(endDate)
-            date.setDate(date.getDate() - i)
-            dates.push(date.toISOString().split('T')[0])
+          if (marketCapHistory.length > 0 && realizedCapHistory.length > 0) {
+            // Generate dates for the last 8 years
+            const dates: string[] = []
+            const endDate = new Date()
+            for (let i = marketCapHistory.length - 1; i >= 0; i--) {
+              const date = new Date(endDate)
+              date.setDate(date.getDate() - i)
+              dates.push(date.toISOString().split('T')[0])
+            }
+
+            // Calculate MVRV Ratio
+            const mvrvRatios = marketCapHistory.map((mv, i) => {
+              const rv = realizedCapHistory[i]
+              return rv && rv !== 0 ? mv / rv : 0
+            })
+
+            setData({
+              dates,
+              marketValues: marketCapHistory,
+              realizedValues: realizedCapHistory,
+              mvrvRatios
+            })
           }
+        } else if (selectedMetric === 'price') {
+          // Fetch Price Analysis data
+          const priceHistory = await brkClient.fetchDailyCloseHistory(2920)
 
-          // Calculate MVRV Ratio
-          const mvrvRatios = marketCapHistory.map((mv, i) => {
-            const rv = realizedCapHistory[i]
-            return rv && rv !== 0 ? mv / rv : 0
-          })
+          if (priceHistory.length > 0) {
+            // Generate dates for the last 8 years
+            const dates: string[] = []
+            const endDate = new Date()
+            for (let i = priceHistory.length - 1; i >= 0; i--) {
+              const date = new Date(endDate)
+              date.setDate(date.getDate() - i)
+              dates.push(date.toISOString().split('T')[0])
+            }
 
-          setData({
-            dates,
-            marketValues: marketCapHistory,
-            realizedValues: realizedCapHistory,
-            mvrvRatios
-          })
+            // Calculate 200-day moving average
+            const priceMA200 = priceHistory.map((_, index) => {
+              if (index < 199) return null // Not enough data for 200-day MA
+              const sum = priceHistory.slice(index - 199, index + 1).reduce((a, b) => a + b, 0)
+              return sum / 200
+            }).filter(val => val !== null) as number[]
+
+            // Calculate Price/MA200 ratio (only for periods where MA200 exists)
+            const priceRatios = priceHistory.slice(199).map((price, i) => {
+              const ma = priceMA200[i]
+              return ma && ma !== 0 ? price / ma : 0
+            })
+
+            setData({
+              dates: dates.slice(199), // Align with MA200 data
+              marketValues: [], // Not used for price analysis
+              realizedValues: [], // Not used for price analysis
+              mvrvRatios: [], // Not used for price analysis
+              priceValues: priceHistory.slice(199),
+              priceMA200,
+              priceRatios
+            })
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch MVRV data:', error)
+        console.error('Failed to fetch data:', error)
         setData(null)
       }
     }
 
-    fetchMVRVData()
-  }, [])
+    fetchData()
+  }, [selectedMetric])
 
   // Monitor sidebar state changes and force chart resize
   useEffect(() => {
@@ -262,14 +300,90 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     return (
       <div className="h-[500px] flex items-center justify-center bg-muted/50 rounded-md">
         <div className="text-center">
-          <p className="text-muted-foreground mb-2">Loading MVRV Analysis Chart...</p>
+          <p className="text-muted-foreground mb-2">Loading {selectedMetric === 'mvrv' ? 'MVRV Analysis' : selectedMetric === 'price' ? 'Price Analysis' : 'Chart'} Chart...</p>
           <p className="text-sm text-muted-foreground">Fetching 8-year rolling window data</p>
         </div>
       </div>
     )
   }
 
-  const { dates, marketValues, realizedValues, mvrvRatios } = data
+  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios } = data
+
+  // Metric configuration
+  const metricConfigs = {
+    mvrv: {
+      mainChart: {
+        datasets: [
+          {
+            label: 'Market Value',
+            data: marketValues,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          },
+          {
+            label: 'Realized Value',
+            data: realizedValues,
+            borderColor: '#eab308',
+            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          }
+        ]
+      },
+      ratioChart: {
+        datasets: [
+          {
+            label: 'MVRV Ratio',
+            data: mvrvRatios,
+            borderColor: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }
+        ],
+        centerLine: 1.0,
+        yRange: [0, 5]
+      },
+      legend: [
+        { color: '#3b82f6', label: 'Market Value' },
+        { color: '#eab308', label: 'Realized Value' },
+        { color: '#ffffff', label: 'MVRV Ratio' }
+      ]
+    },
+    price: {
+      mainChart: {
+        datasets: [
+          {
+            label: 'BTC Price',
+            data: priceValues || [],
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          },
+          {
+            label: '200-Day MA',
+            data: priceMA200 || [],
+            borderColor: '#eab308',
+            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          }
+        ]
+      },
+      ratioChart: {
+        datasets: [
+          {
+            label: 'Price/MA200 Ratio',
+            data: priceRatios || [],
+            borderColor: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }
+        ],
+        centerLine: 1.0,
+        yRange: [0.5, 2.0]
+      },
+      legend: [
+        { color: '#3b82f6', label: 'BTC Price' },
+        { color: '#eab308', label: '200-Day MA' },
+        { color: '#ffffff', label: 'Price/MA200 Ratio' }
+      ]
+    }
+  }
+
+  const currentConfig = metricConfigs[selectedMetric as keyof typeof metricConfigs] || metricConfigs.mvrv
 
   // Format USD values with appropriate units
   const formatUSDValue = (value: number) => {
@@ -352,53 +466,34 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   
   const usdLogTicks = generateLogTicks()
 
-  // Main chart data (MV + RV only)
+  // Main chart data (dynamic based on metric)
   const mainChartData = {
     labels: dates,
-    datasets: [
-      {
-        label: 'Market Value',
-        data: marketValues,
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        borderWidth: 1,
-        fill: false,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        yAxisID: 'y',
-      },
-      {
-        label: 'Realized Value',
-        data: realizedValues,
-        borderColor: '#eab308',
-        backgroundColor: 'rgba(234, 179, 8, 0.1)',
-        borderWidth: 1,
-        fill: false,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        yAxisID: 'y',
-      },
-    ],
+    datasets: currentConfig.mainChart.datasets.map(dataset => ({
+      ...dataset,
+      borderWidth: 1,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      yAxisID: 'y',
+    })),
   }
 
-  // Ratio chart data (MVRV Ratio only)
+  // Ratio chart data (dynamic based on metric)
   const ratioChartData = {
     labels: dates,
     datasets: [
-      {
-        label: 'MVRV Ratio',
-        data: mvrvRatios,
-        borderColor: '#ffffff',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      ...currentConfig.ratioChart.datasets.map(dataset => ({
+        ...dataset,
         borderWidth: 0.5,
         fill: false,
         pointRadius: 0,
         pointHoverRadius: 4,
         yAxisID: 'y',
-      },
+      })),
       {
         label: 'Center Line',
-        data: Array(dates.length).fill(1),
+        data: Array(dates.length).fill(currentConfig.ratioChart.centerLine),
         borderColor: '#ffffff',
         backgroundColor: 'transparent',
         borderWidth: 0.5,
@@ -581,8 +676,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         title: {
           display: false,
         },
-        min: 0,
-        max: 5,
+        min: currentConfig.ratioChart.yRange[0],
+        max: currentConfig.ratioChart.yRange[1],
       },
     },
   }
@@ -597,18 +692,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         {/* Legend area - centered vertically with uniform spacing */}
         <div className="flex justify-center items-center h-12 px-4 pt-2">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-white text-sm">Market Value</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span className="text-white text-sm">Realized Value</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-white"></div>
-              <span className="text-white text-sm">MVRV Ratio</span>
-            </div>
+            {currentConfig.legend.map((item, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                <span className="text-white text-sm">{item.label}</span>
+              </div>
+            ))}
           </div>
         </div>
         {/* Main Chart area (MV + RV) */}
