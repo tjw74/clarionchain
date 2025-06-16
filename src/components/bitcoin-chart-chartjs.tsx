@@ -407,6 +407,21 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       mode: 'index' as const,
       intersect: false,
     },
+    onHover: (event: any, elements: any, chart: any) => {
+      // Sync tooltip with ratio chart
+      if (ratioChartRef.current && elements.length > 0) {
+        const activeIndex = elements[0].index
+        ratioChartRef.current.setActiveElements([{
+          datasetIndex: 0,
+          index: activeIndex
+        }])
+        ratioChartRef.current.tooltip?.setActiveElements([{
+          datasetIndex: 0,
+          index: activeIndex
+        }], { x: event.x, y: event.y })
+        ratioChartRef.current.update('none')
+      }
+    },
     plugins: {
       legend: {
         display: false,
@@ -477,6 +492,21 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     interaction: {
       mode: 'index' as const,
       intersect: false,
+    },
+    onHover: (event: any, elements: any, chart: any) => {
+      // Sync tooltip with main chart
+      if (chartRef.current && elements.length > 0) {
+        const activeIndex = elements[0].index
+        chartRef.current.setActiveElements([
+          { datasetIndex: 0, index: activeIndex }, // Market Value
+          { datasetIndex: 1, index: activeIndex }  // Realized Value
+        ])
+        chartRef.current.tooltip?.setActiveElements([
+          { datasetIndex: 0, index: activeIndex },
+          { datasetIndex: 1, index: activeIndex }
+        ], { x: event.x, y: event.y })
+        chartRef.current.update('none')
+      }
     },
     plugins: {
       legend: {
