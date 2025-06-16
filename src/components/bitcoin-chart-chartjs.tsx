@@ -562,7 +562,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(59, 130, 246, 0.9)',
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
         titleColor: '#ffffff',
         bodyColor: '#ffffff',
         borderWidth: 0,
@@ -660,7 +660,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(59, 130, 246, 0.9)',
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
         titleColor: '#ffffff',
         bodyColor: '#ffffff',
         borderWidth: 0,
