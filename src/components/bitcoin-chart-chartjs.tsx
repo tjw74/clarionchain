@@ -671,7 +671,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             size: 12,
           },
           callback: function(value: any) {
-            return value.toString().padStart(6, ' ')
+            return value.toString().padStart(10, ' ')
           },
         },
         title: {
