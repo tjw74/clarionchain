@@ -156,6 +156,23 @@ export default function Dashboard() {
             return rv && rv !== 0 ? mv / rv : NaN;
           });
         }
+
+        // Calculate 200-day Moving Average and Mayer Multiple
+        let ma200Arr: number[] = [];
+        let mayerMultipleArr: number[] = [];
+        if (priceHistory.length >= 200) {
+          priceHistory.forEach((price, index) => {
+            if (index < 199) {
+              ma200Arr.push(NaN); // Not enough data for 200-day MA
+              mayerMultipleArr.push(NaN);
+            } else {
+              const sum = priceHistory.slice(index - 199, index + 1).reduce((a, b) => a + b, 0);
+              const ma200 = sum / 200;
+              ma200Arr.push(ma200);
+              mayerMultipleArr.push(ma200 && ma200 !== 0 ? price / ma200 : NaN);
+            }
+          });
+        }
         // Fetch all required metrics for the new card layout
         // Only price is real for now, others are placeholders or N/A
         // TODO: Wire up real endpoints for realized price, true market mean, mayer multiple, etc.
@@ -174,17 +191,15 @@ export default function Dashboard() {
             description: 'Realized price per BTC'
           },
           {
-            title: 'True Market Mean',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
-            description: 'True market mean price'
+            title: '200DMA',
+            value: ma200Arr.length > 0 && !isNaN(ma200Arr[ma200Arr.length - 1]) ? formatNumber(ma200Arr[ma200Arr.length - 1]) : 'N/A',
+            ...calcChange(ma200Arr),
+            description: '200-day moving average'
           },
           {
             title: 'Mayer Multiple',
-            value: 'N/A',
-            change: 'N/A',
-            changeType: 'neutral',
+            value: mayerMultipleArr.length > 0 && !isNaN(mayerMultipleArr[mayerMultipleArr.length - 1]) ? mayerMultipleArr[mayerMultipleArr.length - 1].toFixed(2) : 'N/A',
+            ...calcChange(mayerMultipleArr, false),
             description: 'Mayer Multiple ratio'
           },
           // Second row
