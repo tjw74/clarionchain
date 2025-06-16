@@ -561,24 +561,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         ratioChartRef.current.update('none')
       }
     },
-    onLeave: (event: any, chart: any) => {
-      // Clear both tooltips when cursor leaves main chart area completely
-      if (ratioChartRef.current) {
-        ratioChartRef.current.setActiveElements([])
-        ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
-        if (ratioChartRef.current.tooltip) {
-          ratioChartRef.current.tooltip.opacity = 0
-        }
-        ratioChartRef.current.update('none')
-      }
-      // Clear main chart tooltip
-      chart.setActiveElements([])
-      chart.tooltip?.setActiveElements([], { x: 0, y: 0 })
-      if (chart.tooltip) {
-        chart.tooltip.opacity = 0
-      }
-      chart.update('none')
-    },
+
     plugins: {
       legend: {
         display: false,
@@ -681,24 +664,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         chartRef.current.update('none')
       }
     },
-    onLeave: (event: any, chart: any) => {
-      // Clear both tooltips when cursor leaves ratio chart area completely
-      if (chartRef.current) {
-        chartRef.current.setActiveElements([])
-        chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
-        if (chartRef.current.tooltip) {
-          chartRef.current.tooltip.opacity = 0
-        }
-        chartRef.current.update('none')
-      }
-      // Clear ratio chart tooltip
-      chart.setActiveElements([])
-      chart.tooltip?.setActiveElements([], { x: 0, y: 0 })
-      if (chart.tooltip) {
-        chart.tooltip.opacity = 0
-      }
-      chart.update('none')
-    },
+
     plugins: {
       legend: {
         display: false,
@@ -784,7 +750,28 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           </div>
         </div>
         {/* Main Chart area */}
-        <div className="flex-1 px-4 pb-2">
+        <div 
+          className="flex-1 px-4 pb-2"
+          onMouseLeave={() => {
+            // Clear both tooltips when mouse leaves main chart area
+            if (chartRef.current && ratioChartRef.current) {
+              chartRef.current.setActiveElements([])
+              chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+              if (chartRef.current.tooltip) {
+                chartRef.current.tooltip.opacity = 0
+              }
+              
+              ratioChartRef.current.setActiveElements([])
+              ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+              if (ratioChartRef.current.tooltip) {
+                ratioChartRef.current.tooltip.opacity = 0
+              }
+              
+              chartRef.current.update('none')
+              ratioChartRef.current.update('none')
+            }
+          }}
+        >
           <Line
             key={chartKey}
             ref={chartRef}
@@ -793,7 +780,28 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           />
         </div>
         {/* Ratio Chart area */}
-        <div className="h-48 px-4 pb-4">
+        <div 
+          className="h-48 px-4 pb-4"
+          onMouseLeave={() => {
+            // Clear both tooltips when mouse leaves ratio chart area
+            if (chartRef.current && ratioChartRef.current) {
+              chartRef.current.setActiveElements([])
+              chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+              if (chartRef.current.tooltip) {
+                chartRef.current.tooltip.opacity = 0
+              }
+              
+              ratioChartRef.current.setActiveElements([])
+              ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+              if (ratioChartRef.current.tooltip) {
+                ratioChartRef.current.tooltip.opacity = 0
+              }
+              
+              chartRef.current.update('none')
+              ratioChartRef.current.update('none')
+            }
+          }}
+        >
           <Line
             key={`ratio-${chartKey}`}
             ref={ratioChartRef}
