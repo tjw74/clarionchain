@@ -143,11 +143,12 @@ class BRKClient {
   async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
     const prices = await this.fetchDailyCloseHistory(days);
     
-    // Generate timestamps based on days back from today
-    const today = new Date();
+    // Generate timestamps starting from a known date and going forward
+    // Bitcoin started in 2009, so let's start from 2010-01-01
+    const startDate = new Date('2010-01-01');
     const timestamps = prices.map((_, index) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() - (prices.length - 1 - index));
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + index);
       return date.toISOString().split('T')[0]; // YYYY-MM-DD format
     });
     

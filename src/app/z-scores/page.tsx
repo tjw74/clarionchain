@@ -77,15 +77,22 @@ export default function ZScoresPage() {
       // Filter data from Jan 1, 2015 onwards
       const startDate = new Date('2015-01-01')
       console.log('Start date for filtering:', startDate)
-      console.log('Sample timestamps from price history:', priceHistory.slice(0, 3).map(item => item.timestamp))
+      console.log('Sample timestamps from price history:', priceHistory.slice(0, 5).map(item => item.timestamp))
+      console.log('Sample timestamp parsing:', priceHistory.slice(0, 3).map(item => ({
+        original: item.timestamp,
+        parsed: new Date(item.timestamp),
+        isAfter2015: new Date(item.timestamp) >= startDate
+      })))
       
       const filteredData = priceHistory.filter(item => {
         const itemDate = new Date(item.timestamp)
         return itemDate >= startDate
       })
       
-      // If no data after 2015, use all available data
-      const finalData = filteredData.length > 0 ? filteredData : priceHistory
+      console.log('Filtered data length after date filter:', filteredData.length)
+      
+      // If no data after 2015, use all available data (for debugging)
+      const finalData = filteredData.length > 0 ? filteredData : priceHistory.slice(-2000) // Use last 2000 days
       
       console.log('Filtered price data length:', filteredData.length)
       console.log('Final data length:', finalData.length)
