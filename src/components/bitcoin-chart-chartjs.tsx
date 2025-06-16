@@ -48,10 +48,13 @@ interface ChartData {
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
 
-const BitcoinChartJS = forwardRef<BitcoinChartRef>((props, ref) => {
+interface BitcoinChartProps {
+  selectedMetric?: MetricType
+}
+
+const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv' }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('mvrv')
   const [chartKey, setChartKey] = useState(0) // Force chart recreation
   const chartRef = useRef<ChartJS<'line'> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -378,36 +381,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef>((props, ref) => {
     },
   }
 
-  const metricOptions = [
-    { value: 'mvrv', label: 'MVRV Analysis' },
-    { value: 'price', label: 'Price Analysis' },
-    { value: 'volume', label: 'Volume Analysis' },
-    { value: 'onchain', label: 'On-Chain Metrics' },
-  ]
-
   return (
     // CRITICAL: min-w-0 overrides flexbox default min-width: auto behavior
     // This allows the chart container to shrink when sidebar reopens
     // Without this, flexbox prevents shrinking below content size
-    <div ref={containerRef} className="w-full space-y-4 min-w-0">
-      {/* Metric Selection - positioned to align with Workbench title */}
-      <div className="flex items-center justify-end">
-        <Select value={selectedMetric} onValueChange={(value: string) => setSelectedMetric(value as MetricType)}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {metricOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
+    <div ref={containerRef} className="w-full min-w-0">
       {/* Chart Container - styled to match AI component */}
-      <div className="border rounded-md p-4 h-[600px] bg-muted/20 min-w-0">
+      <div className="border rounded-md p-4 h-[680px] bg-muted/20 min-w-0">
         <Line
           key={chartKey}
           ref={chartRef}

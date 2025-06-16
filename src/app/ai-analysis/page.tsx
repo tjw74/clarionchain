@@ -11,9 +11,12 @@ import { Brain, Settings, Send, Loader2 } from "lucide-react"
 import { useState, useRef } from "react"
 import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-chartjs"
 
+type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
+
 export default function AIAnalysisPage() {
   const [apiKey, setApiKey] = useState("")
   const [provider, setProvider] = useState("openai")
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>('mvrv')
 
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
@@ -122,13 +125,26 @@ export default function AIAnalysisPage() {
         <div className="space-y-6">
           <Card className="border-border w-full">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Workbench
-              </CardTitle>
+              <div className="flex items-center justify-between w-full">
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Workbench
+                </CardTitle>
+                <Select value={selectedMetric} onValueChange={(value: string) => setSelectedMetric(value as MetricType)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mvrv">MVRV Analysis</SelectItem>
+                    <SelectItem value="price">Price Analysis</SelectItem>
+                    <SelectItem value="volume">Volume Analysis</SelectItem>
+                    <SelectItem value="onchain">On-Chain Metrics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="p-6 min-w-0">
-              <BitcoinChartJS ref={chartRef} />
+              <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} />
             </CardContent>
           </Card>
 
