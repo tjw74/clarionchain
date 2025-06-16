@@ -442,29 +442,50 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   const topSubplotTicks = calculateLogTicks([...marketValues, ...realizedValues])
 
-  // Calculate dynamic USD axis configuration for Market Value and Realized Value (logarithmic with even spacing)
-  const allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
-  const minUSD = Math.min(...allUSDValues)
-  const maxUSD = Math.max(...allUSDValues)
+  // Calculate dynamic USD axis configuration based on metric
+  let allUSDValues: number[]
+  let minUSD: number, maxUSD: number, logMin: number, logMax: number, logRange: number
+  let paddedLogMin: number, paddedLogMax: number, usdLogTicks: number[]
   
-  // Calculate logarithmic range with even visual spacing
-  const logMin = Math.log10(minUSD)
-  const logMax = Math.log10(maxUSD)
-  const logRange = logMax - logMin
-  const paddedLogMin = logMin - (logRange * 0.1) // 10% padding
-  const paddedLogMax = logMax + (logRange * 0.1) // 10% padding
-  
-  // Generate evenly spaced logarithmic ticks
-  const generateLogTicks = () => {
-    const ticks = []
-    for (let i = 0; i <= 8; i++) {
-      const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 8)
-      ticks.push(Math.pow(10, logValue))
-    }
-    return ticks
+  if (selectedMetric === 'mvrv') {
+    // MVRV Analysis: Use Market Value and Realized Value
+    allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
+  } else if (selectedMetric === 'price') {
+    // Price Analysis: Use Price, Realized Price, and 200DMA
+    allUSDValues = [...(priceValues || []), ...(priceMA200 || [])].filter(v => v > 0)
+  } else {
+    // Fallback
+    allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
   }
   
-  const usdLogTicks = generateLogTicks()
+  if (allUSDValues.length > 0) {
+    minUSD = Math.min(...allUSDValues)
+    maxUSD = Math.max(...allUSDValues)
+    
+    // Calculate logarithmic range with even visual spacing
+    logMin = Math.log10(minUSD)
+    logMax = Math.log10(maxUSD)
+    logRange = logMax - logMin
+    paddedLogMin = logMin - (logRange * 0.1) // 10% padding
+    paddedLogMax = logMax + (logRange * 0.1) // 10% padding
+    
+    // Generate evenly spaced logarithmic ticks
+    const generateLogTicks = () => {
+      const ticks = []
+      for (let i = 0; i <= 8; i++) {
+        const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 8)
+        ticks.push(Math.pow(10, logValue))
+      }
+      return ticks
+    }
+    
+    usdLogTicks = generateLogTicks()
+  } else {
+    // Fallback values
+    paddedLogMin = 3
+    paddedLogMax = 6
+    usdLogTicks = [1000, 10000, 100000, 1000000]
+  }
 
   // Main chart data (dynamic based on metric)
   const mainChartData = {
