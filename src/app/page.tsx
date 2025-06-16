@@ -85,21 +85,31 @@ const priceChartConfig = {
   },
 } satisfies ChartConfig
 
+// Chart configuration for STH Cost Basis
+const sthChartConfig = {
+  price: {
+    label: "STH Cost Basis",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig
+
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number}>>([])
+  const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number}>>([])
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch daily close price, market cap, realized price, and realized cap history from the working endpoints
-        const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory] = await Promise.all([
+        // Fetch daily close price, market cap, realized price, realized cap, and STH realized price history from the working endpoints
+        const [priceHistory, marketCapHistory, realizedPriceHistory, realizedCapHistory, sthRealizedPriceHistory] = await Promise.all([
           brkClient.fetchDailyCloseHistory(2920), // 8 years of data
           brkClient.fetchMarketCapHistory(2920),
           brkClient.fetchRealizedPriceHistory(2920),
-          brkClient.fetchRealizedCapHistory(2920)
+          brkClient.fetchRealizedCapHistory(2920),
+          brkClient.fetchSTHRealizedPriceHistory(2920)
         ]);
 
         // Prepare chart data for 8-year rolling window
@@ -113,6 +123,19 @@ export default function Dashboard() {
             }
           })
           setPriceChartData(chartData)
+        }
+
+        // Prepare STH chart data for 8-year rolling window
+        if (sthRealizedPriceHistory.length > 0) {
+          const sthChartData = sthRealizedPriceHistory.map((price, index) => {
+            const date = new Date()
+            date.setDate(date.getDate() - (sthRealizedPriceHistory.length - 1 - index))
+            return {
+              date: date.toISOString().split('T')[0],
+              price: price
+            }
+          })
+          setSthChartData(sthChartData)
         }
 
         // Helper to format numbers
@@ -256,7 +279,25 @@ export default function Dashboard() {
     }
   }
 
+  // Calculate STH trend for footer
+  const calculateSTHTrend = () => {
+    if (sthChartData.length < 2) return { percentage: 0, period: '' }
+    
+    const latest = sthChartData[sthChartData.length - 1]?.price || 0
+    const monthAgo = sthChartData[sthChartData.length - 31]?.price || 0
+    
+    if (monthAgo === 0) return { percentage: 0, period: '' }
+    
+    const change = ((latest - monthAgo) / monthAgo) * 100
+    return { 
+      percentage: Math.abs(change), 
+      period: 'this month',
+      isPositive: change > 0
+    }
+  }
+
   const priceTrend = calculatePriceTrend()
+  const sthTrend = calculateSTHTrend()
 
   return (
     <DashboardLayout 
@@ -391,18 +432,78 @@ export default function Dashboard() {
           
           <Card className="border-border">
             <CardHeader>
-              <CardTitle>On-Chain Metrics</CardTitle>
+              <CardTitle>STH Cost Basis</CardTitle>
               <CardDescription>
-                Key on-chain indicators and network health
+                STH realized price over the last 8 years
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/50 rounded-md">
-                <p className="text-muted-foreground">
-                  On-chain metrics visualization
-                </p>
-              </div>
+              <ChartContainer config={sthChartConfig} className="h-48 w-full">
+                <AreaChart
+                  accessibilityLayer
+                  data={sthChartData}
+                  margin={{
+                    left: 12,
+                    right: 12,
+                  }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(value: any) => {
+                      const date = new Date(value)
+                      return date.getFullYear().toString()
+                    }}
+                  />
+                  <ChartTooltip 
+                    cursor={false} 
+                    content={<ChartTooltipContent 
+                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "STH Cost Basis"]}
+                      labelFormatter={(label: any) => {
+                        const date = new Date(label)
+                        return date.toLocaleDateString()
+                      }}
+                    />} 
+                  />
+                  <defs>
+                    <linearGradient id="fillSTH" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="var(--color-price)"
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="var(--color-price)"
+                        stopOpacity={0.1}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <Area
+                    dataKey="price"
+                    type="natural"
+                    fill="url(#fillSTH)"
+                    fillOpacity={0.4}
+                    stroke="var(--color-price)"
+                  />
+                </AreaChart>
+              </ChartContainer>
             </CardContent>
+            <CardFooter>
+              <div className="flex w-full items-start gap-2 text-sm">
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2 leading-none font-medium">
+                    {sthTrend.isPositive ? 'Trending up' : 'Trending down'} by {sthTrend.percentage.toFixed(1)}% {sthTrend.period} <TrendingUp className="h-4 w-4" />
+                  </div>
+                  <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                    8-year rolling window
+                  </div>
+                </div>
+              </div>
+            </CardFooter>
           </Card>
         </div>
 
