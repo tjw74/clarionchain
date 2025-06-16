@@ -133,14 +133,15 @@ export default function ZScoresPage() {
   }
 
   const calculateZScores = (priceData: Array<{timestamp: string, price: number}>, otherMetrics: Record<string, number[]>): ZScoreData[] => {
-    const startDate = new Date('2015-01-01')
-    
-    // Helper function to calculate Z-score
+    // Helper function to calculate Z-score using rolling 4-year window
     const calculateZScore = (values: number[], currentIndex: number): number => {
       if (currentIndex < 0 || values.length === 0) return 0
       
-      // Use data from 2015 to current point for Z-score calculation
-      const relevantData = values.slice(0, currentIndex + 1)
+      // Use rolling 4-year window (4 * 365 = 1460 days)
+      const windowSize = 1460
+      const startIndex = Math.max(0, currentIndex - windowSize + 1)
+      const relevantData = values.slice(startIndex, currentIndex + 1)
+      
       if (relevantData.length < 30) return 0 // Need minimum data points
       
       const mean = relevantData.reduce((sum, val) => sum + val, 0) / relevantData.length
@@ -266,7 +267,7 @@ export default function ZScoresPage() {
             <CardTitle>Interactive Z-Score Analysis</CardTitle>
             <CardDescription>
               Hover over the price chart to see real-time Z-scores for key Bitcoin metrics. 
-              Z-scores are calculated using data from January 1, 2015 to present.
+              Z-scores are calculated using a rolling 4-year window for adaptive market analysis.
             </CardDescription>
           </CardHeader>
         </Card>
