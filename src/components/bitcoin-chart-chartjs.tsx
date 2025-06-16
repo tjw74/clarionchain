@@ -538,16 +538,22 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     },
     onHover: (event: any, elements: any, chart: any) => {
       // Sync tooltip with ratio chart
-      if (ratioChartRef.current && elements.length > 0) {
-        const activeIndex = elements[0].index
-        ratioChartRef.current.setActiveElements([{
-          datasetIndex: 0,
-          index: activeIndex
-        }])
-        ratioChartRef.current.tooltip?.setActiveElements([{
-          datasetIndex: 0,
-          index: activeIndex
-        }], { x: event.x, y: event.y })
+      if (ratioChartRef.current) {
+        if (elements.length > 0) {
+          const activeIndex = elements[0].index
+          ratioChartRef.current.setActiveElements([{
+            datasetIndex: 0,
+            index: activeIndex
+          }])
+          ratioChartRef.current.tooltip?.setActiveElements([{
+            datasetIndex: 0,
+            index: activeIndex
+          }], { x: event.x, y: event.y })
+        } else {
+          // Clear ratio chart tooltip when cursor leaves main chart
+          ratioChartRef.current.setActiveElements([])
+          ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        }
         ratioChartRef.current.update('none')
       }
     },
@@ -628,16 +634,22 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     },
     onHover: (event: any, elements: any, chart: any) => {
       // Sync tooltip with main chart
-      if (chartRef.current && elements.length > 0) {
-        const activeIndex = elements[0].index
-        chartRef.current.setActiveElements([
-          { datasetIndex: 0, index: activeIndex }, // Market Value
-          { datasetIndex: 1, index: activeIndex }  // Realized Value
-        ])
-        chartRef.current.tooltip?.setActiveElements([
-          { datasetIndex: 0, index: activeIndex },
-          { datasetIndex: 1, index: activeIndex }
-        ], { x: event.x, y: event.y })
+      if (chartRef.current) {
+        if (elements.length > 0) {
+          const activeIndex = elements[0].index
+          chartRef.current.setActiveElements([
+            { datasetIndex: 0, index: activeIndex }, // Market Value
+            { datasetIndex: 1, index: activeIndex }  // Realized Value
+          ])
+          chartRef.current.tooltip?.setActiveElements([
+            { datasetIndex: 0, index: activeIndex },
+            { datasetIndex: 1, index: activeIndex }
+          ], { x: event.x, y: event.y })
+        } else {
+          // Clear main chart tooltip when cursor leaves ratio chart
+          chartRef.current.setActiveElements([])
+          chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+        }
         chartRef.current.update('none')
       }
     },
