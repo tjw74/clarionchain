@@ -76,15 +76,25 @@ export default function ZScoresPage() {
 
       // Filter data from Jan 1, 2015 onwards
       const startDate = new Date('2015-01-01')
-      const filteredData = priceHistory.filter(item => new Date(item.timestamp) >= startDate)
+      console.log('Start date for filtering:', startDate)
+      console.log('Sample timestamps from price history:', priceHistory.slice(0, 3).map(item => item.timestamp))
+      
+      const filteredData = priceHistory.filter(item => {
+        const itemDate = new Date(item.timestamp)
+        return itemDate >= startDate
+      })
+      
+      // If no data after 2015, use all available data
+      const finalData = filteredData.length > 0 ? filteredData : priceHistory
       
       console.log('Filtered price data length:', filteredData.length)
-      console.log('Sample price data:', filteredData.slice(0, 3))
+      console.log('Final data length:', finalData.length)
+      console.log('Sample price data:', finalData.slice(0, 3))
       console.log('SOPR data length:', soprHistory.length)
       console.log('Sample SOPR data:', soprHistory.slice(0, 3))
 
       // Calculate Z-scores for each metric
-      const processedData = calculateZScores(filteredData, {
+      const processedData = calculateZScores(finalData, {
         realizedPrice: realizedPriceHistory,
         marketCap: marketCapHistory,
         realizedCap: realizedCapHistory,
@@ -98,7 +108,7 @@ export default function ZScoresPage() {
       console.log('Processed Z-score data length:', processedData.length)
       console.log('Sample Z-score data:', processedData.slice(-3))
 
-      setPriceData(filteredData)
+      setPriceData(finalData)
       setZScoreData(processedData)
       
       // Set initial active z-scores to latest data point

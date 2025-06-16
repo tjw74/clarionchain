@@ -141,22 +141,20 @@ class BRKClient {
 
   // Fetch price history with timestamps for Z-Score analysis
   async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
-    const [prices, dates] = await Promise.all([
-      this.fetchDailyCloseHistory(days),
-      this.fetchDateIndex(days)
-    ]);
+    const prices = await this.fetchDailyCloseHistory(days);
+    
+    // Generate timestamps based on days back from today
+    const today = new Date();
+    const timestamps = prices.map((_, index) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (prices.length - 1 - index));
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    });
     
     return prices.map((price, index) => ({
-      timestamp: dates[index],
+      timestamp: timestamps[index],
       price: price
     }));
-  }
-
-  // Fetch date index for timestamps
-  async fetchDateIndex(days: number = 10000): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=dateindex&from=-${days}`);
-    if (!response.ok) throw new Error('Failed to fetch date index');
-    return await response.json();
   }
 
   // Fetch SOPR history (correct endpoint)
