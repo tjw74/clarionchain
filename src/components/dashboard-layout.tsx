@@ -18,7 +18,8 @@ import {
   Database,
   Layers,
   Calculator,
-  Bot
+  Bot,
+  Combine
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -70,6 +71,11 @@ const navigation = [
     name: "Machine Learning",
     href: "/machine-learning",
     icon: Bot,
+  },
+  {
+    name: "Overlays",
+    href: "/overlays",
+    icon: Combine,
   },
   {
     name: "Z Scores",
