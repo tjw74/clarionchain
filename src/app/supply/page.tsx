@@ -313,15 +313,16 @@ export default function SupplyPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                <ChartContainer config={lthSupplyConfig} className="h-80 w-full">
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
                     {gradientDefs}
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
                       axisLine={false}
                       tickMargin={8}
+                      interval="preserveStartEnd"
                       tickFormatter={(value) => {
                         const date = new Date(value)
                         return date.getFullYear().toString()
@@ -333,7 +334,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      tickCount={6}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -342,7 +344,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
+                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -364,7 +367,7 @@ export default function SupplyPage() {
                       dataKey="lthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#lthGradient)"
                       dot={false}
                     />
@@ -376,10 +379,22 @@ export default function SupplyPage() {
                       strokeWidth={1.5}
                       strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.8}
+                      opacity={0.9}
                     />
                   </ComposedChart>
                 </ChartContainer>
+                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
+                    <span className="text-blue-400">Price</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-yellow-400"></div>
+                    <span className="text-yellow-400">LTH Supply</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatSupply(latestData.lthSupply) : '-'}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -394,15 +409,16 @@ export default function SupplyPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                <ChartContainer config={lthSupplyConfig} className="h-80 w-full">
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
                     {gradientDefs}
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
                       axisLine={false}
                       tickMargin={8}
+                      interval="preserveStartEnd"
                       tickFormatter={(value) => {
                         const date = new Date(value)
                         return date.getFullYear().toString()
@@ -414,7 +430,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      tickCount={6}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -423,7 +440,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
+                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -445,7 +463,7 @@ export default function SupplyPage() {
                       dataKey="lthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#lthGradient)"
                       dot={false}
                     />
@@ -457,10 +475,22 @@ export default function SupplyPage() {
                       strokeWidth={1.5}
                       strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.8}
+                      opacity={0.9}
                     />
                   </ComposedChart>
                 </ChartContainer>
+                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
+                    <span className="text-blue-400">Price</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-yellow-400"></div>
+                    <span className="text-yellow-400">LTH Supply</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatUSD(latestData.lthSupplyUSD) : '-'}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -478,15 +508,16 @@ export default function SupplyPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                <ChartContainer config={sthSupplyConfig} className="h-80 w-full">
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
                     {gradientDefs}
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
                       axisLine={false}
                       tickMargin={8}
+                      interval="preserveStartEnd"
                       tickFormatter={(value) => {
                         const date = new Date(value)
                         return date.getFullYear().toString()
@@ -498,7 +529,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      tickCount={6}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -507,7 +539,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
+                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -529,7 +562,7 @@ export default function SupplyPage() {
                       dataKey="sthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#sthGradient)"
                       dot={false}
                     />
@@ -541,10 +574,22 @@ export default function SupplyPage() {
                       strokeWidth={1.5}
                       strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.8}
+                      opacity={0.9}
                     />
                   </ComposedChart>
                 </ChartContainer>
+                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
+                    <span className="text-blue-400">Price</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-yellow-400"></div>
+                    <span className="text-yellow-400">STH Supply</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatSupply(latestData.sthSupply) : '-'}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -559,15 +604,16 @@ export default function SupplyPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                <ChartContainer config={sthSupplyConfig} className="h-80 w-full">
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
                     {gradientDefs}
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
                       dataKey="date"
                       tickLine={false}
                       axisLine={false}
                       tickMargin={8}
+                      interval="preserveStartEnd"
                       tickFormatter={(value) => {
                         const date = new Date(value)
                         return date.getFullYear().toString()
@@ -579,7 +625,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
+                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      tickCount={6}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -588,7 +635,8 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
+                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -610,7 +658,7 @@ export default function SupplyPage() {
                       dataKey="sthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={3}
+                      strokeWidth={2}
                       fill="url(#sthGradient)"
                       dot={false}
                     />
@@ -622,10 +670,22 @@ export default function SupplyPage() {
                       strokeWidth={1.5}
                       strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.8}
+                      opacity={0.9}
                     />
                   </ComposedChart>
                 </ChartContainer>
+                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
+                    <span className="text-blue-400">Price</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-yellow-400"></div>
+                    <span className="text-yellow-400">STH Supply</span>
+                    <span className="text-muted-foreground">Last: {latestData ? formatUSD(latestData.sthSupplyUSD) : '-'}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
