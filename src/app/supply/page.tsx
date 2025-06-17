@@ -281,143 +281,7 @@ export default function SupplyPage() {
         {/* Chart Section - Logical Flow */}
         <div className="space-y-6">
           
-          {/* 1. Total Supply Overview */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Coins className="h-5 w-5" />
-                Total Bitcoin Supply
-              </CardTitle>
-              <CardDescription>
-                Total circulating Bitcoin supply over the last 8 years
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={totalSupplyConfig} className="h-64 w-full">
-                <AreaChart data={supplyData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    orientation="right"
-                    tickFormatter={(value) => formatSupply(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any) => [formatSupply(value), "Total Supply"]}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
-                      }}
-                    />}
-                  />
-                  <defs>
-                    <linearGradient id="fillTotalSupply" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-supply)" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="var(--color-supply)" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="totalSupply"
-                    type="natural"
-                    fill="url(#fillTotalSupply)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-supply)"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* 2. Supply Distribution (Stacked Area) */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Layers className="h-5 w-5" />
-                Supply Distribution
-              </CardTitle>
-              <CardDescription>
-                Bitcoin supply breakdown between Long-term Holders (LTH) and Short-term Holders (STH)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={supplyDistributionConfig} className="h-64 w-full">
-                <AreaChart data={supplyData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    orientation="right"
-                    tickFormatter={(value) => formatSupply(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any, name: any) => [
-                        formatSupply(value), 
-                        name === "lthSupply" ? "LTH Supply" : "STH Supply"
-                      ]}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
-                      }}
-                    />}
-                  />
-                  <defs>
-                    <linearGradient id="fillLTH" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-lth)" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="var(--color-lth)" stopOpacity={0.1} />
-                    </linearGradient>
-                    <linearGradient id="fillSTH" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-sth)" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="var(--color-sth)" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="lthSupply"
-                    stackId="1"
-                    type="natural"
-                    fill="url(#fillLTH)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-lth)"
-                  />
-                  <Area
-                    dataKey="sthSupply"
-                    stackId="1"
-                    type="natural"
-                    fill="url(#fillSTH)"
-                    fillOpacity={0.6}
-                    stroke="var(--color-sth)"
-                  />
-                </AreaChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          {/* 3. LTH Supply Charts (BTC & USD) */}
+          {/* LTH Supply Charts (BTC & USD) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-border">
               <CardHeader>
@@ -526,7 +390,7 @@ export default function SupplyPage() {
             </Card>
           </div>
 
-          {/* 4. STH Supply Charts (BTC & USD) */}
+          {/* STH Supply Charts (BTC & USD) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-border">
               <CardHeader>
