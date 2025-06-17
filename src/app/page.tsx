@@ -314,6 +314,17 @@ export default function Dashboard() {
     }
   }
 
+  // Format USD values in short form for Y-axis
+  const formatShortUSD = (value: number) => {
+    if (value >= 1e6) {
+      return `$${(value / 1e6).toFixed(0)}M`
+    } else if (value >= 1e3) {
+      return `$${(value / 1e3).toFixed(0)}K`
+    } else {
+      return `$${value.toFixed(0)}`
+    }
+  }
+
   const priceTrend = calculatePriceTrend()
   const sthTrend = calculateSTHTrend()
 
@@ -408,7 +419,7 @@ export default function Dashboard() {
                   <YAxis 
                     scale="log" 
                     domain={['dataMin', 'dataMax']}
-                    tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
+                    tickFormatter={(value: any) => formatShortUSD(Number(value))}
                     axisLine={false}
                     tickLine={false}
                     orientation="right"
@@ -493,7 +504,7 @@ export default function Dashboard() {
                   <YAxis 
                     scale="log" 
                     domain={['dataMin', 'dataMax']}
-                    tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
+                    tickFormatter={(value: any) => formatShortUSD(Number(value))}
                     axisLine={false}
                     tickLine={false}
                     orientation="right"
