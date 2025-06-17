@@ -65,7 +65,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         borderColor: '#f59e0b',
         backgroundColor: 'rgba(245, 158, 11, 0.1)',
         borderWidth: 2,
-        fill: true,
+        fill: false,
         tension: 0.1,
         pointRadius: 0,
         pointHoverRadius: 6,

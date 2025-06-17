@@ -114,6 +114,14 @@ export default function ZScoresPage() {
       
       console.log('Processed Z-score data length:', processedData.length)
       console.log('Sample Z-score data:', processedData.slice(-3))
+      
+      // Debug Supply in Profit values
+      if (processedData.length > 0) {
+        const latest = processedData[processedData.length - 1]
+        console.log('Latest Supply in Profit raw value:', latest.rawValues.supplyInProfit)
+        console.log('Latest Supply in Profit Z-score:', latest.zScores.supplyInProfit)
+        console.log('Sample Supply in Profit values:', supplyInProfitHistory.slice(-10))
+      }
 
       setPriceData(finalData)
       setZScoreData(processedData)
