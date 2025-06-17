@@ -14,7 +14,8 @@ import {
   Home,
   Activity,
   Zap,
-  Brain
+  Brain,
+  Database
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -46,6 +47,11 @@ const navigation = [
     name: "AI Analysis",
     href: "/ai-analysis",
     icon: Brain,
+  },
+  {
+    name: "BRK Analytics",
+    href: "/brk",
+    icon: Database,
   },
   {
     name: "Z Scores",
