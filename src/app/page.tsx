@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } f
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -405,6 +405,13 @@ export default function Dashboard() {
                       return date.getFullYear().toString()
                     }}
                   />
+                  <YAxis 
+                    scale="log" 
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
+                    axisLine={false}
+                    tickLine={false}
+                  />
                   <ChartTooltip 
                     cursor={false} 
                     content={<ChartTooltipContent 
@@ -480,6 +487,13 @@ export default function Dashboard() {
                       const date = new Date(value)
                       return date.getFullYear().toString()
                     }}
+                  />
+                  <YAxis 
+                    scale="log" 
+                    domain={['dataMin', 'dataMax']}
+                    tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <ChartTooltip 
                     cursor={false} 
