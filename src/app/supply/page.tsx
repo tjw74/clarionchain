@@ -333,7 +333,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -342,7 +342,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -414,7 +414,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -423,7 +423,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -498,7 +498,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -507,7 +507,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -579,7 +579,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.95', 'dataMax * 1.05']}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -588,7 +588,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin', 'dataMax']}
+                      domain={['dataMin * 0.8', 'dataMax * 1.2']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
