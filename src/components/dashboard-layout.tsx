@@ -15,7 +15,8 @@ import {
   Activity,
   Zap,
   Brain,
-  Database
+  Database,
+  Layers
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -52,6 +53,11 @@ const navigation = [
     name: "BRK Dataset",
     href: "/brk",
     icon: Database,
+  },
+  {
+    name: "Supply Analysis",
+    href: "/supply",
+    icon: Layers,
   },
   {
     name: "Z Scores",

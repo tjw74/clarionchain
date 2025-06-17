@@ -139,6 +139,13 @@ class BRKClient {
     return await response.json();
   }
 
+  // Fetch LTH supply history from the working endpoint
+  async fetchLTHSupplyHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=lth-supply&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch LTH supply history');
+    return await response.json();
+  }
+
   // Fetch price history with timestamps for Z-Score analysis
   async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
     const prices = await this.fetchDailyCloseHistory(days);
