@@ -282,12 +282,12 @@ export default function Dashboard() {
 
   // Calculate price trend for footer
   const calculatePriceTrend = () => {
-    if (priceChartData.length < 2) return { percentage: 0, period: '' }
+    if (priceChartData.length < 31) return { percentage: 0, period: '', isPositive: true }
     
     const latest = priceChartData[priceChartData.length - 1]?.price || 0
     const monthAgo = priceChartData[priceChartData.length - 31]?.price || 0
     
-    if (monthAgo === 0) return { percentage: 0, period: '' }
+    if (monthAgo === 0 || latest === 0) return { percentage: 0, period: '', isPositive: true }
     
     const change = ((latest - monthAgo) / monthAgo) * 100
     return { 
@@ -299,12 +299,12 @@ export default function Dashboard() {
 
   // Calculate STH trend for footer
   const calculateSTHTrend = () => {
-    if (sthChartData.length < 2) return { percentage: 0, period: '' }
+    if (sthChartData.length < 31) return { percentage: 0, period: '', isPositive: true }
     
     const latest = sthChartData[sthChartData.length - 1]?.price || 0
     const monthAgo = sthChartData[sthChartData.length - 31]?.price || 0
     
-    if (monthAgo === 0) return { percentage: 0, period: '' }
+    if (monthAgo === 0 || latest === 0) return { percentage: 0, period: '', isPositive: true }
     
     const change = ((latest - monthAgo) / monthAgo) * 100
     return { 
