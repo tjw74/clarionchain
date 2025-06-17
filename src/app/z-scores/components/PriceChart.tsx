@@ -53,6 +53,14 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
     [onHover]
   )
 
+  // Create gradient background
+  const createGradient = (ctx: CanvasRenderingContext2D, chartArea: any) => {
+    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
+    return gradient
+  }
+
   const chartData = {
     labels: data.length > 0 ? data.map(item => {
       const date = new Date(item.timestamp)
@@ -63,16 +71,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         label: 'Bitcoin Price',
         data: data.length > 0 ? data.map(item => item.price) : [0],
         borderColor: '#3b82f6',
-        backgroundColor: (context: any) => {
-          const chart = context.chart
-          const {ctx, chartArea} = chart
-          if (!chartArea) return null
-          
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
-          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
-          return gradient
-        },
+        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Fallback color
         borderWidth: 2,
         fill: true,
         tension: 0.1,
@@ -84,6 +83,21 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
       }
     ]
   }
+
+  // Update chart with gradient after render
+  useEffect(() => {
+    const chart = chartRef.current
+    if (chart) {
+      const ctx = chart.ctx
+      const chartArea = chart.chartArea
+      
+      if (ctx && chartArea) {
+        const gradient = createGradient(ctx, chartArea)
+        chart.data.datasets[0].backgroundColor = gradient
+        chart.update('none')
+      }
+    }
+  }, [data])
 
   const options: ChartOptions<'line'> = {
     responsive: true,
