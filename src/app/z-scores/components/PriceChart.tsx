@@ -62,14 +62,23 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
       {
         label: 'Bitcoin Price',
         data: data.length > 0 ? data.map(item => item.price) : [0],
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        borderColor: '#3b82f6',
+        backgroundColor: (context: any) => {
+          const chart = context.chart
+          const {ctx, chartArea} = chart
+          if (!chartArea) return null
+          
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
+          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
+          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
+          return gradient
+        },
         borderWidth: 2,
-        fill: false,
+        fill: true,
         tension: 0.1,
         pointRadius: 0,
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#f59e0b',
+        pointHoverBackgroundColor: '#3b82f6',
         pointHoverBorderColor: '#ffffff',
         pointHoverBorderWidth: 2,
       }
