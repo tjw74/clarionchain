@@ -411,6 +411,7 @@ export default function Dashboard() {
                     tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
                     axisLine={false}
                     tickLine={false}
+                    orientation="right"
                   />
                   <ChartTooltip 
                     cursor={false} 
@@ -494,6 +495,7 @@ export default function Dashboard() {
                     tickFormatter={(value: any) => `$${Number(value).toLocaleString()}`}
                     axisLine={false}
                     tickLine={false}
+                    orientation="right"
                   />
                   <ChartTooltip 
                     cursor={false} 
