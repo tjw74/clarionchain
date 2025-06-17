@@ -12,7 +12,8 @@ import {
   Tooltip,
   Legend,
   ChartOptions,
-  TooltipItem
+  TooltipItem,
+  Plugin
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 
@@ -53,12 +54,19 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
     [onHover]
   )
 
-  // Create gradient background
-  const createGradient = (ctx: CanvasRenderingContext2D, chartArea: any) => {
-    const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
-    gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
-    return gradient
+  // Create gradient plugin
+  const gradientPlugin: Plugin = {
+    id: 'gradientFill',
+    beforeDatasetsDraw: (chart) => {
+      const { ctx, chartArea, data } = chart
+      if (!chartArea || !data.datasets[0]) return
+      
+      const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
+      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
+      gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
+      
+      data.datasets[0].backgroundColor = gradient
+    }
   }
 
   const chartData = {
@@ -84,39 +92,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
     ]
   }
 
-  // Update chart with gradient after render
-  useEffect(() => {
-    const chart = chartRef.current
-    if (chart) {
-      const applyGradient = () => {
-        const ctx = chart.ctx
-        const chartArea = chart.chartArea
-        
-        if (ctx && chartArea && chartArea.bottom > chartArea.top) {
-          const gradient = createGradient(ctx, chartArea)
-          chart.data.datasets[0].backgroundColor = gradient
-          chart.update('none')
-        }
-      }
-      
-      // Use requestAnimationFrame to ensure chart is fully rendered
-      const applyGradientDelayed = () => {
-        requestAnimationFrame(() => {
-          setTimeout(applyGradient, 100)
-        })
-      }
-      
-      // Apply gradient with delay
-      applyGradientDelayed()
-      
-      // Also apply gradient on chart resize/redraw
-      const originalResize = chart.resize
-      chart.resize = function(...args) {
-        originalResize.apply(this, args)
-        applyGradientDelayed()
-      }
-    }
-  }, [data])
+
 
   const options: ChartOptions<'line'> = {
     responsive: true,
@@ -131,7 +107,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
       },
       tooltip: {
         enabled: true,
-        mode: 'index',
+        mode: 'index' as const,
         intersect: false,
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         titleColor: '#ffffff',
@@ -206,6 +182,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         ref={chartRef}
         data={chartData} 
         options={options}
+        plugins={[gradientPlugin]}
       />
     </div>
   )
