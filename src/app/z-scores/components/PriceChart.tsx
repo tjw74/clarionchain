@@ -129,13 +129,14 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
           
           tooltipEl.innerHTML = `
             <div style="
-              background: rgba(0, 0, 0, 0.8);
+              background: rgba(59, 130, 246, 0.15);
               color: white;
               padding: 8px 12px;
               border-radius: 4px;
-              border: 1px solid #374151;
+              border: none;
               font-size: 12px;
               white-space: nowrap;
+              backdrop-filter: blur(8px);
             ">
               ${tooltip.title[0]}<br/>
               ${tooltip.body[0].lines[0]}
