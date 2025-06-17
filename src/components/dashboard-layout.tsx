@@ -49,7 +49,7 @@ const navigation = [
     icon: Brain,
   },
   {
-    name: "BRK Analytics",
+    name: "BRK Dataset",
     href: "/brk",
     icon: Database,
   },
