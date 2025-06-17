@@ -16,7 +16,8 @@ import {
   Zap,
   Brain,
   Database,
-  Layers
+  Layers,
+  Calculator
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -58,6 +59,11 @@ const navigation = [
     name: "Supply",
     href: "/supply",
     icon: Layers,
+  },
+  {
+    name: "DCA Tuner",
+    href: "/dca-tuner",
+    icon: Calculator,
   },
   {
     name: "Z Scores",
