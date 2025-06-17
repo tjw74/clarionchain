@@ -92,21 +92,28 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         const ctx = chart.ctx
         const chartArea = chart.chartArea
         
-        if (ctx && chartArea) {
+        if (ctx && chartArea && chartArea.bottom > chartArea.top) {
           const gradient = createGradient(ctx, chartArea)
           chart.data.datasets[0].backgroundColor = gradient
           chart.update('none')
         }
       }
       
-      // Apply gradient immediately if chart is ready
-      applyGradient()
+      // Use requestAnimationFrame to ensure chart is fully rendered
+      const applyGradientDelayed = () => {
+        requestAnimationFrame(() => {
+          setTimeout(applyGradient, 100)
+        })
+      }
+      
+      // Apply gradient with delay
+      applyGradientDelayed()
       
       // Also apply gradient on chart resize/redraw
       const originalResize = chart.resize
       chart.resize = function(...args) {
         originalResize.apply(this, args)
-        setTimeout(applyGradient, 0)
+        applyGradientDelayed()
       }
     }
   }, [data])
