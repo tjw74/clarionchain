@@ -416,6 +416,7 @@ export default function Dashboard() {
                   <ChartTooltip 
                     cursor={false} 
                     content={<ChartTooltipContent 
+                      className="bg-blue-600/15 border-0 text-white"
                       formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Bitcoin Price"]}
                       labelFormatter={(label: any) => {
                         const date = new Date(label)
@@ -500,6 +501,7 @@ export default function Dashboard() {
                   <ChartTooltip 
                     cursor={false} 
                     content={<ChartTooltipContent 
+                      className="bg-blue-600/15 border-0 text-white"
                       formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "STH Cost Basis"]}
                       labelFormatter={(label: any) => {
                         const date = new Date(label)
