@@ -88,13 +88,25 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
   useEffect(() => {
     const chart = chartRef.current
     if (chart) {
-      const ctx = chart.ctx
-      const chartArea = chart.chartArea
+      const applyGradient = () => {
+        const ctx = chart.ctx
+        const chartArea = chart.chartArea
+        
+        if (ctx && chartArea) {
+          const gradient = createGradient(ctx, chartArea)
+          chart.data.datasets[0].backgroundColor = gradient
+          chart.update('none')
+        }
+      }
       
-      if (ctx && chartArea) {
-        const gradient = createGradient(ctx, chartArea)
-        chart.data.datasets[0].backgroundColor = gradient
-        chart.update('none')
+      // Apply gradient immediately if chart is ready
+      applyGradient()
+      
+      // Also apply gradient on chart resize/redraw
+      const originalResize = chart.resize
+      chart.resize = function(...args) {
+        originalResize.apply(this, args)
+        setTimeout(applyGradient, 0)
       }
     }
   }, [data])
