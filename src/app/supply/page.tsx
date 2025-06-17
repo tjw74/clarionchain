@@ -46,6 +46,9 @@ interface SupplyData {
   totalSupply: number
   lthSupply: number
   sthSupply: number
+  lthSupplyUSD: number
+  sthSupplyUSD: number
+  price: number
 }
 
 export default function SupplyPage() {
@@ -59,14 +62,15 @@ export default function SupplyPage() {
         setLoading(true)
         
         // Fetch supply data from BRK API (8 years of data)
-        const [lthSupplyHistory, sthSupplyHistory] = await Promise.all([
+        const [lthSupplyHistory, sthSupplyHistory, priceHistory] = await Promise.all([
           brkClient.fetchLTHSupplyHistory(2920),
-          brkClient.fetchSTHSupplyHistory(2920)
+          brkClient.fetchSTHSupplyHistory(2920),
+          brkClient.fetchDailyCloseHistory(2920)
         ])
 
-        if (lthSupplyHistory.length > 0 && sthSupplyHistory.length > 0) {
+        if (lthSupplyHistory.length > 0 && sthSupplyHistory.length > 0 && priceHistory.length > 0) {
           const data: SupplyData[] = []
-          const dataLength = Math.min(lthSupplyHistory.length, sthSupplyHistory.length)
+          const dataLength = Math.min(lthSupplyHistory.length, sthSupplyHistory.length, priceHistory.length)
           
           for (let i = 0; i < dataLength; i++) {
             const date = new Date()
@@ -76,12 +80,16 @@ export default function SupplyPage() {
             const lthSupplyBTC = lthSupplyHistory[i] / 100000000
             const sthSupplyBTC = sthSupplyHistory[i] / 100000000
             const totalSupplyBTC = lthSupplyBTC + sthSupplyBTC
+            const price = priceHistory[i]
             
             data.push({
               date: date.toISOString().split('T')[0],
               totalSupply: totalSupplyBTC,
               lthSupply: lthSupplyBTC,
-              sthSupply: sthSupplyBTC
+              sthSupply: sthSupplyBTC,
+              lthSupplyUSD: lthSupplyBTC * price,
+              sthSupplyUSD: sthSupplyBTC * price,
+              price: price
             })
           }
           
@@ -121,6 +129,15 @@ export default function SupplyPage() {
   // Format supply numbers
   const formatSupply = (value: number) => {
     return `${(value / 1000000).toFixed(2)}M BTC`
+  }
+
+  // Format USD values
+  const formatUSD = (value: number) => {
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+    return `$${value.toLocaleString()}`
   }
 
   // Get latest values for summary cards
@@ -400,113 +417,223 @@ export default function SupplyPage() {
             </CardContent>
           </Card>
 
-          {/* 3. LTH Supply Detail */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Long-term Holder Supply
-              </CardTitle>
-              <CardDescription>
-                Bitcoin held by addresses that haven't moved coins for 155+ days
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
-                <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    orientation="right"
-                    tickFormatter={(value) => formatSupply(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any) => [formatSupply(value), "LTH Supply"]}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
+          {/* 3. LTH Supply Charts (BTC & USD) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  LTH Supply (BTC)
+                </CardTitle>
+                <CardDescription>
+                  Long-term Holder supply in Bitcoin
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
+                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => {
+                        const date = new Date(value)
+                        return date.getFullYear().toString()
                       }}
-                    />}
-                  />
-                  <Line
-                    dataKey="lthSupply"
-                    type="natural"
-                    stroke="var(--color-supply)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="right"
+                      tickFormatter={(value) => formatSupply(value)}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        className="bg-blue-600/15 border-0 text-white"
+                        formatter={(value: any) => [formatSupply(value), "LTH Supply (BTC)"]}
+                        labelFormatter={(label: any) => {
+                          const date = new Date(label)
+                          return date.toLocaleDateString()
+                        }}
+                      />}
+                    />
+                    <Line
+                      dataKey="lthSupply"
+                      type="natural"
+                      stroke="var(--color-supply)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
 
-          {/* 4. STH Supply Detail */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Short-term Holder Supply
-              </CardTitle>
-              <CardDescription>
-                Bitcoin held by addresses that moved coins within the last 155 days
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
-                <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    orientation="right"
-                    tickFormatter={(value) => formatSupply(value)}
-                  />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any) => [formatSupply(value), "STH Supply"]}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  LTH Supply (USD)
+                </CardTitle>
+                <CardDescription>
+                  Long-term Holder supply value in USD
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
+                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => {
+                        const date = new Date(value)
+                        return date.getFullYear().toString()
                       }}
-                    />}
-                  />
-                  <Line
-                    dataKey="sthSupply"
-                    type="natural"
-                    stroke="var(--color-supply)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="right"
+                      tickFormatter={(value) => formatUSD(value)}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        className="bg-blue-600/15 border-0 text-white"
+                        formatter={(value: any) => [formatUSD(value), "LTH Supply (USD)"]}
+                        labelFormatter={(label: any) => {
+                          const date = new Date(label)
+                          return date.toLocaleDateString()
+                        }}
+                      />}
+                    />
+                    <Line
+                      dataKey="lthSupplyUSD"
+                      type="natural"
+                      stroke="var(--color-supply)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 4. STH Supply Charts (BTC & USD) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  STH Supply (BTC)
+                </CardTitle>
+                <CardDescription>
+                  Short-term Holder supply in Bitcoin
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
+                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => {
+                        const date = new Date(value)
+                        return date.getFullYear().toString()
+                      }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="right"
+                      tickFormatter={(value) => formatSupply(value)}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        className="bg-blue-600/15 border-0 text-white"
+                        formatter={(value: any) => [formatSupply(value), "STH Supply (BTC)"]}
+                        labelFormatter={(label: any) => {
+                          const date = new Date(label)
+                          return date.toLocaleDateString()
+                        }}
+                      />}
+                    />
+                    <Line
+                      dataKey="sthSupply"
+                      type="natural"
+                      stroke="var(--color-supply)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  STH Supply (USD)
+                </CardTitle>
+                <CardDescription>
+                  Short-term Holder supply value in USD
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
+                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => {
+                        const date = new Date(value)
+                        return date.getFullYear().toString()
+                      }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="right"
+                      tickFormatter={(value) => formatUSD(value)}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent
+                        className="bg-blue-600/15 border-0 text-white"
+                        formatter={(value: any) => [formatUSD(value), "STH Supply (USD)"]}
+                        labelFormatter={(label: any) => {
+                          const date = new Date(label)
+                          return date.toLocaleDateString()
+                        }}
+                      />}
+                    />
+                    <Line
+                      dataKey="sthSupplyUSD"
+                      type="natural"
+                      stroke="var(--color-supply)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </DashboardLayout>
