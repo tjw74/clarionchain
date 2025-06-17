@@ -110,7 +110,8 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         borderWidth: 1,
         position: 'nearest' as const,
         yAlign: 'top' as const,
-        caretPadding: 10,
+        caretPadding: 20,
+        displayColors: false,
         callbacks: {
           title: (context) => {
             const index = context[0].dataIndex
@@ -121,6 +122,39 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
             const value = context.parsed.y
             return `Price: $${value.toLocaleString()}`
           }
+        },
+        external: (context: any) => {
+          const { chart, tooltip } = context
+          if (tooltip.opacity === 0) return
+          
+          const position = chart.canvas.getBoundingClientRect()
+          const tooltipEl = document.getElementById('chartjs-tooltip') || document.createElement('div')
+          
+          if (!document.getElementById('chartjs-tooltip')) {
+            tooltipEl.id = 'chartjs-tooltip'
+            tooltipEl.style.position = 'absolute'
+            tooltipEl.style.pointerEvents = 'none'
+            tooltipEl.style.transition = 'all 0.1s ease'
+            document.body.appendChild(tooltipEl)
+          }
+          
+          tooltipEl.innerHTML = `
+            <div style="
+              background: rgba(0, 0, 0, 0.8);
+              color: white;
+              padding: 8px 12px;
+              border-radius: 4px;
+              border: 1px solid #374151;
+              font-size: 12px;
+              white-space: nowrap;
+            ">
+              ${tooltip.title[0]}<br/>
+              ${tooltip.body[0].lines[0]}
+            </div>
+          `
+          
+          tooltipEl.style.left = position.left + tooltip.caretX - tooltipEl.offsetWidth / 2 + 'px'
+          tooltipEl.style.top = position.top + tooltip.caretY - tooltipEl.offsetHeight - 20 + 'px'
         }
       }
     },
