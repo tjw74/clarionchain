@@ -45,12 +45,12 @@ const supplyDistributionConfig = {
 const gradientDefs = (
   <defs>
     <linearGradient id="lthGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.8}/>
-      <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.1}/>
+      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
+      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.1}/>
     </linearGradient>
     <linearGradient id="sthGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.8}/>
-      <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0.1}/>
+      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
+      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.1}/>
     </linearGradient>
   </defs>
 )
@@ -363,8 +363,8 @@ export default function SupplyPage() {
                       yAxisId="supply"
                       dataKey="lthSupply"
                       type="natural"
-                      stroke="var(--chart-2)"
-                      strokeWidth={2}
+                      stroke="#fbbf24"
+                      strokeWidth={3}
                       fill="url(#lthGradient)"
                       dot={false}
                     />
@@ -372,10 +372,11 @@ export default function SupplyPage() {
                       yAxisId="price"
                       dataKey="price"
                       type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={1}
+                      stroke="#3b82f6"
+                      strokeWidth={1.5}
+                      strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.7}
+                      opacity={0.8}
                     />
                   </ComposedChart>
                 </ChartContainer>
@@ -443,8 +444,8 @@ export default function SupplyPage() {
                       yAxisId="supply"
                       dataKey="lthSupplyUSD"
                       type="natural"
-                      stroke="var(--chart-2)"
-                      strokeWidth={2}
+                      stroke="#fbbf24"
+                      strokeWidth={3}
                       fill="url(#lthGradient)"
                       dot={false}
                     />
@@ -452,10 +453,11 @@ export default function SupplyPage() {
                       yAxisId="price"
                       dataKey="price"
                       type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={1}
+                      stroke="#3b82f6"
+                      strokeWidth={1.5}
+                      strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.7}
+                      opacity={0.8}
                     />
                   </ComposedChart>
                 </ChartContainer>
@@ -526,8 +528,8 @@ export default function SupplyPage() {
                       yAxisId="supply"
                       dataKey="sthSupply"
                       type="natural"
-                      stroke="var(--chart-3)"
-                      strokeWidth={2}
+                      stroke="#fbbf24"
+                      strokeWidth={3}
                       fill="url(#sthGradient)"
                       dot={false}
                     />
@@ -535,10 +537,11 @@ export default function SupplyPage() {
                       yAxisId="price"
                       dataKey="price"
                       type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={1}
+                      stroke="#3b82f6"
+                      strokeWidth={1.5}
+                      strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.7}
+                      opacity={0.8}
                     />
                   </ComposedChart>
                 </ChartContainer>
@@ -606,8 +609,8 @@ export default function SupplyPage() {
                       yAxisId="supply"
                       dataKey="sthSupplyUSD"
                       type="natural"
-                      stroke="var(--chart-3)"
-                      strokeWidth={2}
+                      stroke="#fbbf24"
+                      strokeWidth={3}
                       fill="url(#sthGradient)"
                       dot={false}
                     />
@@ -615,10 +618,11 @@ export default function SupplyPage() {
                       yAxisId="price"
                       dataKey="price"
                       type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={1}
+                      stroke="#3b82f6"
+                      strokeWidth={1.5}
+                      strokeDasharray="5,5"
                       dot={false}
-                      opacity={0.7}
+                      opacity={0.8}
                     />
                   </ComposedChart>
                 </ChartContainer>
