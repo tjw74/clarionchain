@@ -334,7 +334,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      domain={['dataMin * 2', 'dataMax * 0.5']}
                       tickCount={6}
                       tickFormatter={(value) => formatSupply(value)}
                     />
@@ -344,7 +344,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      domain={['dataMin * 0.2', 'dataMax * 5']}
                       tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
@@ -362,13 +362,12 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Area
+                    <Line
                       yAxisId="supply"
                       dataKey="lthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={2}
-                      fill="url(#lthGradient)"
+                      strokeWidth={1.5}
                       dot={false}
                     />
                     <Line
@@ -430,7 +429,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      domain={['dataMin * 2', 'dataMax * 0.5']}
                       tickCount={6}
                       tickFormatter={(value) => formatUSD(value)}
                     />
@@ -440,7 +439,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      domain={['dataMin * 0.2', 'dataMax * 5']}
                       tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
@@ -458,13 +457,12 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Area
+                    <Line
                       yAxisId="supply"
                       dataKey="lthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={2}
-                      fill="url(#lthGradient)"
+                      strokeWidth={1.5}
                       dot={false}
                     />
                     <Line
@@ -529,7 +527,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      domain={['dataMin * 2', 'dataMax * 0.5']}
                       tickCount={6}
                       tickFormatter={(value) => formatSupply(value)}
                     />
@@ -539,7 +537,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      domain={['dataMin * 0.2', 'dataMax * 5']}
                       tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
@@ -557,13 +555,12 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Area
+                    <Line
                       yAxisId="supply"
                       dataKey="sthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={2}
-                      fill="url(#sthGradient)"
+                      strokeWidth={1.5}
                       dot={false}
                     />
                     <Line
@@ -625,7 +622,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="left"
                       scale="log"
-                      domain={['dataMin * 0.9', 'dataMax * 1.1']}
+                      domain={['dataMin * 2', 'dataMax * 0.5']}
                       tickCount={6}
                       tickFormatter={(value) => formatUSD(value)}
                     />
@@ -635,7 +632,7 @@ export default function SupplyPage() {
                       axisLine={false}
                       orientation="right"
                       scale="log"
-                      domain={['dataMin * 0.5', 'dataMax * 2']}
+                      domain={['dataMin * 0.2', 'dataMax * 5']}
                       tickCount={6}
                       tickFormatter={(value) => formatPrice(value)}
                     />
@@ -653,13 +650,12 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Area
+                    <Line
                       yAxisId="supply"
                       dataKey="sthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={2}
-                      fill="url(#sthGradient)"
+                      strokeWidth={1.5}
                       dot={false}
                     />
                     <Line
