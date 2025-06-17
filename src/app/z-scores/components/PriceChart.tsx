@@ -108,6 +108,9 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         bodyColor: '#ffffff',
         borderColor: '#374151',
         borderWidth: 1,
+        position: 'nearest' as const,
+        yAlign: 'top' as const,
+        caretPadding: 10,
         callbacks: {
           title: (context) => {
             const index = context[0].dataIndex
