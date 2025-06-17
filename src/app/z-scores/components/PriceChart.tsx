@@ -100,18 +100,7 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         display: false
       },
       tooltip: {
-        enabled: true,
-        mode: 'index' as const,
-        intersect: false,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        borderColor: '#374151',
-        borderWidth: 1,
-        position: 'nearest' as const,
-        yAlign: 'top' as const,
-        caretPadding: 20,
-        displayColors: false,
+        enabled: false,
         callbacks: {
           title: (context) => {
             const index = context[0].dataIndex
