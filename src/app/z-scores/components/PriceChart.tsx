@@ -54,21 +54,6 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
     [onHover]
   )
 
-  // Create gradient plugin
-  const gradientPlugin: Plugin = {
-    id: 'gradientFill',
-    beforeDatasetsDraw: (chart) => {
-      const { ctx, chartArea, data } = chart
-      if (!chartArea || !data.datasets[0]) return
-      
-      const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
-      gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
-      
-      data.datasets[0].backgroundColor = gradient
-    }
-  }
-
   const chartData = {
     labels: data.length > 0 ? data.map(item => {
       const date = new Date(item.timestamp)
@@ -79,9 +64,18 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         label: 'Bitcoin Price',
         data: data.length > 0 ? data.map(item => item.price) : [0],
         borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)', // Fallback color
+        backgroundColor: (context: any) => {
+          if (!context.chart.chartArea) {
+            return 'rgba(59, 130, 246, 0.1)'
+          }
+          const { ctx, chartArea } = context.chart
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
+          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)')
+          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)')
+          return gradient
+        },
         borderWidth: 2,
-        fill: true,
+        fill: 'origin',
         tension: 0.1,
         pointRadius: 0,
         pointHoverRadius: 6,
@@ -182,7 +176,6 @@ export default function PriceChart({ data, onHover }: PriceChartProps) {
         ref={chartRef}
         data={chartData} 
         options={options}
-        plugins={[gradientPlugin]}
       />
     </div>
   )
