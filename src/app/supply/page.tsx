@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from "recharts"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, ComposedChart } from "recharts"
 import { TrendingUp, TrendingDown, Layers, Users, Clock, Coins } from "lucide-react"
 import { brkClient } from "@/lib/api/brkClient"
 
@@ -137,6 +137,11 @@ export default function SupplyPage() {
     if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
     if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
     if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+    return `$${value.toLocaleString()}`
+  }
+
+  // Format price values
+  const formatPrice = (value: number) => {
     return `$${value.toLocaleString()}`
   }
 
@@ -295,7 +300,7 @@ export default function SupplyPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
-                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -308,16 +313,27 @@ export default function SupplyPage() {
                       }}
                     />
                     <YAxis
+                      yAxisId="supply"
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="left"
+                      tickFormatter={(value) => formatSupply(value)}
+                    />
+                    <YAxis
+                      yAxisId="price"
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
-                      tickFormatter={(value) => formatSupply(value)}
+                      tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent
                         className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any) => [formatSupply(value), "LTH Supply (BTC)"]}
+                        formatter={(value: any, name: any) => [
+                          name === "lthSupply" ? formatSupply(value) : formatPrice(value),
+                          name === "lthSupply" ? "LTH Supply (BTC)" : "Bitcoin Price"
+                        ]}
                         labelFormatter={(label: any) => {
                           const date = new Date(label)
                           return date.toLocaleDateString()
@@ -325,13 +341,23 @@ export default function SupplyPage() {
                       />}
                     />
                     <Line
+                      yAxisId="supply"
                       dataKey="lthSupply"
                       type="natural"
                       stroke="var(--color-supply)"
                       strokeWidth={2}
                       dot={false}
                     />
-                  </LineChart>
+                    <Line
+                      yAxisId="price"
+                      dataKey="price"
+                      type="natural"
+                      stroke="#fbbf24"
+                      strokeWidth={1}
+                      dot={false}
+                      opacity={0.7}
+                    />
+                  </ComposedChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -348,7 +374,7 @@ export default function SupplyPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
-                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -361,16 +387,27 @@ export default function SupplyPage() {
                       }}
                     />
                     <YAxis
+                      yAxisId="supply"
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="left"
+                      tickFormatter={(value) => formatUSD(value)}
+                    />
+                    <YAxis
+                      yAxisId="price"
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
-                      tickFormatter={(value) => formatUSD(value)}
+                      tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent
                         className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any) => [formatUSD(value), "LTH Supply (USD)"]}
+                        formatter={(value: any, name: any) => [
+                          name === "lthSupplyUSD" ? formatUSD(value) : formatPrice(value),
+                          name === "lthSupplyUSD" ? "LTH Supply (USD)" : "Bitcoin Price"
+                        ]}
                         labelFormatter={(label: any) => {
                           const date = new Date(label)
                           return date.toLocaleDateString()
@@ -378,13 +415,23 @@ export default function SupplyPage() {
                       />}
                     />
                     <Line
+                      yAxisId="supply"
                       dataKey="lthSupplyUSD"
                       type="natural"
                       stroke="var(--color-supply)"
                       strokeWidth={2}
                       dot={false}
                     />
-                  </LineChart>
+                    <Line
+                      yAxisId="price"
+                      dataKey="price"
+                      type="natural"
+                      stroke="#fbbf24"
+                      strokeWidth={1}
+                      dot={false}
+                      opacity={0.7}
+                    />
+                  </ComposedChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -404,7 +451,7 @@ export default function SupplyPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
-                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -417,16 +464,27 @@ export default function SupplyPage() {
                       }}
                     />
                     <YAxis
+                      yAxisId="supply"
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="left"
+                      tickFormatter={(value) => formatSupply(value)}
+                    />
+                    <YAxis
+                      yAxisId="price"
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
-                      tickFormatter={(value) => formatSupply(value)}
+                      tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent
                         className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any) => [formatSupply(value), "STH Supply (BTC)"]}
+                        formatter={(value: any, name: any) => [
+                          name === "sthSupply" ? formatSupply(value) : formatPrice(value),
+                          name === "sthSupply" ? "STH Supply (BTC)" : "Bitcoin Price"
+                        ]}
                         labelFormatter={(label: any) => {
                           const date = new Date(label)
                           return date.toLocaleDateString()
@@ -434,13 +492,23 @@ export default function SupplyPage() {
                       />}
                     />
                     <Line
+                      yAxisId="supply"
                       dataKey="sthSupply"
                       type="natural"
                       stroke="var(--color-supply)"
                       strokeWidth={2}
                       dot={false}
                     />
-                  </LineChart>
+                    <Line
+                      yAxisId="price"
+                      dataKey="price"
+                      type="natural"
+                      stroke="#fbbf24"
+                      strokeWidth={1}
+                      dot={false}
+                      opacity={0.7}
+                    />
+                  </ComposedChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -457,7 +525,7 @@ export default function SupplyPage() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
-                  <LineChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -470,16 +538,27 @@ export default function SupplyPage() {
                       }}
                     />
                     <YAxis
+                      yAxisId="supply"
+                      tickLine={false}
+                      axisLine={false}
+                      orientation="left"
+                      tickFormatter={(value) => formatUSD(value)}
+                    />
+                    <YAxis
+                      yAxisId="price"
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
-                      tickFormatter={(value) => formatUSD(value)}
+                      tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent
                         className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any) => [formatUSD(value), "STH Supply (USD)"]}
+                        formatter={(value: any, name: any) => [
+                          name === "sthSupplyUSD" ? formatUSD(value) : formatPrice(value),
+                          name === "sthSupplyUSD" ? "STH Supply (USD)" : "Bitcoin Price"
+                        ]}
                         labelFormatter={(label: any) => {
                           const date = new Date(label)
                           return date.toLocaleDateString()
@@ -487,13 +566,23 @@ export default function SupplyPage() {
                       />}
                     />
                     <Line
+                      yAxisId="supply"
                       dataKey="sthSupplyUSD"
                       type="natural"
                       stroke="var(--color-supply)"
                       strokeWidth={2}
                       dot={false}
                     />
-                  </LineChart>
+                    <Line
+                      yAxisId="price"
+                      dataKey="price"
+                      type="natural"
+                      stroke="#fbbf24"
+                      strokeWidth={1}
+                      dot={false}
+                      opacity={0.7}
+                    />
+                  </ComposedChart>
                 </ChartContainer>
               </CardContent>
             </Card>
