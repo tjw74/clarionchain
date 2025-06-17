@@ -86,7 +86,7 @@ const priceChartConfig = {
 const sthChartConfig = {
   price: {
     label: "STH Cost Basis",
-    color: "var(--chart-2)",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig
 
