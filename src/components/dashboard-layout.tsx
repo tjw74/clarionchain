@@ -55,7 +55,7 @@ const navigation = [
     icon: Database,
   },
   {
-    name: "Supply Analysis",
+    name: "Supply",
     href: "/supply",
     icon: Layers,
   },

@@ -130,7 +130,7 @@ export default function SupplyPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Supply Analysis" description="Bitcoin supply distribution and holder analysis">
+      <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -143,7 +143,7 @@ export default function SupplyPage() {
 
   if (error) {
     return (
-      <DashboardLayout title="Supply Analysis" description="Bitcoin supply distribution and holder analysis">
+      <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
         <Card className="border-border">
           <CardContent className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -157,7 +157,7 @@ export default function SupplyPage() {
   }
 
   return (
-    <DashboardLayout title="Supply Analysis" description="Bitcoin supply distribution and holder analysis">
+    <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
       <div className="space-y-6">
         
         {/* Summary Cards */}
