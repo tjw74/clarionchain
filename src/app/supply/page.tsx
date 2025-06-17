@@ -75,11 +75,11 @@ export default function SupplyPage() {
       try {
         setLoading(true)
         
-        // Fetch supply data from BRK API (8 years of data)
+        // Fetch supply data from BRK API (10 years of data)
         const [lthSupplyHistory, sthSupplyHistory, priceHistory] = await Promise.all([
-          brkClient.fetchLTHSupplyHistory(2920),
-          brkClient.fetchSTHSupplyHistory(2920),
-          brkClient.fetchDailyCloseHistory(2920)
+          brkClient.fetchLTHSupplyHistory(3650),
+          brkClient.fetchSTHSupplyHistory(3650),
+          brkClient.fetchDailyCloseHistory(3650)
         ])
 
         if (lthSupplyHistory.length > 0 && sthSupplyHistory.length > 0 && priceHistory.length > 0) {
