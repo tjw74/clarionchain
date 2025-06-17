@@ -367,7 +367,7 @@ export default function SupplyPage() {
                       dataKey="lthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       dot={false}
                     />
                     <Line
@@ -375,8 +375,7 @@ export default function SupplyPage() {
                       dataKey="price"
                       type="natural"
                       stroke="#3b82f6"
-                      strokeWidth={1.5}
-                      strokeDasharray="5,5"
+                      strokeWidth={1}
                       dot={false}
                       opacity={0.9}
                     />
@@ -462,7 +461,7 @@ export default function SupplyPage() {
                       dataKey="lthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       dot={false}
                     />
                     <Line
@@ -470,8 +469,7 @@ export default function SupplyPage() {
                       dataKey="price"
                       type="natural"
                       stroke="#3b82f6"
-                      strokeWidth={1.5}
-                      strokeDasharray="5,5"
+                      strokeWidth={1}
                       dot={false}
                       opacity={0.9}
                     />
@@ -560,7 +558,7 @@ export default function SupplyPage() {
                       dataKey="sthSupply"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       dot={false}
                     />
                     <Line
@@ -568,8 +566,7 @@ export default function SupplyPage() {
                       dataKey="price"
                       type="natural"
                       stroke="#3b82f6"
-                      strokeWidth={1.5}
-                      strokeDasharray="5,5"
+                      strokeWidth={1}
                       dot={false}
                       opacity={0.9}
                     />
@@ -655,7 +652,7 @@ export default function SupplyPage() {
                       dataKey="sthSupplyUSD"
                       type="natural"
                       stroke="#fbbf24"
-                      strokeWidth={1.5}
+                      strokeWidth={2}
                       dot={false}
                     />
                     <Line
@@ -663,8 +660,7 @@ export default function SupplyPage() {
                       dataKey="price"
                       type="natural"
                       stroke="#3b82f6"
-                      strokeWidth={1.5}
-                      strokeDasharray="5,5"
+                      strokeWidth={1}
                       dot={false}
                       opacity={0.9}
                     />
