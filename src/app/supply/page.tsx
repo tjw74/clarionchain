@@ -41,6 +41,20 @@ const supplyDistributionConfig = {
   },
 }
 
+// Gradient definitions for area fills
+const gradientDefs = (
+  <defs>
+    <linearGradient id="lthGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.8}/>
+      <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.1}/>
+    </linearGradient>
+    <linearGradient id="sthGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="5%" stopColor="var(--chart-3)" stopOpacity={0.8}/>
+      <stop offset="95%" stopColor="var(--chart-3)" stopOpacity={0.1}/>
+    </linearGradient>
+  </defs>
+)
+
 interface SupplyData {
   date: string
   totalSupply: number
@@ -301,6 +315,7 @@ export default function SupplyPage() {
               <CardContent>
                 <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
                   <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    {gradientDefs}
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -317,6 +332,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="left"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -324,6 +341,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -340,12 +359,13 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Line
+                    <Area
                       yAxisId="supply"
                       dataKey="lthSupply"
                       type="natural"
-                      stroke="var(--color-supply)"
+                      stroke="var(--chart-2)"
                       strokeWidth={2}
+                      fill="url(#lthGradient)"
                       dot={false}
                     />
                     <Line
@@ -375,6 +395,7 @@ export default function SupplyPage() {
               <CardContent>
                 <ChartContainer config={lthSupplyConfig} className="h-64 w-full">
                   <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    {gradientDefs}
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -391,6 +412,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="left"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -398,6 +421,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -414,12 +439,13 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Line
+                    <Area
                       yAxisId="supply"
                       dataKey="lthSupplyUSD"
                       type="natural"
-                      stroke="var(--color-supply)"
+                      stroke="var(--chart-2)"
                       strokeWidth={2}
+                      fill="url(#lthGradient)"
                       dot={false}
                     />
                     <Line
@@ -452,6 +478,7 @@ export default function SupplyPage() {
               <CardContent>
                 <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
                   <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    {gradientDefs}
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -468,6 +495,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="left"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatSupply(value)}
                     />
                     <YAxis
@@ -475,6 +504,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -491,12 +522,13 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Line
+                    <Area
                       yAxisId="supply"
                       dataKey="sthSupply"
                       type="natural"
-                      stroke="var(--color-supply)"
+                      stroke="var(--chart-3)"
                       strokeWidth={2}
+                      fill="url(#sthGradient)"
                       dot={false}
                     />
                     <Line
@@ -526,6 +558,7 @@ export default function SupplyPage() {
               <CardContent>
                 <ChartContainer config={sthSupplyConfig} className="h-64 w-full">
                   <ComposedChart data={supplyData} margin={{ left: 12, right: 12 }}>
+                    {gradientDefs}
                     <CartesianGrid vertical={false} />
                     <XAxis
                       dataKey="date"
@@ -542,6 +575,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="left"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatUSD(value)}
                     />
                     <YAxis
@@ -549,6 +584,8 @@ export default function SupplyPage() {
                       tickLine={false}
                       axisLine={false}
                       orientation="right"
+                      scale="log"
+                      domain={['dataMin', 'dataMax']}
                       tickFormatter={(value) => formatPrice(value)}
                     />
                     <ChartTooltip
@@ -565,12 +602,13 @@ export default function SupplyPage() {
                         }}
                       />}
                     />
-                    <Line
+                    <Area
                       yAxisId="supply"
                       dataKey="sthSupplyUSD"
                       type="natural"
-                      stroke="var(--color-supply)"
+                      stroke="var(--chart-3)"
                       strokeWidth={2}
+                      fill="url(#sthGradient)"
                       dot={false}
                     />
                     <Line
