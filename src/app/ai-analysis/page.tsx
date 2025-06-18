@@ -148,7 +148,7 @@ export default function AIAnalysisPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border">
+          <Card className="border-border flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
@@ -191,10 +191,10 @@ export default function AIAnalysisPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Chat Messages Area */}
-                <div className="border rounded-md p-4 min-h-[200px] max-h-[400px] overflow-y-auto bg-muted/20">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="flex flex-col h-full space-y-4">
+                {/* Chat Messages Area - Now expands to fill available space */}
+                <div className="border rounded-md p-4 flex-1 overflow-y-auto bg-muted/20">
                   {messages.length > 0 ? (
                     <div className="space-y-4">
                       {messages.map((message, index) => (
@@ -230,7 +230,7 @@ export default function AIAnalysisPage() {
                   )}
                 </div>
 
-                {/* Chat Input Area */}
+                {/* Chat Input Area - Fixed at bottom */}
                 <div className="flex gap-2">
                   <Input
                     placeholder="Ask a follow-up question about the analysis..."
