@@ -574,31 +574,31 @@ export default function Dashboard() {
                     />} 
                   />
                   <defs>
-                    <linearGradient id="fillSTH" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="fillBitcoinPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="#eab308"
+                        stopColor="#3b82f6"
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor="#eab308"
+                        stopColor="#3b82f6"
                         stopOpacity={0.1}
                       />
                     </linearGradient>
                   </defs>
                   <Area
-                    dataKey="price"
+                    dataKey="bitcoinPrice"
                     type="natural"
-                    fill="url(#fillSTH)"
+                    fill="url(#fillBitcoinPrice)"
                     fillOpacity={0.4}
-                    stroke="#eab308"
+                    stroke="#3b82f6"
                     strokeWidth={2}
                   />
                   <Line
-                    dataKey="bitcoinPrice"
+                    dataKey="price"
                     type="natural"
-                    stroke="#3b82f6"
+                    stroke="#eab308"
                     strokeWidth={1}
                     dot={false}
                   />
