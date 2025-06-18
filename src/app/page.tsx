@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } f
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ComposedChart } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -124,14 +124,16 @@ export default function Dashboard() {
           setPriceChartData(chartData)
         }
 
-        // Prepare STH chart data for 8-year rolling window
-        if (sthRealizedPriceHistory.length > 0) {
-          const sthChartData = sthRealizedPriceHistory.map((price, index) => {
+        // Prepare STH chart data for 8-year rolling window with both STH and Bitcoin price
+        if (sthRealizedPriceHistory.length > 0 && priceHistory.length > 0) {
+          const minLength = Math.min(sthRealizedPriceHistory.length, priceHistory.length)
+          const sthChartData = Array.from({ length: minLength }, (_, index) => {
             const date = new Date()
-            date.setDate(date.getDate() - (sthRealizedPriceHistory.length - 1 - index))
+            date.setDate(date.getDate() - (minLength - 1 - index))
             return {
               date: date.toISOString().split('T')[0],
-              price: price
+              price: sthRealizedPriceHistory[index],
+              bitcoinPrice: priceHistory[index]
             }
           })
           setSthChartData(sthChartData)
@@ -480,9 +482,21 @@ export default function Dashboard() {
                 STH realized price over the last 8 years
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Legend */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="text-sm">STH Cost Basis</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                  <span className="text-sm">Price</span>
+                </div>
+              </div>
+              
               <ChartContainer config={sthChartConfig} className="h-48 w-full">
-                <AreaChart
+                <ComposedChart
                   accessibilityLayer
                   data={sthChartData}
                   margin={{
@@ -513,7 +527,10 @@ export default function Dashboard() {
                     cursor={false} 
                     content={<ChartTooltipContent 
                       className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "STH Cost Basis"]}
+                      formatter={(value: any, name: any) => {
+                        const label = name === "price" ? "STH Cost Basis" : "Bitcoin Price"
+                        return [`$${Number(value).toLocaleString()}`, label]
+                      }}
                       labelFormatter={(label: any) => {
                         const date = new Date(label)
                         return date.toLocaleDateString()
@@ -524,12 +541,12 @@ export default function Dashboard() {
                     <linearGradient id="fillSTH" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="var(--color-price)"
+                        stopColor="#3b82f6"
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor="var(--color-price)"
+                        stopColor="#3b82f6"
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -539,9 +556,17 @@ export default function Dashboard() {
                     type="natural"
                     fill="url(#fillSTH)"
                     fillOpacity={0.4}
-                    stroke="var(--color-price)"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
                   />
-                </AreaChart>
+                  <Line
+                    dataKey="bitcoinPrice"
+                    type="natural"
+                    stroke="#eab308"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                </ComposedChart>
               </ChartContainer>
             </CardContent>
             <CardFooter>
