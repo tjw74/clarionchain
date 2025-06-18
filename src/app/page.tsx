@@ -411,7 +411,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={priceChartConfig} className="h-48 w-full">
+              <ChartContainer config={priceChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
                 <ComposedChart
                   accessibilityLayer
                   data={priceChartData}
@@ -474,6 +474,7 @@ export default function Dashboard() {
                     fillOpacity={0.4}
                     stroke="#3b82f6"
                     strokeWidth={2}
+                    isAnimationActive={false}
                   />
                   <Line
                     dataKey="realizedPrice"
@@ -481,6 +482,7 @@ export default function Dashboard() {
                     stroke="#eab308"
                     strokeWidth={1}
                     dot={false}
+                    isAnimationActive={false}
                   />
                 </ComposedChart>
               </ChartContainer>
@@ -517,7 +519,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={sthChartConfig} className="h-48 w-full">
+              <ChartContainer config={sthChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
                 <ComposedChart
                   accessibilityLayer
                   data={sthChartData}
@@ -580,6 +582,7 @@ export default function Dashboard() {
                     fillOpacity={0.4}
                     stroke="#3b82f6"
                     strokeWidth={2}
+                    isAnimationActive={false}
                   />
                   <Line
                     dataKey="price"
@@ -587,6 +590,7 @@ export default function Dashboard() {
                     stroke="#eab308"
                     strokeWidth={1}
                     dot={false}
+                    isAnimationActive={false}
                   />
                 </ComposedChart>
               </ChartContainer>
