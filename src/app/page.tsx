@@ -108,6 +108,14 @@ export default function Dashboard() {
   // Zoom state for charts
   const [priceZoomDomain, setPriceZoomDomain] = useState<{left?: number, right?: number}>({})
   const [sthZoomDomain, setSthZoomDomain] = useState<{left?: number, right?: number}>({})
+  
+  // Y-axis zoom state for charts
+  const [priceYZoomDomain, setPriceYZoomDomain] = useState<{min?: number, max?: number}>({})
+  const [sthYZoomDomain, setSthYZoomDomain] = useState<{min?: number, max?: number}>({})
+  
+  // Pan state for charts
+  const [pricePanState, setPricePanState] = useState<{isDragging: boolean, startX: number, startY: number, startXDomain?: {left: number, right: number}, startYDomain?: {min: number, max: number}}>({isDragging: false, startX: 0, startY: 0})
+  const [sthPanState, setSthPanState] = useState<{isDragging: boolean, startX: number, startY: number, startXDomain?: {left: number, right: number}, startYDomain?: {min: number, max: number}}>({isDragging: false, startX: 0, startY: 0})
 
   useEffect(() => {
     async function fetchData() {
@@ -347,40 +355,226 @@ export default function Dashboard() {
   // Wheel zoom handlers for Recharts
   const handlePriceChartWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    const { deltaY } = e
+    const { deltaY, shiftKey } = e
     const zoomFactor = deltaY > 0 ? 1.1 : 0.9
     
     if (priceChartData.length === 0) return
     
-    const currentLeft = priceZoomDomain.left ?? 0
-    const currentRight = priceZoomDomain.right ?? priceChartData.length - 1
-    const currentRange = currentRight - currentLeft
-    const newRange = Math.max(10, Math.min(priceChartData.length, currentRange * zoomFactor))
-    const center = (currentLeft + currentRight) / 2
-    
-    const newLeft = Math.max(0, Math.floor(center - newRange / 2))
-    const newRight = Math.min(priceChartData.length - 1, Math.floor(center + newRange / 2))
-    
-    setPriceZoomDomain({ left: newLeft, right: newRight })
+    if (shiftKey) {
+      // Y-axis zoom
+      const visibleData = priceZoomDomain.left !== undefined 
+        ? priceChartData.slice(priceZoomDomain.left, priceZoomDomain.right! + 1)
+        : priceChartData
+      
+      const prices = visibleData.flatMap(d => [d.price, d.realizedPrice])
+      const currentMin = priceYZoomDomain.min ?? Math.min(...prices)
+      const currentMax = priceYZoomDomain.max ?? Math.max(...prices)
+      const currentRange = currentMax - currentMin
+      const center = (currentMin + currentMax) / 2
+      
+      const newRange = Math.max(currentRange * 0.01, currentRange * zoomFactor)
+      const newMin = center - newRange / 2
+      const newMax = center + newRange / 2
+      
+      setPriceYZoomDomain({ min: newMin, max: newMax })
+    } else {
+      // X-axis zoom
+      const currentLeft = priceZoomDomain.left ?? 0
+      const currentRight = priceZoomDomain.right ?? priceChartData.length - 1
+      const currentRange = currentRight - currentLeft
+      const newRange = Math.max(10, Math.min(priceChartData.length, currentRange * zoomFactor))
+      const center = (currentLeft + currentRight) / 2
+      
+      const newLeft = Math.max(0, Math.floor(center - newRange / 2))
+      const newRight = Math.min(priceChartData.length - 1, Math.floor(center + newRange / 2))
+      
+      setPriceZoomDomain({ left: newLeft, right: newRight })
+    }
   }
 
   const handleSTHChartWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    const { deltaY } = e
+    const { deltaY, shiftKey } = e
     const zoomFactor = deltaY > 0 ? 1.1 : 0.9
     
     if (sthChartData.length === 0) return
     
-    const currentLeft = sthZoomDomain.left ?? 0
-    const currentRight = sthZoomDomain.right ?? sthChartData.length - 1
-    const currentRange = currentRight - currentLeft
-    const newRange = Math.max(10, Math.min(sthChartData.length, currentRange * zoomFactor))
-    const center = (currentLeft + currentRight) / 2
+    if (shiftKey) {
+      // Y-axis zoom
+      const visibleData = sthZoomDomain.left !== undefined 
+        ? sthChartData.slice(sthZoomDomain.left, sthZoomDomain.right! + 1)
+        : sthChartData
+      
+      const prices = visibleData.flatMap(d => [d.price, d.bitcoinPrice])
+      const currentMin = sthYZoomDomain.min ?? Math.min(...prices)
+      const currentMax = sthYZoomDomain.max ?? Math.max(...prices)
+      const currentRange = currentMax - currentMin
+      const center = (currentMin + currentMax) / 2
+      
+      const newRange = Math.max(currentRange * 0.01, currentRange * zoomFactor)
+      const newMin = center - newRange / 2
+      const newMax = center + newRange / 2
+      
+      setSthYZoomDomain({ min: newMin, max: newMax })
+    } else {
+      // X-axis zoom
+      const currentLeft = sthZoomDomain.left ?? 0
+      const currentRight = sthZoomDomain.right ?? sthChartData.length - 1
+      const currentRange = currentRight - currentLeft
+      const newRange = Math.max(10, Math.min(sthChartData.length, currentRange * zoomFactor))
+      const center = (currentLeft + currentRight) / 2
+      
+      const newLeft = Math.max(0, Math.floor(center - newRange / 2))
+      const newRight = Math.min(sthChartData.length - 1, Math.floor(center + newRange / 2))
+      
+      setSthZoomDomain({ left: newLeft, right: newRight })
+    }
+  }
+
+  // Mouse pan handlers for Price chart
+  const handlePriceMouseDown = (e: React.MouseEvent) => {
+    const currentXDomain = {
+      left: priceZoomDomain.left ?? 0,
+      right: priceZoomDomain.right ?? priceChartData.length - 1
+    }
     
-    const newLeft = Math.max(0, Math.floor(center - newRange / 2))
-    const newRight = Math.min(sthChartData.length - 1, Math.floor(center + newRange / 2))
+    // Always enable Y-axis interaction - calculate current Y domain from visible data
+    const visibleData = priceZoomDomain.left !== undefined 
+      ? priceChartData.slice(priceZoomDomain.left, priceZoomDomain.right! + 1)
+      : priceChartData
+    const prices = visibleData.flatMap(d => [d.price, d.realizedPrice])
+    
+    const currentYDomain = priceYZoomDomain.min !== undefined && priceYZoomDomain.max !== undefined ? {
+      min: priceYZoomDomain.min,
+      max: priceYZoomDomain.max
+    } : {
+      min: Math.min(...prices),
+      max: Math.max(...prices)
+    }
+    
+    setPricePanState({
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startXDomain: currentXDomain,
+      startYDomain: currentYDomain
+    })
+  }
+
+  const handlePriceMouseMove = (e: React.MouseEvent) => {
+    if (!pricePanState.isDragging || !pricePanState.startXDomain || !pricePanState.startYDomain) return
+    
+    const deltaX = e.clientX - pricePanState.startX
+    const deltaY = e.clientY - pricePanState.startY
+    
+    // X-axis panning
+    const xRange = pricePanState.startXDomain.right - pricePanState.startXDomain.left
+    const xSensitivity = xRange / 500 // Adjust sensitivity
+    const xOffset = Math.round(deltaX * xSensitivity)
+    
+    const newLeft = Math.max(0, pricePanState.startXDomain.left - xOffset)
+    const newRight = Math.min(priceChartData.length - 1, pricePanState.startXDomain.right - xOffset)
+    
+    setPriceZoomDomain({ left: newLeft, right: newRight })
+    
+    // Y-axis panning - Chart.js style pixel-based movement
+    // Chart height is 192px (h-48), so we scale mouse movement to chart coordinates
+    const chartHeight = 192 // h-48 in pixels
+    const yRange = pricePanState.startYDomain.max - pricePanState.startYDomain.min
+    
+    // Convert pixel movement to log-scale value movement
+    // Since we use log scale, we need to work in log space
+    const logMin = Math.log10(pricePanState.startYDomain.min)
+    const logMax = Math.log10(pricePanState.startYDomain.max)
+    const logRange = logMax - logMin
+    
+    // Scale pixel movement to log range (inverted because Y increases downward)
+    const logOffset = -(deltaY / chartHeight) * logRange * 0.5 // 0.5 for reasonable sensitivity
+    
+    const newLogMin = logMin + logOffset
+    const newLogMax = logMax + logOffset
+    
+    setPriceYZoomDomain({
+      min: Math.pow(10, newLogMin),
+      max: Math.pow(10, newLogMax)
+    })
+  }
+
+  const handlePriceMouseUp = () => {
+    setPricePanState(prev => ({ ...prev, isDragging: false }))
+  }
+
+  // Mouse pan handlers for STH chart
+  const handleSTHMouseDown = (e: React.MouseEvent) => {
+    const currentXDomain = {
+      left: sthZoomDomain.left ?? 0,
+      right: sthZoomDomain.right ?? sthChartData.length - 1
+    }
+    
+    // Always enable Y-axis interaction - calculate current Y domain from visible data
+    const visibleData = sthZoomDomain.left !== undefined 
+      ? sthChartData.slice(sthZoomDomain.left, sthZoomDomain.right! + 1)
+      : sthChartData
+    const prices = visibleData.flatMap(d => [d.price, d.bitcoinPrice])
+    
+    const currentYDomain = sthYZoomDomain.min !== undefined && sthYZoomDomain.max !== undefined ? {
+      min: sthYZoomDomain.min,
+      max: sthYZoomDomain.max
+    } : {
+      min: Math.min(...prices),
+      max: Math.max(...prices)
+    }
+    
+    setSthPanState({
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startXDomain: currentXDomain,
+      startYDomain: currentYDomain
+    })
+  }
+
+  const handleSTHMouseMove = (e: React.MouseEvent) => {
+    if (!sthPanState.isDragging || !sthPanState.startXDomain || !sthPanState.startYDomain) return
+    
+    const deltaX = e.clientX - sthPanState.startX
+    const deltaY = e.clientY - sthPanState.startY
+    
+    // X-axis panning
+    const xRange = sthPanState.startXDomain.right - sthPanState.startXDomain.left
+    const xSensitivity = xRange / 500 // Adjust sensitivity
+    const xOffset = Math.round(deltaX * xSensitivity)
+    
+    const newLeft = Math.max(0, sthPanState.startXDomain.left - xOffset)
+    const newRight = Math.min(sthChartData.length - 1, sthPanState.startXDomain.right - xOffset)
     
     setSthZoomDomain({ left: newLeft, right: newRight })
+    
+    // Y-axis panning - Chart.js style pixel-based movement
+    // Chart height is 192px (h-48), so we scale mouse movement to chart coordinates
+    const chartHeight = 192 // h-48 in pixels
+    const yRange = sthPanState.startYDomain.max - sthPanState.startYDomain.min
+    
+    // Convert pixel movement to log-scale value movement
+    // Since we use log scale, we need to work in log space
+    const logMin = Math.log10(sthPanState.startYDomain.min)
+    const logMax = Math.log10(sthPanState.startYDomain.max)
+    const logRange = logMax - logMin
+    
+    // Scale pixel movement to log range (inverted because Y increases downward)
+    const logOffset = -(deltaY / chartHeight) * logRange * 0.5 // 0.5 for reasonable sensitivity
+    
+    const newLogMin = logMin + logOffset
+    const newLogMax = logMax + logOffset
+    
+    setSthYZoomDomain({
+      min: Math.pow(10, newLogMin),
+      max: Math.pow(10, newLogMax)
+    })
+  }
+
+  const handleSTHMouseUp = () => {
+    setSthPanState(prev => ({ ...prev, isDragging: false }))
   }
 
   const priceTrend = calculatePriceTrend()
@@ -454,7 +648,14 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div onWheel={handlePriceChartWheel}>
+              <div 
+                onWheel={handlePriceChartWheel}
+                onMouseDown={handlePriceMouseDown}
+                onMouseMove={handlePriceMouseMove}
+                onMouseUp={handlePriceMouseUp}
+                onMouseLeave={handlePriceMouseUp}
+                style={{ cursor: pricePanState.isDragging ? 'grabbing' : 'grab' }}
+              >
                 <ChartContainer config={priceChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
                   <ComposedChart
                     accessibilityLayer
@@ -481,7 +682,10 @@ export default function Dashboard() {
                   />
                   <YAxis 
                     scale="log" 
-                    domain={['dataMin', 'dataMax']}
+                    domain={priceYZoomDomain.min !== undefined && priceYZoomDomain.max !== undefined
+                      ? [priceYZoomDomain.min, priceYZoomDomain.max] 
+                      : ['dataMin', 'dataMax']
+                    }
                     tickFormatter={(value: any) => formatShortUSD(Number(value))}
                     axisLine={false}
                     tickLine={false}
@@ -568,7 +772,14 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div onWheel={handleSTHChartWheel}>
+              <div 
+                onWheel={handleSTHChartWheel}
+                onMouseDown={handleSTHMouseDown}
+                onMouseMove={handleSTHMouseMove}
+                onMouseUp={handleSTHMouseUp}
+                onMouseLeave={handleSTHMouseUp}
+                style={{ cursor: sthPanState.isDragging ? 'grabbing' : 'grab' }}
+              >
                 <ChartContainer config={sthChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
                   <ComposedChart
                     accessibilityLayer
@@ -595,7 +806,10 @@ export default function Dashboard() {
                   />
                   <YAxis 
                     scale="log" 
-                    domain={['dataMin', 'dataMax']}
+                    domain={sthYZoomDomain.min !== undefined && sthYZoomDomain.max !== undefined
+                      ? [sthYZoomDomain.min, sthYZoomDomain.max] 
+                      : ['dataMin', 'dataMax']
+                    }
                     tickFormatter={(value: any) => formatShortUSD(Number(value))}
                     axisLine={false}
                     tickLine={false}
