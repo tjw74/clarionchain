@@ -19,7 +19,8 @@ import {
   Layers,
   Calculator,
   Bot,
-  Combine
+  Combine,
+  Gauge
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -46,6 +47,11 @@ const navigation = [
     name: "Dashboard",
     href: "/",
     icon: Home,
+  },
+  {
+    name: "Dynamics",
+    href: "/dynamics",
+    icon: Gauge,
   },
   {
     name: "AI Analysis",
