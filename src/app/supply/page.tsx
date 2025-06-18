@@ -25,22 +25,23 @@ import {
   Filler,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
-import zoomPlugin from 'chartjs-plugin-zoom'
 
 if (typeof window !== 'undefined') {
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    LogarithmicScale,
-    TimeScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler,
-    zoomPlugin
-  )
+  import('chartjs-plugin-zoom').then((zoomPlugin) => {
+    ChartJS.register(
+      CategoryScale,
+      LinearScale,
+      LogarithmicScale,
+      TimeScale,
+      PointElement,
+      LineElement,
+      Title,
+      Tooltip,
+      Legend,
+      Filler,
+      zoomPlugin.default
+    )
+  })
 }
 
 interface SupplyData {
