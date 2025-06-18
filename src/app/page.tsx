@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } f
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ComposedChart, Brush } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ComposedChart } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -104,6 +104,10 @@ export default function Dashboard() {
   const [, setError] = useState<string | null>(null)
   const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number, realizedPrice: number}>>([])
   const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number, bitcoinPrice: number}>>([])
+  
+  // Zoom state for charts
+  const [priceZoomDomain, setPriceZoomDomain] = useState<{left?: number, right?: number}>({})
+  const [sthZoomDomain, setSthZoomDomain] = useState<{left?: number, right?: number}>({})
 
   useEffect(() => {
     async function fetchData() {
@@ -340,6 +344,45 @@ export default function Dashboard() {
     }
   }
 
+  // Wheel zoom handlers for Recharts
+  const handlePriceChartWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const { deltaY } = e
+    const zoomFactor = deltaY > 0 ? 1.1 : 0.9
+    
+    if (priceChartData.length === 0) return
+    
+    const currentLeft = priceZoomDomain.left ?? 0
+    const currentRight = priceZoomDomain.right ?? priceChartData.length - 1
+    const currentRange = currentRight - currentLeft
+    const newRange = Math.max(10, Math.min(priceChartData.length, currentRange * zoomFactor))
+    const center = (currentLeft + currentRight) / 2
+    
+    const newLeft = Math.max(0, Math.floor(center - newRange / 2))
+    const newRight = Math.min(priceChartData.length - 1, Math.floor(center + newRange / 2))
+    
+    setPriceZoomDomain({ left: newLeft, right: newRight })
+  }
+
+  const handleSTHChartWheel = (e: React.WheelEvent) => {
+    e.preventDefault()
+    const { deltaY } = e
+    const zoomFactor = deltaY > 0 ? 1.1 : 0.9
+    
+    if (sthChartData.length === 0) return
+    
+    const currentLeft = sthZoomDomain.left ?? 0
+    const currentRight = sthZoomDomain.right ?? sthChartData.length - 1
+    const currentRange = currentRight - currentLeft
+    const newRange = Math.max(10, Math.min(sthChartData.length, currentRange * zoomFactor))
+    const center = (currentLeft + currentRight) / 2
+    
+    const newLeft = Math.max(0, Math.floor(center - newRange / 2))
+    const newRight = Math.min(sthChartData.length - 1, Math.floor(center + newRange / 2))
+    
+    setSthZoomDomain({ left: newLeft, right: newRight })
+  }
+
   const priceTrend = calculatePriceTrend()
   const sthTrend = calculateSTHTrend()
 
@@ -411,16 +454,20 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={priceChartConfig} className="h-60 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
-                <ComposedChart
-                  accessibilityLayer
-                  data={priceChartData}
-                  margin={{
-                    left: 12,
-                    right: 12,
-                  }}
-                  syncId="priceCharts"
-                >
+              <div onWheel={handlePriceChartWheel}>
+                <ChartContainer config={priceChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
+                  <ComposedChart
+                    accessibilityLayer
+                    data={priceZoomDomain.left !== undefined 
+                      ? priceChartData.slice(priceZoomDomain.left, priceZoomDomain.right! + 1)
+                      : priceChartData
+                    }
+                    margin={{
+                      left: 12,
+                      right: 12,
+                    }}
+                    syncId="priceCharts"
+                  >
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -485,15 +532,9 @@ export default function Dashboard() {
                     dot={false}
                     isAnimationActive={false}
                   />
-                  <Brush 
-                    dataKey="date" 
-                    height={30}
-                    stroke="#3b82f6"
-                    fill="#3b82f6"
-                    fillOpacity={0.1}
-                  />
                 </ComposedChart>
               </ChartContainer>
+              </div>
             </CardContent>
             <CardFooter>
               <div className="flex w-full items-start justify-between gap-2 text-sm">
@@ -527,16 +568,20 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={sthChartConfig} className="h-60 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
-                <ComposedChart
-                  accessibilityLayer
-                  data={sthChartData}
-                  margin={{
-                    left: 12,
-                    right: 12,
-                  }}
-                  syncId="sthCharts"
-                >
+              <div onWheel={handleSTHChartWheel}>
+                <ChartContainer config={sthChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
+                  <ComposedChart
+                    accessibilityLayer
+                    data={sthZoomDomain.left !== undefined 
+                      ? sthChartData.slice(sthZoomDomain.left, sthZoomDomain.right! + 1)
+                      : sthChartData
+                    }
+                    margin={{
+                      left: 12,
+                      right: 12,
+                    }}
+                    syncId="sthCharts"
+                  >
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -601,15 +646,9 @@ export default function Dashboard() {
                     dot={false}
                     isAnimationActive={false}
                   />
-                  <Brush 
-                    dataKey="date" 
-                    height={30}
-                    stroke="#eab308"
-                    fill="#eab308"
-                    fillOpacity={0.1}
-                  />
                 </ComposedChart>
               </ChartContainer>
+              </div>
             </CardContent>
             <CardFooter>
               <div className="flex w-full items-start justify-between gap-2 text-sm">
