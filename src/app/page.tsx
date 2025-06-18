@@ -78,7 +78,11 @@ const mockMetrics: MetricCard[] = [
 const priceChartConfig = {
   price: {
     label: "Bitcoin Price",
-    color: "var(--chart-1)",
+    color: "#3b82f6",
+  },
+  realizedPrice: {
+    label: "Realized Price", 
+    color: "#eab308",
   },
 } satisfies ChartConfig
 
@@ -86,7 +90,11 @@ const priceChartConfig = {
 const sthChartConfig = {
   price: {
     label: "STH Cost Basis",
-    color: "var(--chart-1)",
+    color: "#eab308",
+  },
+  bitcoinPrice: {
+    label: "Bitcoin Price",
+    color: "#3b82f6",
   },
 } satisfies ChartConfig
 
@@ -94,8 +102,8 @@ export default function Dashboard() {
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
-  const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number}>>([])
-  const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number}>>([])
+  const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number, realizedPrice: number}>>([])
+  const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number, bitcoinPrice: number}>>([])
 
   useEffect(() => {
     async function fetchData() {
@@ -106,34 +114,39 @@ export default function Dashboard() {
           brkClient.fetchMarketCapHistory(2920),
           brkClient.fetchRealizedPriceHistory(2920),
           brkClient.fetchRealizedCapHistory(2920),
-          brkClient.fetchSTHRealizedPriceHistory(2920),
+          brkClient.fetchSTHRealizedPriceHistory(730), // 2 years of data for STH chart
           brkClient.fetchSTHRealizedCapHistory(2920),
-          brkClient.fetchSTHSupplyHistory(2920)
+          brkClient.fetchSTHSupplyHistory(730) // 2 years of data for STH chart
         ]);
 
-        // Prepare chart data for 8-year rolling window
-        if (priceHistory.length > 0) {
-          const chartData = priceHistory.map((price, index) => {
+        // Prepare chart data for 8-year rolling window with both price and realized price
+        if (priceHistory.length > 0 && realizedPriceHistory.length > 0) {
+          const minLength = Math.min(priceHistory.length, realizedPriceHistory.length)
+          const chartData = Array.from({ length: minLength }, (_, index) => {
             const date = new Date()
-            date.setDate(date.getDate() - (priceHistory.length - 1 - index))
+            date.setDate(date.getDate() - (minLength - 1 - index))
             return {
               date: date.toISOString().split('T')[0],
-              price: price
+              price: priceHistory[index],
+              realizedPrice: realizedPriceHistory[index]
             }
           })
           setPriceChartData(chartData)
         }
 
-        // Prepare STH chart data for 8-year rolling window with both STH and Bitcoin price
+        // Prepare STH chart data for 2-year rolling window with both STH and Bitcoin price
         if (sthRealizedPriceHistory.length > 0 && priceHistory.length > 0) {
-          const minLength = Math.min(sthRealizedPriceHistory.length, priceHistory.length)
-          const sthChartData = Array.from({ length: minLength }, (_, index) => {
+          // Use the STH data length (730 days) and align with the most recent Bitcoin price data
+          const sthLength = sthRealizedPriceHistory.length
+          const priceStartIndex = Math.max(0, priceHistory.length - sthLength)
+          
+          const sthChartData = Array.from({ length: sthLength }, (_, index) => {
             const date = new Date()
-            date.setDate(date.getDate() - (minLength - 1 - index))
+            date.setDate(date.getDate() - (sthLength - 1 - index))
             return {
               date: date.toISOString().split('T')[0],
               price: sthRealizedPriceHistory[index],
-              bitcoinPrice: priceHistory[index]
+              bitcoinPrice: priceHistory[priceStartIndex + index] || 0
             }
           })
           setSthChartData(sthChartData)
@@ -397,9 +410,21 @@ export default function Dashboard() {
                 Bitcoin price trend over the last 8 years
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Legend */}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="text-sm">Bitcoin Price</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                  <span className="text-sm">Realized Price</span>
+                </div>
+              </div>
+              
               <ChartContainer config={priceChartConfig} className="h-48 w-full">
-                <AreaChart
+                <ComposedChart
                   accessibilityLayer
                   data={priceChartData}
                   margin={{
@@ -430,7 +455,10 @@ export default function Dashboard() {
                     cursor={false} 
                     content={<ChartTooltipContent 
                       className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Bitcoin Price"]}
+                      formatter={(value: any, name: any) => {
+                        const label = name === "price" ? "Bitcoin Price" : "Realized Price"
+                        return [`$${Number(value).toLocaleString()}`, label]
+                      }}
                       labelFormatter={(label: any) => {
                         const date = new Date(label)
                         return date.toLocaleDateString()
@@ -457,8 +485,16 @@ export default function Dashboard() {
                     fill="url(#fillPrice)"
                     fillOpacity={0.4}
                     stroke="#3b82f6"
+                    strokeWidth={2}
                   />
-                </AreaChart>
+                  <Line
+                    dataKey="realizedPrice"
+                    type="natural"
+                    stroke="#eab308"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                </ComposedChart>
               </ChartContainer>
             </CardContent>
             <CardFooter>
@@ -479,19 +515,19 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>STH Cost Basis</CardTitle>
               <CardDescription>
-                STH realized price over the last 8 years
+                STH realized price over the last 2 years
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Legend */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
                   <span className="text-sm">STH Cost Basis</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-sm">Price</span>
+                  <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="text-sm">Bitcoin Price</span>
                 </div>
               </div>
               
@@ -541,12 +577,12 @@ export default function Dashboard() {
                     <linearGradient id="fillSTH" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="#3b82f6"
+                        stopColor="#eab308"
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor="#3b82f6"
+                        stopColor="#eab308"
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -556,13 +592,13 @@ export default function Dashboard() {
                     type="natural"
                     fill="url(#fillSTH)"
                     fillOpacity={0.4}
-                    stroke="#3b82f6"
+                    stroke="#eab308"
                     strokeWidth={2}
                   />
                   <Line
                     dataKey="bitcoinPrice"
                     type="natural"
-                    stroke="#eab308"
+                    stroke="#3b82f6"
                     strokeWidth={1}
                     dot={false}
                   />
@@ -576,7 +612,7 @@ export default function Dashboard() {
                     {sthTrend.isPositive ? 'Trending up' : 'Trending down'} by {sthTrend.percentage.toFixed(1)}% {sthTrend.period} <TrendingUp className="h-4 w-4" />
                   </div>
                   <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                    8-year rolling window
+                    2-year rolling window
                   </div>
                 </div>
               </div>
