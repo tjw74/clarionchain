@@ -601,11 +601,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           pinch: {
             enabled: true,
           },
-          mode: 'x' as const,
+          mode: 'xy' as const,
         },
         pan: {
           enabled: true,
-          mode: 'x' as const,
+          mode: 'xy' as const,
         },
       },
     },
@@ -719,11 +719,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           pinch: {
             enabled: true,
           },
-          mode: 'x' as const,
+          mode: 'xy' as const,
         },
         pan: {
           enabled: true,
-          mode: 'x' as const,
+          mode: 'xy' as const,
         },
       },
     },
