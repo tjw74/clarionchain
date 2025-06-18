@@ -511,7 +511,7 @@ export default function Dashboard() {
           
           <Card className="border-border">
             <CardHeader>
-              <CardTitle>STH Cost Basis</CardTitle>
+              <CardTitle>STH Cost Basis : Realized Price</CardTitle>
               <CardDescription>
                 STH realized price over the last 2 years
               </CardDescription>
