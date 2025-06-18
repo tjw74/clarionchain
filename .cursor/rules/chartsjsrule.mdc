@@ -65,6 +65,36 @@ alwaysApply: true
 6. Format Y-axis labels using short notation
 7. Test interactivity and visual consistency
 
+### Legend Implementation
+- NEVER use Chart.js built-in legends (always set display: false)
+- ALWAYS create custom HTML legends positioned below charts
+- Legend dots: Use HTML/CSS circles with 6px radius, solid fill
+- Legend positioning: Lower right alignment with proper spacing
+- Legend styling: White text (#ffffff) with colored circle indicators
+
+### Y-Axis Even Spacing (Logarithmic)
+- ALWAYS implement custom tick generation for logarithmic scales
+- Use afterBuildTicks callback to override default Chart.js tick spacing
+- Calculate evenly spaced logarithmic ticks using:
+  - Determine log range: logMin to logMax
+  - Add 10% padding: paddedLogMin, paddedLogMax  
+  - Generate 6-8 evenly spaced ticks across the padded range
+  - Use Math.pow(10, logValue) to convert back to actual values
+- Set explicit min/max bounds on Y-axis using calculated padded values
+- Example implementation:
+  ```javascript
+  afterBuildTicks: function(axis) {
+    axis.ticks = calculatedLogTicks.map(value => ({ value }))
+  },
+  min: Math.pow(10, paddedLogMin),
+  max: Math.pow(10, paddedLogMax)
+  ```
+
+### Legend and Y-Axis Standards
+- Legend implementation: Always disable Chart.js legends (display: false) and create custom HTML legends with solid 6px circle dots positioned in lower right
+- Y-axis spacing: Always implement custom logarithmic tick generation using afterBuildTicks callback with evenly spaced logarithmic intervals and explicit min/max bounds
+- These standards apply to ALL charts to ensure visual consistency
+
 ### Standard Chart.js Template
 const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false

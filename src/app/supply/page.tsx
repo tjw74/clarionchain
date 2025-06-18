@@ -1,18 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, TrendingDown, Layers, Users, Clock, Coins } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus, Users, Clock } from "lucide-react"
+import { useEffect, useState } from "react"
 import { brkClient } from "@/lib/api/brkClient"
 import dynamic from 'next/dynamic'
 
-// Dynamically import Chart.js to avoid SSR issues
 const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false
 })
 
-// Import Chart.js components
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,7 +27,6 @@ import {
 import 'chartjs-adapter-date-fns'
 import zoomPlugin from 'chartjs-plugin-zoom'
 
-// Register Chart.js components
 if (typeof window !== 'undefined') {
   ChartJS.register(
     CategoryScale,
@@ -59,50 +56,39 @@ interface SupplyData {
 export default function SupplyPage() {
   const [supplyData, setSupplyData] = useState<SupplyData[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchSupplyData() {
       try {
-        setLoading(true)
-        
-        // Fetch supply data from BRK API (10 years of data)
-        const [lthSupplyHistory, sthSupplyHistory, priceHistory] = await Promise.all([
-          brkClient.fetchLTHSupplyHistory(3650),
-          brkClient.fetchSTHSupplyHistory(3650),
-          brkClient.fetchDailyCloseHistory(3650)
+        const [lthSupply, sthSupply, priceHistory] = await Promise.all([
+          brkClient.fetchLTHSupplyHistory(2555),
+          brkClient.fetchSTHSupplyHistory(2555),
+          brkClient.fetchDailyCloseHistory(2555)
         ])
 
-        if (lthSupplyHistory.length > 0 && sthSupplyHistory.length > 0 && priceHistory.length > 0) {
-          const data: SupplyData[] = []
-          const dataLength = Math.min(lthSupplyHistory.length, sthSupplyHistory.length, priceHistory.length)
+        const combinedData: SupplyData[] = []
+        const endDate = new Date()
+        
+        for (let i = 0; i < Math.min(lthSupply.length, sthSupply.length, priceHistory.length); i++) {
+          const date = new Date(endDate)
+          date.setDate(date.getDate() - (lthSupply.length - 1 - i))
           
-          for (let i = 0; i < dataLength; i++) {
-            const date = new Date()
-            date.setDate(date.getDate() - (dataLength - 1 - i))
-            
-            // Convert from satoshis to BTC
-            const lthSupplyBTC = lthSupplyHistory[i] / 100000000
-            const sthSupplyBTC = sthSupplyHistory[i] / 100000000
-            const totalSupplyBTC = lthSupplyBTC + sthSupplyBTC
-            const price = priceHistory[i]
-            
-            data.push({
-              date: date.toISOString().split('T')[0],
-              totalSupply: totalSupplyBTC,
-              lthSupply: lthSupplyBTC,
-              sthSupply: sthSupplyBTC,
-              lthSupplyUSD: lthSupplyBTC * price,
-              sthSupplyUSD: sthSupplyBTC * price,
-              price: price
-            })
-          }
-          
-          setSupplyData(data)
+          const price = priceHistory[i]
+          const totalSupply = lthSupply[i] + sthSupply[i] // Calculate total supply
+          combinedData.push({
+            date: date.toISOString().split('T')[0],
+            totalSupply: totalSupply,
+            lthSupply: lthSupply[i],
+            sthSupply: sthSupply[i],
+            lthSupplyUSD: lthSupply[i] * price,
+            sthSupplyUSD: sthSupply[i] * price,
+            price: price
+          })
         }
-      } catch (err) {
-        console.error('Error fetching supply data:', err)
-        setError('Failed to fetch supply data')
+
+        setSupplyData(combinedData)
+      } catch (error) {
+        console.error('Failed to fetch supply data:', error)
       } finally {
         setLoading(false)
       }
@@ -111,27 +97,34 @@ export default function SupplyPage() {
     fetchSupplyData()
   }, [])
 
-  // Calculate trends for the last 30 days
-  const calculateTrend = (data: SupplyData[], key: keyof SupplyData) => {
-    if (data.length < 31) return { percentage: 0, isPositive: true }
-    
-    const latest = data[data.length - 1][key] as number
-    const monthAgo = data[data.length - 31][key] as number
-    
-    if (monthAgo === 0 || latest === 0) return { percentage: 0, isPositive: true }
-    
-    const change = ((latest - monthAgo) / monthAgo) * 100
-    return {
-      percentage: Math.abs(change),
-      isPositive: change > 0
-    }
+  if (loading) {
+    return (
+      <DashboardLayout title="Supply Analysis">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading supply data...</div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
-  const totalSupplyTrend = calculateTrend(supplyData, 'totalSupply')
-  const lthSupplyTrend = calculateTrend(supplyData, 'lthSupply')
-  const sthSupplyTrend = calculateTrend(supplyData, 'sthSupply')
+  const calculateTrend = (data: SupplyData[], key: keyof SupplyData) => {
+    if (data.length < 2) return 0
+    const recent = data[data.length - 1][key] as number
+    const previous = data[data.length - 2][key] as number
+    return ((recent - previous) / previous) * 100
+  }
 
-  // Format functions following chart rules
+  const lthTrend = calculateTrend(supplyData, 'lthSupply')
+  const sthTrend = calculateTrend(supplyData, 'sthSupply')
+  const totalTrend = calculateTrend(supplyData, 'totalSupply')
+  const priceTrend = calculateTrend(supplyData, 'price')
+
+  const getTrendIcon = (trend: number) => {
+    if (trend > 0.1) return <TrendingUp className="h-4 w-4 text-green-500" />
+    if (trend < -0.1) return <TrendingDown className="h-4 w-4 text-red-500" />
+    return <Minus className="h-4 w-4 text-gray-500" />
+  }
+
   const formatShort = (value: number) => {
     if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`
     if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`
@@ -141,11 +134,19 @@ export default function SupplyPage() {
   }
 
   const formatSupply = (value: number) => {
-    return `${(value / 1000000).toFixed(2)}M BTC`
+    // Convert from satoshis to BTC first
+    const btcValue = value / 1e8
+    if (btcValue >= 1e6) return `${(btcValue / 1e6).toFixed(0)}M BTC`
+    if (btcValue >= 1e3) return `${(btcValue / 1e3).toFixed(0)}K BTC`
+    return `${btcValue.toFixed(0)} BTC`
   }
 
   const formatSupplyShort = (value: number) => {
-    return `${(value / 1000000).toFixed(0)}M`
+    // Convert from satoshis to BTC first
+    const btcValue = value / 1e8
+    if (btcValue >= 1e6) return `${(btcValue / 1e6).toFixed(0)}M`
+    if (btcValue >= 1e3) return `${(btcValue / 1e3).toFixed(0)}K`
+    return btcValue.toFixed(0)
   }
 
   const formatPrice = (value: number) => {
@@ -153,150 +154,113 @@ export default function SupplyPage() {
   }
 
   const formatPriceShort = (value: number) => {
-    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
-    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`
     return `$${Math.round(value)}`
   }
 
-  // Get latest values for summary cards
-  const latestData = supplyData[supplyData.length - 1]
-  const lthPercentage = latestData ? (latestData.lthSupply / latestData.totalSupply * 100) : 0
-  const sthPercentage = latestData ? (latestData.sthSupply / latestData.totalSupply * 100) : 0
-
-  if (loading) {
-    return (
-      <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading supply data...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
+  // Calculate logarithmic ticks for even spacing
+  // This ensures Y-axis ticks are visually evenly spaced on logarithmic scale
+  const calculateLogTicks = (values: number[]) => {
+    // Find the min/max values in the dataset (filter out zeros for log scale)
+    const minVal = Math.min(...values.filter(v => v > 0))
+    const maxVal = Math.max(...values)
+    
+    // Convert to logarithmic space
+    const logMin = Math.log10(minVal)
+    const logMax = Math.log10(maxVal)
+    const logRange = logMax - logMin
+    
+    // Add 10% padding on both ends for better visualization
+    const paddedLogMin = logMin - (logRange * 0.1)
+    const paddedLogMax = logMax + (logRange * 0.1)
+    
+    // Generate 7 evenly spaced ticks in logarithmic space (0-6 range)
+    const ticks = []
+    for (let i = 0; i <= 6; i++) {
+      const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 6)
+      // Convert back to linear space
+      ticks.push(Math.pow(10, logValue))
+    }
+    
+    return { ticks, paddedLogMin, paddedLogMax }
   }
 
-  if (error) {
-    return (
-      <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
-        <Card className="border-border">
-          <CardContent className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <p className="text-red-500 mb-2">Error loading supply data</p>
-              <p className="text-muted-foreground text-sm">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardLayout>
-    )
-  }
+  // Calculate ticks for LTH Supply chart (left Y-axis: supply, right Y-axis: price)
+  const lthSupplyValues = supplyData.map(d => d.lthSupply)
+  const lthPriceValues = supplyData.map(d => d.price)
+  const lthSupplyTicks = calculateLogTicks(lthSupplyValues)
+  const lthPriceTicks = calculateLogTicks(lthPriceValues)
+
+  // Calculate ticks for STH Supply chart (left Y-axis: supply, right Y-axis: price)
+  const sthSupplyValues = supplyData.map(d => d.sthSupply)
+  const sthPriceValues = supplyData.map(d => d.price)
+  const sthSupplyTicks = calculateLogTicks(sthSupplyValues)
+  const sthPriceTicks = calculateLogTicks(sthPriceValues)
 
   return (
-    <DashboardLayout title="Supply" description="Bitcoin supply distribution and holder analysis">
+    <DashboardLayout title="Supply Analysis">
       <div className="space-y-6">
-        
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Supply</CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {latestData ? formatSupply(latestData.totalSupply) : 'Loading...'}
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Supply</p>
+                  <p className="text-2xl font-bold">
+                    {supplyData.length > 0 ? formatSupply(supplyData[supplyData.length - 1].totalSupply) : '0M BTC'}
+                  </p>
+                </div>
+                {getTrendIcon(totalTrend)}
               </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                {totalSupplyTrend.isPositive ? (
-                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                )}
-                <span className={totalSupplyTrend.isPositive ? 'text-green-500' : 'text-red-500'}>
-                  {totalSupplyTrend.percentage.toFixed(2)}%
-                </span>
-                <span className="ml-1">from last month</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Circulating Bitcoin supply
-              </p>
             </CardContent>
           </Card>
 
           <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">LTH Supply</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {latestData ? formatSupply(latestData.lthSupply) : 'Loading...'}
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">LTH Supply</p>
+                  <p className="text-2xl font-bold">
+                    {supplyData.length > 0 ? formatSupply(supplyData[supplyData.length - 1].lthSupply) : '0M BTC'}
+                  </p>
+                </div>
+                {getTrendIcon(lthTrend)}
               </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                {lthSupplyTrend.isPositive ? (
-                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                )}
-                <span className={lthSupplyTrend.isPositive ? 'text-green-500' : 'text-red-500'}>
-                  {lthSupplyTrend.percentage.toFixed(2)}%
-                </span>
-                <span className="ml-1">from last month</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {lthPercentage.toFixed(1)}% of total supply
-              </p>
             </CardContent>
           </Card>
 
           <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">STH Supply</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {latestData ? formatSupply(latestData.sthSupply) : 'Loading...'}
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">STH Supply</p>
+                  <p className="text-2xl font-bold">
+                    {supplyData.length > 0 ? formatSupply(supplyData[supplyData.length - 1].sthSupply) : '0M BTC'}
+                  </p>
+                </div>
+                {getTrendIcon(sthTrend)}
               </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                {sthSupplyTrend.isPositive ? (
-                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                )}
-                <span className={sthSupplyTrend.isPositive ? 'text-green-500' : 'text-red-500'}>
-                  {sthSupplyTrend.percentage.toFixed(2)}%
-                </span>
-                <span className="ml-1">from last month</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {sthPercentage.toFixed(1)}% of total supply
-              </p>
             </CardContent>
           </Card>
 
           <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">LTH Dominance</CardTitle>
-              <Layers className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {lthPercentage.toFixed(1)}%
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Bitcoin Price</p>
+                  <p className="text-2xl font-bold">
+                    {supplyData.length > 0 ? formatPrice(supplyData[supplyData.length - 1].price) : '$0'}
+                  </p>
+                </div>
+                {getTrendIcon(priceTrend)}
               </div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <span className="text-muted-foreground">
-                  Long-term holder ratio
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Held for 155+ days
-              </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts Section */}
+        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-border">
             <CardHeader>
@@ -348,16 +312,7 @@ export default function SupplyPage() {
                       },
                       plugins: {
                         legend: {
-                          display: true,
-                          position: 'bottom',
-                          align: 'end',
-                          labels: {
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            boxWidth: 6,
-                            boxHeight: 6,
-                            color: '#ffffff',
-                          },
+                          display: false,
                         },
                         tooltip: {
                           backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -421,27 +376,50 @@ export default function SupplyPage() {
                             callback: function(value: any) {
                               return formatSupplyShort(value)
                             },
-                            maxTicksLimit: 8,
+                          },
+                          // Set explicit bounds using calculated padded values
+                          min: Math.pow(10, lthSupplyTicks.paddedLogMin),
+                          max: Math.pow(10, lthSupplyTicks.paddedLogMax),
+                          // Override Chart.js default tick generation with our evenly spaced ticks
+                          afterBuildTicks: function(axis: any) {
+                            axis.ticks = lthSupplyTicks.ticks.map((value: number) => ({ value }))
                           },
                         },
                         y1: {
                           type: 'logarithmic',
                           position: 'right',
                           grid: {
-                            drawOnChartArea: false,
+                            drawOnChartArea: false, // Don't draw grid lines for right axis
                           },
                           ticks: {
                             color: '#9ca3af',
                             callback: function(value: any) {
                               return formatPriceShort(value)
                             },
-                            maxTicksLimit: 8,
+                          },
+                          // Set explicit bounds using calculated padded values
+                          min: Math.pow(10, lthPriceTicks.paddedLogMin),
+                          max: Math.pow(10, lthPriceTicks.paddedLogMax),
+                          // Override Chart.js default tick generation with our evenly spaced ticks
+                          afterBuildTicks: function(axis: any) {
+                            axis.ticks = lthPriceTicks.ticks.map((value: number) => ({ value }))
                           },
                         },
                       },
                     }}
                   />
                 )}
+              </div>
+              {/* Custom HTML Legend - positioned lower right with solid circle dots */}
+              <div className="flex justify-end mt-4 space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm text-white">Bitcoin Price</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                  <span className="text-sm text-white">LTH Supply</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -496,16 +474,7 @@ export default function SupplyPage() {
                       },
                       plugins: {
                         legend: {
-                          display: true,
-                          position: 'bottom',
-                          align: 'end',
-                          labels: {
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            boxWidth: 6,
-                            boxHeight: 6,
-                            color: '#ffffff',
-                          },
+                          display: false,
                         },
                         tooltip: {
                           backgroundColor: 'rgba(59, 130, 246, 0.15)',
@@ -569,27 +538,50 @@ export default function SupplyPage() {
                             callback: function(value: any) {
                               return formatSupplyShort(value)
                             },
-                            maxTicksLimit: 8,
+                          },
+                          // Set explicit bounds using calculated padded values
+                          min: Math.pow(10, sthSupplyTicks.paddedLogMin),
+                          max: Math.pow(10, sthSupplyTicks.paddedLogMax),
+                          // Override Chart.js default tick generation with our evenly spaced ticks
+                          afterBuildTicks: function(axis: any) {
+                            axis.ticks = sthSupplyTicks.ticks.map((value: number) => ({ value }))
                           },
                         },
                         y1: {
                           type: 'logarithmic',
                           position: 'right',
                           grid: {
-                            drawOnChartArea: false,
+                            drawOnChartArea: false, // Don't draw grid lines for right axis
                           },
                           ticks: {
                             color: '#9ca3af',
                             callback: function(value: any) {
                               return formatPriceShort(value)
                             },
-                            maxTicksLimit: 8,
+                          },
+                          // Set explicit bounds using calculated padded values
+                          min: Math.pow(10, sthPriceTicks.paddedLogMin),
+                          max: Math.pow(10, sthPriceTicks.paddedLogMax),
+                          // Override Chart.js default tick generation with our evenly spaced ticks
+                          afterBuildTicks: function(axis: any) {
+                            axis.ticks = sthPriceTicks.ticks.map((value: number) => ({ value }))
                           },
                         },
                       },
                     }}
                   />
                 )}
+              </div>
+              {/* Custom HTML Legend - positioned lower right with solid circle dots */}
+              <div className="flex justify-end mt-4 space-x-6">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-sm text-white">Bitcoin Price</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                  <span className="text-sm text-white">STH Supply</span>
+                </div>
               </div>
             </CardContent>
           </Card>
