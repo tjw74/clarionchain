@@ -411,18 +411,6 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Legend */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span className="text-sm">Bitcoin Price</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-sm">Realized Price</span>
-                </div>
-              </div>
-              
               <ChartContainer config={priceChartConfig} className="h-48 w-full">
                 <ComposedChart
                   accessibilityLayer
@@ -498,13 +486,23 @@ export default function Dashboard() {
               </ChartContainer>
             </CardContent>
             <CardFooter>
-              <div className="flex w-full items-start gap-2 text-sm">
+              <div className="flex w-full items-start justify-between gap-2 text-sm">
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2 leading-none font-medium">
                     {priceTrend.isPositive ? 'Trending up' : 'Trending down'} by {priceTrend.percentage.toFixed(1)}% {priceTrend.period} <TrendingUp className="h-4 w-4" />
                   </div>
                   <div className="text-muted-foreground flex items-center gap-2 leading-none">
                     8-year rolling window
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span className="text-sm">Bitcoin Price</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                    <span className="text-sm">Realized Price</span>
                   </div>
                 </div>
               </div>
@@ -519,18 +517,6 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Legend */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                  <span className="text-sm">STH Cost Basis</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-blue-500" />
-                  <span className="text-sm">Bitcoin Price</span>
-                </div>
-              </div>
-              
               <ChartContainer config={sthChartConfig} className="h-48 w-full">
                 <ComposedChart
                   accessibilityLayer
@@ -606,13 +592,23 @@ export default function Dashboard() {
               </ChartContainer>
             </CardContent>
             <CardFooter>
-              <div className="flex w-full items-start gap-2 text-sm">
+              <div className="flex w-full items-start justify-between gap-2 text-sm">
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2 leading-none font-medium">
                     {sthTrend.isPositive ? 'Trending up' : 'Trending down'} by {sthTrend.percentage.toFixed(1)}% {sthTrend.period} <TrendingUp className="h-4 w-4" />
                   </div>
                   <div className="text-muted-foreground flex items-center gap-2 leading-none">
                     2-year rolling window
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                    <span className="text-sm">STH Cost Basis</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span className="text-sm">Bitcoin Price</span>
                   </div>
                 </div>
               </div>
