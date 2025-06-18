@@ -1,0 +1,184 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Chart Creation Rules
+
+### Library and Scaling
+- Always use Chart.js unless explicitly stated otherwise
+- Always default to logarithmic scale for Y-axes
+- Use type: 'logarithmic' for Chart.js Y-axis configuration
+
+### Visual Design
+- Legend colors: Always use solid dots (circles), never dashes or lines
+- Legend placement: Always position legend in the lower right of the chart component
+- Color scheme:
+  - Price data: Always blue (#3b82f6)
+  - Primary metric: Always yellow (#fbbf24) 
+  - Ratios/Z-scores/Oscillators: White (#ffffff)
+
+### Y-Axis Formatting
+- Always use short form notation for Y-axis values:
+  - 15M not 15.00M BTC
+  - 1.2K not 1,200
+  - 500B not 500,000,000,000
+- For Bitcoin amounts: Use M suffix without "BTC" text (e.g., 15M instead of 15.00M BTC)
+- For USD amounts: Use standard short notation with $ prefix (e.g., $1.2T, $500B)
+- Y-axis spacing: Must always be evenly spaced using maxTicksLimit and proper tick calculation
+
+### Interactivity
+- Always implement wheel zoom: Enable mouse wheel zooming functionality
+- Always implement Y-axis grab: Enable click-and-drag panning on Y-axis
+- Reference implementation: Use the exact zoom/pan implementation from the AI Analysis page chart
+- Zoom configuration:
+  zoom: {
+    wheel: { enabled: true },
+    pinch: { enabled: true },
+    mode: 'xy'
+  },
+  pan: {
+    enabled: true,
+    mode: 'xy'
+  }
+
+### Chart Configuration Standards
+- Grid lines: Use subtle grid with color: '#374151' and appropriate opacity
+- Tooltips: Dark background (rgba(59, 130, 246, 0.15)) with white text
+- Point radius: Set to 0 for clean lines without visible data points
+- Line tension: Use 0.1 for smooth curves
+- Responsive: Always set responsive: true and maintainAspectRatio: false
+- Height: Default chart container height should be 400px
+
+### Data Formatting Functions
+- Create consistent formatting functions:
+  - formatShort() for Y-axis labels
+  - formatTooltip() for tooltip values
+  - Maintain precision appropriate to data type (price vs supply vs ratios)
+
+### Implementation Priority
+1. Set up Chart.js with zoom plugin
+2. Configure logarithmic Y-axis with even spacing
+3. Apply color scheme (blue for price, yellow for metric)
+4. Position legend in lower right
+5. Implement wheel zoom and Y-axis grab functionality
+6. Format Y-axis labels using short notation
+7. Test interactivity and visual consistency
+
+### Standard Chart.js Template
+const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
+  ssr: false
+})
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LogarithmicScale,
+  TimeScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js'
+import 'chartjs-adapter-date-fns'
+import zoomPlugin from 'chartjs-plugin-zoom'
+
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    LogarithmicScale,
+    TimeScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    zoomPlugin
+  )
+}
+
+const formatShort = (value) => {
+  if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`
+  if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`
+  if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M`
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`
+  return Math.round(value).toString()
+}
+
+const standardChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'bottom',
+      align: 'end',
+      labels: {
+        usePointStyle: true,
+        pointStyle: 'circle',
+        color: '#ffffff',
+      },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(59, 130, 246, 0.15)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderWidth: 0,
+    },
+    zoom: {
+      zoom: {
+        wheel: {
+          enabled: true,
+        },
+        pinch: {
+          enabled: true,
+        },
+        mode: 'xy',
+      },
+      pan: {
+        enabled: true,
+        mode: 'xy',
+      },
+    },
+  },
+  scales: {
+    x: {
+      type: 'time',
+      time: {
+        unit: 'year',
+      },
+      grid: {
+        color: '#374151',
+      },
+      ticks: {
+        color: '#9ca3af',
+        maxTicksLimit: 10,
+      },
+    },
+    y: {
+      type: 'logarithmic',
+      position: 'left',
+      grid: {
+        color: '#374151',
+      },
+      ticks: {
+        color: '#9ca3af',
+        callback: function(value) {
+          return formatShort(value)
+        },
+        maxTicksLimit: 8,
+      },
+    },
+  },
+}
+
+This rule set ensures all charts maintain visual consistency, proper functionality, and user experience standards across the entire application.

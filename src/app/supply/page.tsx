@@ -3,57 +3,48 @@
 import { useState, useEffect } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, ComposedChart } from "recharts"
 import { TrendingUp, TrendingDown, Layers, Users, Clock, Coins } from "lucide-react"
 import { brkClient } from "@/lib/api/brkClient"
+import dynamic from 'next/dynamic'
 
-// Chart configurations
-const totalSupplyConfig = {
-  supply: {
-    label: "Total Supply",
-    color: "var(--chart-1)",
-  },
+// Dynamically import Chart.js to avoid SSR issues
+const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
+  ssr: false
+})
+
+// Import Chart.js components
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LogarithmicScale,
+  TimeScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js'
+import 'chartjs-adapter-date-fns'
+import zoomPlugin from 'chartjs-plugin-zoom'
+
+// Register Chart.js components
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    LogarithmicScale,
+    TimeScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    zoomPlugin
+  )
 }
-
-const lthSupplyConfig = {
-  supply: {
-    label: "LTH Supply",
-    color: "var(--chart-2)",
-  },
-}
-
-const sthSupplyConfig = {
-  supply: {
-    label: "STH Supply", 
-    color: "var(--chart-3)",
-  },
-}
-
-const supplyDistributionConfig = {
-  lth: {
-    label: "Long-term Holders",
-    color: "var(--chart-2)",
-  },
-  sth: {
-    label: "Short-term Holders",
-    color: "var(--chart-3)",
-  },
-}
-
-// Gradient definitions for area fills
-const gradientDefs = (
-  <defs>
-    <linearGradient id="lthGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
-      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.1}/>
-    </linearGradient>
-    <linearGradient id="sthGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.8}/>
-      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0.1}/>
-    </linearGradient>
-  </defs>
-)
 
 interface SupplyData {
   date: string
@@ -140,23 +131,31 @@ export default function SupplyPage() {
   const lthSupplyTrend = calculateTrend(supplyData, 'lthSupply')
   const sthSupplyTrend = calculateTrend(supplyData, 'sthSupply')
 
-  // Format supply numbers
+  // Format functions following chart rules
+  const formatShort = (value: number) => {
+    if (value >= 1e12) return `${(value / 1e12).toFixed(1)}T`
+    if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`
+    if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M`
+    if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`
+    return Math.round(value).toString()
+  }
+
   const formatSupply = (value: number) => {
     return `${(value / 1000000).toFixed(2)}M BTC`
   }
 
-  // Format USD values
-  const formatUSD = (value: number) => {
-    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`
-    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`
-    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`
-    if (value >= 1e3) return `$${(value / 1e3).toFixed(2)}K`
+  const formatSupplyShort = (value: number) => {
+    return `${(value / 1000000).toFixed(0)}M`
+  }
+
+  const formatPrice = (value: number) => {
     return `$${value.toLocaleString()}`
   }
 
-  // Format price values
-  const formatPrice = (value: number) => {
-    return `$${value.toLocaleString()}`
+  const formatPriceShort = (value: number) => {
+    if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+    if (value >= 1000) return `$${(value / 1000).toFixed(0)}K`
+    return `$${Math.round(value)}`
   }
 
   // Get latest values for summary cards
@@ -297,390 +296,299 @@ export default function SupplyPage() {
           </Card>
         </div>
 
-        {/* Chart Section - Logical Flow */}
-        <div className="space-y-6">
-          
-          {/* LTH Supply Charts (BTC & USD) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  LTH Supply (BTC)
-                </CardTitle>
-                <CardDescription>
-                  Long-term Holder supply in Bitcoin
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={lthSupplyConfig} className="h-80 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
-                    {gradientDefs}
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      interval="preserveStartEnd"
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return date.getFullYear().toString()
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="supply"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="left"
-                      scale="log"
-                      domain={['dataMin * 2', 'dataMax * 0.5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatSupply(value)}
-                    />
-                    <YAxis
-                      yAxisId="price"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="right"
-                      scale="log"
-                      domain={['dataMin * 0.2', 'dataMax * 5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatPrice(value)}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent
-                        className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any, name: any) => [
-                          name === "lthSupply" ? formatSupply(value) : formatPrice(value),
-                          name === "lthSupply" ? "LTH Supply (BTC)" : "Bitcoin Price"
-                        ]}
-                        labelFormatter={(label: any) => {
-                          const date = new Date(label)
-                          return date.toLocaleDateString()
-                        }}
-                      />}
-                    />
-                    <Line
-                      yAxisId="supply"
-                      dataKey="lthSupply"
-                      type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      yAxisId="price"
-                      dataKey="price"
-                      type="natural"
-                      stroke="#3b82f6"
-                      strokeWidth={1}
-                      dot={false}
-                      opacity={0.9}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
-                    <span className="text-blue-400">Price</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-yellow-400"></div>
-                    <span className="text-yellow-400">LTH Supply</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatSupply(latestData.lthSupply) : '-'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                LTH Supply (BTC)
+              </CardTitle>
+              <CardDescription>
+                Long-term Holder supply in Bitcoin
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                {typeof window !== 'undefined' && (
+                  <ChartJSLine
+                    data={{
+                      labels: supplyData.map(d => d.date),
+                      datasets: [
+                        {
+                          label: 'Bitcoin Price',
+                          data: supplyData.map(d => d.price),
+                          borderColor: '#3b82f6',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          borderWidth: 2,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.1,
+                          yAxisID: 'y1',
+                        },
+                        {
+                          label: 'LTH Supply',
+                          data: supplyData.map(d => d.lthSupply),
+                          borderColor: '#fbbf24',
+                          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                          borderWidth: 2,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.1,
+                          yAxisID: 'y',
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'index',
+                        intersect: false,
+                      },
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'bottom',
+                          align: 'end',
+                          labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            color: '#ffffff',
+                          },
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                          titleColor: '#ffffff',
+                          bodyColor: '#ffffff',
+                          borderWidth: 0,
+                          callbacks: {
+                            title: function(context: any) {
+                              const date = new Date(context[0].label)
+                              return date.toLocaleDateString()
+                            },
+                            label: function(context: any) {
+                              const label = context.dataset.label || ''
+                              const value = context.parsed.y
+                              if (label === 'Bitcoin Price') {
+                                return `${label}: ${formatPrice(value)}`
+                              } else {
+                                return `${label}: ${formatSupply(value)}`
+                              }
+                            }
+                          }
+                        },
+                        zoom: {
+                          zoom: {
+                            wheel: {
+                              enabled: true,
+                            },
+                            pinch: {
+                              enabled: true,
+                            },
+                            mode: 'xy',
+                          },
+                          pan: {
+                            enabled: true,
+                            mode: 'xy',
+                          },
+                        },
+                      },
+                      scales: {
+                        x: {
+                          type: 'time',
+                          time: {
+                            unit: 'year',
+                          },
+                          grid: {
+                            color: '#374151',
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            maxTicksLimit: 10,
+                          },
+                        },
+                        y: {
+                          type: 'logarithmic',
+                          position: 'left',
+                          grid: {
+                            color: '#374151',
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            callback: function(value: any) {
+                              return formatSupplyShort(value)
+                            },
+                            maxTicksLimit: 8,
+                          },
+                        },
+                        y1: {
+                          type: 'logarithmic',
+                          position: 'right',
+                          grid: {
+                            drawOnChartArea: false,
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            callback: function(value: any) {
+                              return formatPriceShort(value)
+                            },
+                            maxTicksLimit: 8,
+                          },
+                        },
+                      },
+                    }}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  LTH Supply (USD)
-                </CardTitle>
-                <CardDescription>
-                  Long-term Holder supply value in USD
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={lthSupplyConfig} className="h-80 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
-                    {gradientDefs}
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      interval="preserveStartEnd"
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return date.getFullYear().toString()
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="supply"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="left"
-                      scale="log"
-                      domain={['dataMin * 2', 'dataMax * 0.5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatUSD(value)}
-                    />
-                    <YAxis
-                      yAxisId="price"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="right"
-                      scale="log"
-                      domain={['dataMin * 0.2', 'dataMax * 5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatPrice(value)}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent
-                        className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any, name: any) => [
-                          name === "lthSupplyUSD" ? formatUSD(value) : formatPrice(value),
-                          name === "lthSupplyUSD" ? "LTH Supply (USD)" : "Bitcoin Price"
-                        ]}
-                        labelFormatter={(label: any) => {
-                          const date = new Date(label)
-                          return date.toLocaleDateString()
-                        }}
-                      />}
-                    />
-                    <Line
-                      yAxisId="supply"
-                      dataKey="lthSupplyUSD"
-                      type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      yAxisId="price"
-                      dataKey="price"
-                      type="natural"
-                      stroke="#3b82f6"
-                      strokeWidth={1}
-                      dot={false}
-                      opacity={0.9}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
-                    <span className="text-blue-400">Price</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-yellow-400"></div>
-                    <span className="text-yellow-400">LTH Supply</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatUSD(latestData.lthSupplyUSD) : '-'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* STH Supply Charts (BTC & USD) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  STH Supply (BTC)
-                </CardTitle>
-                <CardDescription>
-                  Short-term Holder supply in Bitcoin
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={sthSupplyConfig} className="h-80 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
-                    {gradientDefs}
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      interval="preserveStartEnd"
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return date.getFullYear().toString()
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="supply"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="left"
-                      scale="log"
-                      domain={['dataMin * 2', 'dataMax * 0.5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatSupply(value)}
-                    />
-                    <YAxis
-                      yAxisId="price"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="right"
-                      scale="log"
-                      domain={['dataMin * 0.2', 'dataMax * 5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatPrice(value)}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent
-                        className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any, name: any) => [
-                          name === "sthSupply" ? formatSupply(value) : formatPrice(value),
-                          name === "sthSupply" ? "STH Supply (BTC)" : "Bitcoin Price"
-                        ]}
-                        labelFormatter={(label: any) => {
-                          const date = new Date(label)
-                          return date.toLocaleDateString()
-                        }}
-                      />}
-                    />
-                    <Line
-                      yAxisId="supply"
-                      dataKey="sthSupply"
-                      type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      yAxisId="price"
-                      dataKey="price"
-                      type="natural"
-                      stroke="#3b82f6"
-                      strokeWidth={1}
-                      dot={false}
-                      opacity={0.9}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
-                    <span className="text-blue-400">Price</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-yellow-400"></div>
-                    <span className="text-yellow-400">STH Supply</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatSupply(latestData.sthSupply) : '-'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  STH Supply (USD)
-                </CardTitle>
-                <CardDescription>
-                  Short-term Holder supply value in USD
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={sthSupplyConfig} className="h-80 w-full">
-                  <ComposedChart data={supplyData} margin={{ left: 12, right: 12, bottom: 40 }}>
-                    {gradientDefs}
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis
-                      dataKey="date"
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                      interval="preserveStartEnd"
-                      tickFormatter={(value) => {
-                        const date = new Date(value)
-                        return date.getFullYear().toString()
-                      }}
-                    />
-                    <YAxis
-                      yAxisId="supply"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="left"
-                      scale="log"
-                      domain={['dataMin * 2', 'dataMax * 0.5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatUSD(value)}
-                    />
-                    <YAxis
-                      yAxisId="price"
-                      tickLine={false}
-                      axisLine={false}
-                      orientation="right"
-                      scale="log"
-                      domain={['dataMin * 0.2', 'dataMax * 5']}
-                      tickCount={6}
-                      tickFormatter={(value) => formatPrice(value)}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent
-                        className="bg-blue-600/15 border-0 text-white"
-                        formatter={(value: any, name: any) => [
-                          name === "sthSupplyUSD" ? formatUSD(value) : formatPrice(value),
-                          name === "sthSupplyUSD" ? "STH Supply (USD)" : "Bitcoin Price"
-                        ]}
-                        labelFormatter={(label: any) => {
-                          const date = new Date(label)
-                          return date.toLocaleDateString()
-                        }}
-                      />}
-                    />
-                    <Line
-                      yAxisId="supply"
-                      dataKey="sthSupplyUSD"
-                      type="natural"
-                      stroke="#fbbf24"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      yAxisId="price"
-                      dataKey="price"
-                      type="natural"
-                      stroke="#3b82f6"
-                      strokeWidth={1}
-                      dot={false}
-                      opacity={0.9}
-                    />
-                  </ComposedChart>
-                </ChartContainer>
-                <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-blue-500" style={{borderTop: "1.5px dashed #3b82f6"}}></div>
-                    <span className="text-blue-400">Price</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatPrice(latestData.price) : '-'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-yellow-400"></div>
-                    <span className="text-yellow-400">STH Supply</span>
-                    <span className="text-muted-foreground">Last: {latestData ? formatUSD(latestData.sthSupplyUSD) : '-'}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                STH Supply (BTC)
+              </CardTitle>
+              <CardDescription>
+                Short-term Holder supply in Bitcoin
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px] w-full">
+                {typeof window !== 'undefined' && (
+                  <ChartJSLine
+                    data={{
+                      labels: supplyData.map(d => d.date),
+                      datasets: [
+                        {
+                          label: 'Bitcoin Price',
+                          data: supplyData.map(d => d.price),
+                          borderColor: '#3b82f6',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          borderWidth: 2,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.1,
+                          yAxisID: 'y1',
+                        },
+                        {
+                          label: 'STH Supply',
+                          data: supplyData.map(d => d.sthSupply),
+                          borderColor: '#fbbf24',
+                          backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                          borderWidth: 2,
+                          fill: false,
+                          pointRadius: 0,
+                          tension: 0.1,
+                          yAxisID: 'y',
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: 'index',
+                        intersect: false,
+                      },
+                      plugins: {
+                        legend: {
+                          display: true,
+                          position: 'bottom',
+                          align: 'end',
+                          labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            color: '#ffffff',
+                          },
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                          titleColor: '#ffffff',
+                          bodyColor: '#ffffff',
+                          borderWidth: 0,
+                          callbacks: {
+                            title: function(context: any) {
+                              const date = new Date(context[0].label)
+                              return date.toLocaleDateString()
+                            },
+                            label: function(context: any) {
+                              const label = context.dataset.label || ''
+                              const value = context.parsed.y
+                              if (label === 'Bitcoin Price') {
+                                return `${label}: ${formatPrice(value)}`
+                              } else {
+                                return `${label}: ${formatSupply(value)}`
+                              }
+                            }
+                          }
+                        },
+                        zoom: {
+                          zoom: {
+                            wheel: {
+                              enabled: true,
+                            },
+                            pinch: {
+                              enabled: true,
+                            },
+                            mode: 'xy',
+                          },
+                          pan: {
+                            enabled: true,
+                            mode: 'xy',
+                          },
+                        },
+                      },
+                      scales: {
+                        x: {
+                          type: 'time',
+                          time: {
+                            unit: 'year',
+                          },
+                          grid: {
+                            color: '#374151',
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            maxTicksLimit: 10,
+                          },
+                        },
+                        y: {
+                          type: 'logarithmic',
+                          position: 'left',
+                          grid: {
+                            color: '#374151',
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            callback: function(value: any) {
+                              return formatSupplyShort(value)
+                            },
+                            maxTicksLimit: 8,
+                          },
+                        },
+                        y1: {
+                          type: 'logarithmic',
+                          position: 'right',
+                          grid: {
+                            drawOnChartArea: false,
+                          },
+                          ticks: {
+                            color: '#9ca3af',
+                            callback: function(value: any) {
+                              return formatPriceShort(value)
+                            },
+                            maxTicksLimit: 8,
+                          },
+                        },
+                      },
+                    }}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
