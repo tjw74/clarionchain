@@ -348,6 +348,8 @@ export default function SupplyPage() {
                           pan: {
                             enabled: true,
                             mode: 'xy',
+                            // Enable independent Y-axis grab control for each axis
+                            scaleMode: 'xy',
                           },
                         },
                       },
@@ -510,6 +512,8 @@ export default function SupplyPage() {
                           pan: {
                             enabled: true,
                             mode: 'xy',
+                            // Enable independent Y-axis grab control for each axis
+                            scaleMode: 'xy',
                           },
                         },
                       },
