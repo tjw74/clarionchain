@@ -441,12 +441,12 @@ export default function Dashboard() {
                     <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="var(--color-price)"
+                        stopColor="#3b82f6"
                         stopOpacity={0.8}
                       />
                       <stop
                         offset="95%"
-                        stopColor="var(--color-price)"
+                        stopColor="#3b82f6"
                         stopOpacity={0.1}
                       />
                     </linearGradient>
@@ -456,7 +456,7 @@ export default function Dashboard() {
                     type="natural"
                     fill="url(#fillPrice)"
                     fillOpacity={0.4}
-                    stroke="var(--color-price)"
+                    stroke="#3b82f6"
                   />
                 </AreaChart>
               </ChartContainer>
