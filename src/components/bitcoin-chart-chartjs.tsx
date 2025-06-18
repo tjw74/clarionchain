@@ -14,6 +14,7 @@ import {
   TimeScale,
   Filler,
 } from 'chart.js'
+import zoomPlugin from 'chartjs-plugin-zoom'
 import { Line } from 'react-chartjs-2'
 import 'chartjs-adapter-date-fns'
 import { brkClient } from '@/lib/api/brkClient'
@@ -21,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSidebar } from "@/components/ui/sidebar"
 
-// Register Chart.js components
+// Register Chart.js components including zoom plugin
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,7 +33,8 @@ ChartJS.register(
   Tooltip,
   Legend,
   TimeScale,
-  Filler
+  Filler,
+  zoomPlugin
 )
 
 export interface BitcoinChartRef {
@@ -591,6 +593,21 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           }
         }
       },
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true,
+          },
+          mode: 'x' as const,
+        },
+        pan: {
+          enabled: true,
+          mode: 'x' as const,
+        },
+      },
     },
     scales: {
       x: {
@@ -693,6 +710,21 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             return `${label}: ${value.toFixed(2)}`
           }
         }
+      },
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true,
+          },
+          mode: 'x' as const,
+        },
+        pan: {
+          enabled: true,
+          mode: 'x' as const,
+        },
       },
     },
     scales: {

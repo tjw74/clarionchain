@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } f
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { MetricCard } from "@/types/bitcoin"
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ComposedChart } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart, ComposedChart, Brush } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -411,7 +411,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={priceChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
+              <ChartContainer config={priceChartConfig} className="h-60 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
                 <ComposedChart
                   accessibilityLayer
                   data={priceChartData}
@@ -419,6 +419,7 @@ export default function Dashboard() {
                     left: 12,
                     right: 12,
                   }}
+                  syncId="priceCharts"
                 >
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -484,6 +485,13 @@ export default function Dashboard() {
                     dot={false}
                     isAnimationActive={false}
                   />
+                  <Brush 
+                    dataKey="date" 
+                    height={30}
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.1}
+                  />
                 </ComposedChart>
               </ChartContainer>
             </CardContent>
@@ -519,7 +527,7 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <ChartContainer config={sthChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
+              <ChartContainer config={sthChartConfig} className="h-60 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
                 <ComposedChart
                   accessibilityLayer
                   data={sthChartData}
@@ -527,6 +535,7 @@ export default function Dashboard() {
                     left: 12,
                     right: 12,
                   }}
+                  syncId="sthCharts"
                 >
                   <CartesianGrid vertical={false} />
                   <XAxis
@@ -591,6 +600,13 @@ export default function Dashboard() {
                     strokeWidth={1}
                     dot={false}
                     isAnimationActive={false}
+                  />
+                  <Brush 
+                    dataKey="date" 
+                    height={30}
+                    stroke="#eab308"
+                    fill="#eab308"
+                    fillOpacity={0.1}
                   />
                 </ComposedChart>
               </ChartContainer>
