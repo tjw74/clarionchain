@@ -405,7 +405,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-border">
             <CardHeader>
-              <CardTitle>Price Chart</CardTitle>
+              <CardTitle>Price Models</CardTitle>
               <CardDescription>
                 Bitcoin price trend over the last 8 years
               </CardDescription>
