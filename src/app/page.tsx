@@ -604,7 +604,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm">STH Cost Basis</span>
+                    <span className="text-sm">STH Realized Price</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-blue-500" />
