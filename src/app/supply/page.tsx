@@ -354,6 +354,8 @@ export default function SupplyPage() {
                           labels: {
                             usePointStyle: true,
                             pointStyle: 'circle',
+                            boxWidth: 6,
+                            boxHeight: 6,
                             color: '#ffffff',
                           },
                         },
@@ -500,6 +502,8 @@ export default function SupplyPage() {
                           labels: {
                             usePointStyle: true,
                             pointStyle: 'circle',
+                            boxWidth: 6,
+                            boxHeight: 6,
                             color: '#ffffff',
                           },
                         },
