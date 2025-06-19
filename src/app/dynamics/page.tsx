@@ -543,10 +543,10 @@ export default function DynamicsPage() {
           callback: function(value: any) {
             return `${value.toFixed(1)}σ`
           },
-          maxTicksLimit: 5
+          maxTicksLimit: 7
         },
-        min: -3,
-        max: 3
+        min: -3.5,
+        max: 3.5
       }
     }
   }
