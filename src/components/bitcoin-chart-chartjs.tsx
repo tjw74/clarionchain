@@ -14,7 +14,7 @@ import {
   TimeScale,
   Filler,
 } from 'chart.js'
-import zoomPlugin from 'chartjs-plugin-zoom'
+// Dynamic import for zoom plugin to avoid SSR issues
 import { Line } from 'react-chartjs-2'
 import 'chartjs-adapter-date-fns'
 import { brkClient } from '@/lib/api/brkClient'
@@ -24,19 +24,22 @@ import { useSidebar } from "@/components/ui/sidebar"
 
 // Register Chart.js components including zoom plugin
 if (typeof window !== 'undefined') {
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    LogarithmicScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    TimeScale,
-    Filler,
-    zoomPlugin
-  )
+  // Dynamic import for zoom plugin
+  import('chartjs-plugin-zoom').then((zoomModule) => {
+    ChartJS.register(
+      CategoryScale,
+      LinearScale,
+      LogarithmicScale,
+      PointElement,
+      LineElement,
+      Title,
+      Tooltip,
+      Legend,
+      TimeScale,
+      Filler,
+      zoomModule.default
+    )
+  }).catch(console.error)
 }
 
 export interface BitcoinChartRef {
@@ -282,13 +285,17 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     resizeObserver.observe(containerRef.current)
 
     // Window resize fallback
-    window.addEventListener('resize', handleResize)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize)
+    }
 
     // Cleanup
     return () => {
       clearTimeout(resizeTimeout)
       resizeObserver.disconnect()
-      window.removeEventListener('resize', handleResize)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', handleResize)
+      }
     }
   }, [isClient])
 
