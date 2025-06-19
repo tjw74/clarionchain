@@ -22,26 +22,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSidebar } from "@/components/ui/sidebar"
 
-// Register Chart.js components including zoom plugin
-if (typeof window !== 'undefined') {
-  // Dynamic import for zoom plugin
-  import('chartjs-plugin-zoom').then((zoomModule) => {
-    ChartJS.register(
-      CategoryScale,
-      LinearScale,
-      LogarithmicScale,
-      PointElement,
-      LineElement,
-      Title,
-      Tooltip,
-      Legend,
-      TimeScale,
-      Filler,
-      zoomModule.default
-    )
-  }).catch(console.error)
-}
-
 export interface BitcoinChartRef {
   captureImage: () => Promise<string>
 }
@@ -65,6 +45,7 @@ interface BitcoinChartProps {
 const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv' }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [chartReady, setChartReady] = useState(false)
   const [chartKey, setChartKey] = useState(0) // Force chart recreation
   const chartRef = useRef<ChartJS<'line'> | null>(null)
   const ratioChartRef = useRef<ChartJS<'line'> | null>(null)
@@ -72,6 +53,37 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   
   // Get sidebar state
   const { state: sidebarState } = useSidebar()
+
+  // Register Chart.js components in useEffect to avoid SSR issues
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Register basic Chart.js components first
+      ChartJS.register(
+        CategoryScale,
+        LinearScale,
+        LogarithmicScale,
+        PointElement,
+        LineElement,
+        Title,
+        Tooltip,
+        Legend,
+        TimeScale,
+        Filler
+      )
+
+      // Then dynamically import and register zoom plugin
+      import('chartjs-plugin-zoom').then((zoomModule) => {
+        ChartJS.register(zoomModule.default)
+        setChartReady(true)
+      }).catch((error) => {
+        console.error('Failed to load zoom plugin:', error)
+        // Still set chart ready even if zoom fails, so basic charts work
+        setChartReady(true)
+      })
+
+      setIsClient(true)
+    }
+  }, [])
 
   useImperativeHandle(ref, () => ({
     captureImage: async () => {
@@ -149,7 +161,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   }))
 
   useEffect(() => {
-    setIsClient(true)
+    if (!chartReady) return
     
     // Fetch data based on selected metric
     const fetchData = async () => {
@@ -229,7 +241,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     }
 
     fetchData()
-  }, [selectedMetric])
+  }, [chartReady, selectedMetric])
 
   // Monitor sidebar state changes and force chart resize
   useEffect(() => {
@@ -299,7 +311,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     }
   }, [isClient])
 
-  if (!isClient) {
+  if (!isClient || !chartReady) {
     return (
       <div className="h-[500px] flex items-center justify-center bg-muted/50 rounded-md">
         <p className="text-muted-foreground">Loading chart...</p>

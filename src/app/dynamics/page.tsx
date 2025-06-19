@@ -754,45 +754,49 @@ export default function DynamicsPage() {
                       </p>
                     </div>
 
-                    {/* Window Analysis */}
-                    <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {/* 4-Year Window */}
-                      <div className={`p-3 rounded-lg border ${activeWindow === '4year' ? 'border-blue-500 bg-blue-500/10' : 'border-border'}`}>
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-medium">4-Year Cycle</p>
-                          <Badge variant="outline" className={getSeverityColor(analysis.windows.fourYear.severity)}>
-                            {analysis.windows.fourYear.zScore.toFixed(1)}σ
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {analysis.windows.fourYear.severity} anomaly
-                        </p>
-                      </div>
+                    {/* Window Analysis - Combined Component */}
+                    <div className="lg:col-span-3">
+                      <div className="p-4 rounded-lg border border-border bg-card">
+                        <div className="space-y-3">
+                          {/* 4-Year Window */}
+                          <div className={`flex justify-between items-center p-2 rounded ${activeWindow === '4year' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">4-Year Cycle</p>
+                              <Badge variant="outline" className={getSeverityColor(analysis.windows.fourYear.severity)}>
+                                {analysis.windows.fourYear.zScore.toFixed(1)}σ
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {analysis.windows.fourYear.severity} anomaly
+                            </p>
+                          </div>
 
-                      {/* 2-Year Window */}
-                      <div className={`p-3 rounded-lg border ${activeWindow === '2year' ? 'border-blue-500 bg-blue-500/10' : 'border-border'}`}>
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-medium">2-Year Trend</p>
-                          <Badge variant="outline" className={getSeverityColor(analysis.windows.twoYear.severity)}>
-                            {analysis.windows.twoYear.zScore.toFixed(1)}σ
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {analysis.windows.twoYear.severity} anomaly
-                        </p>
-                      </div>
+                          {/* 2-Year Window */}
+                          <div className={`flex justify-between items-center p-2 rounded ${activeWindow === '2year' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">2-Year Trend</p>
+                              <Badge variant="outline" className={getSeverityColor(analysis.windows.twoYear.severity)}>
+                                {analysis.windows.twoYear.zScore.toFixed(1)}σ
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {analysis.windows.twoYear.severity} anomaly
+                            </p>
+                          </div>
 
-                      {/* 2015+ Window */}
-                      <div className={`p-3 rounded-lg border ${activeWindow === '2015plus' ? 'border-blue-500 bg-blue-500/10' : 'border-border'}`}>
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-medium">2015+ Era</p>
-                          <Badge variant="outline" className={getSeverityColor(analysis.windows.since2015.severity)}>
-                            {analysis.windows.since2015.zScore.toFixed(1)}σ
-                          </Badge>
+                          {/* 2015+ Window */}
+                          <div className={`flex justify-between items-center p-2 rounded ${activeWindow === '2015plus' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium">2015+ Era</p>
+                              <Badge variant="outline" className={getSeverityColor(analysis.windows.since2015.severity)}>
+                                {analysis.windows.since2015.zScore.toFixed(1)}σ
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {analysis.windows.since2015.severity} anomaly
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          {analysis.windows.since2015.severity} anomaly
-                        </p>
                       </div>
                     </div>
                   </div>
