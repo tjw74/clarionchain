@@ -23,19 +23,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSidebar } from "@/components/ui/sidebar"
 
 // Register Chart.js components including zoom plugin
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  LogarithmicScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  TimeScale,
-  Filler,
-  zoomPlugin
-)
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    LogarithmicScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    TimeScale,
+    Filler,
+    zoomPlugin
+  )
+}
 
 export interface BitcoinChartRef {
   captureImage: () => Promise<string>
