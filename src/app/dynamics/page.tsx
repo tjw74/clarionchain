@@ -58,7 +58,7 @@ interface ZScoreResult {
   stdDev: number
   zScore: number
   severity: ZScoreSeverity
-  percentileEquivalent: number
+  timeInBandPercent: number
 }
 
 interface ZScoreTimeSeries {
@@ -225,33 +225,37 @@ export default function DynamicsPage() {
     analyzeMetrics()
   }, [])
 
-  const calculateZScore = (values: number[], windowSize?: number): ZScoreResult => {
-    const dataset = windowSize ? values.slice(-windowSize) : values
-    const mean = dataset.reduce((a, b) => a + b) / dataset.length
-    const variance = dataset.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / dataset.length
-    const stdDev = Math.sqrt(variance)
-    const currentValue = values[values.length - 1]
-    const zScore = stdDev === 0 ? 0 : (currentValue - mean) / stdDev
+  const calculateRarityAndSeverity = (historicalZScores: number[]): { severity: ZScoreSeverity; timeInBandPercent: number } => {
+    if (historicalZScores.length < 30) {
+      return { severity: 'normal', timeInBandPercent: 100 };
+    }
 
-    // Convert Z-score to approximate percentile
-    const percentileEquivalent = 50 + (zScore / 4) * 50 // Rough approximation
+    const currentZScore = historicalZScores[historicalZScores.length - 1];
+    const currentBand = Math.floor(Math.abs(currentZScore));
 
-    // Determine severity based on absolute Z-score
-    let severity: ZScoreSeverity = 'normal'
-    const absZ = Math.abs(zScore)
-    if (absZ >= 2.5) severity = 'extreme'
-    else if (absZ >= 2.0) severity = 'high'
-    else if (absZ >= 1.5) severity = 'moderate'
+    let countInBand = 0;
+    for (const score of historicalZScores) {
+      if (Math.floor(Math.abs(score)) === currentBand) {
+        countInBand++;
+      }
+    }
+
+    const timeInBandPercent = (countInBand / historicalZScores.length) * 100;
+
+    let severity: ZScoreSeverity = 'normal';
+    if (timeInBandPercent <= 5) {
+      severity = 'extreme';
+    } else if (timeInBandPercent <= 20) {
+      severity = 'high';
+    } else if (timeInBandPercent <= 50) {
+      severity = 'moderate';
+    }
 
     return {
-      value: currentValue,
-      mean,
-      stdDev,
-      zScore,
       severity,
-      percentileEquivalent: Math.max(0, Math.min(100, percentileEquivalent))
-    }
-  }
+      timeInBandPercent
+    };
+  };
 
   const calculateZScoreTimeSeries = (values: number[], dates: Date[], windowSize?: number): ZScoreTimeSeries => {
     const zScores: number[] = []
@@ -280,24 +284,46 @@ export default function DynamicsPage() {
     dates: Date[],
     since2015Dates: Date[]
   }, id: string): MetricZScoreAnalysis | null => {
-    const { name, values, since2015Values, dates, since2015Dates } = metric
+    if (metric.values.length < 365 * 2) return null; // Need at least 2 years of data
 
-    // Calculate Z-scores for different windows
-    const fourYear = calculateZScore(values, 1460) // 4 years
-    const twoYear = calculateZScore(values, 730)   // 2 years  
-    const since2015 = calculateZScore(since2015Values) // Full 2015+ history
+    // Full history analysis for each window
+    const fourYearTimeSeries = calculateZScoreTimeSeries(metric.values, metric.dates, 365 * 4);
+    const twoYearTimeSeries = calculateZScoreTimeSeries(metric.values, metric.dates, 365 * 2);
+    const since2015TimeSeries = calculateZScoreTimeSeries(metric.since2015Values, metric.since2015Dates);
 
-    // Calculate time series for each window
-    const fourYearTimeSeries = calculateZScoreTimeSeries(values, dates, 1460)
-    const twoYearTimeSeries = calculateZScoreTimeSeries(values, dates, 730)
-    const since2015TimeSeries = calculateZScoreTimeSeries(since2015Values, since2015Dates)
+    const fourYearResult = calculateRarityAndSeverity(fourYearTimeSeries.zScores);
+    const twoYearResult = calculateRarityAndSeverity(twoYearTimeSeries.zScores);
+    const since2015Result = calculateRarityAndSeverity(since2015TimeSeries.zScores);
 
-    // Determine maximum severity across all windows
-    const severities = [fourYear.severity, twoYear.severity, since2015.severity]
-    const severityOrder = { extreme: 4, high: 3, moderate: 2, normal: 1 }
-    const maxSeverity = severities.reduce((max, curr) => 
-      severityOrder[curr] > severityOrder[max] ? curr : max
-    ) as ZScoreSeverity
+    const latestValue = metric.values[metric.values.length - 1]
+
+    const windows = {
+      fourYear: {
+        value: latestValue,
+        mean: 0, // Mean is always 0 for z-scores
+        stdDev: 1, // StdDev is always 1 for z-scores
+        zScore: fourYearTimeSeries.zScores[fourYearTimeSeries.zScores.length - 1],
+        ...fourYearResult
+      },
+      twoYear: {
+        value: latestValue,
+        mean: 0,
+        stdDev: 1,
+        zScore: twoYearTimeSeries.zScores[twoYearTimeSeries.zScores.length - 1],
+        ...twoYearResult
+      },
+      since2015: {
+        value: latestValue,
+        mean: 0,
+        stdDev: 1,
+        zScore: since2015TimeSeries.zScores[since2015TimeSeries.zScores.length - 1],
+        ...since2015Result
+      }
+    };
+
+    const severities = [windows.fourYear.severity, windows.twoYear.severity, windows.since2015.severity];
+    const severityOrder: Record<ZScoreSeverity, number> = { extreme: 4, high: 3, moderate: 2, normal: 1 };
+    const maxSeverity = severities.reduce((max, current) => severityOrder[current] > severityOrder[max] ? current : max, 'normal');
 
     // Check if anomaly in all windows (moderate or higher)
     const isAnomalyInAllWindows = severities.every(s => severityOrder[s] >= 2)
@@ -307,19 +333,15 @@ export default function DynamicsPage() {
 
     return {
       id,
-      name,
-      currentValue: values[values.length - 1],
-      windows: {
-        fourYear,
-        twoYear,
-        since2015
-      },
+      name: metric.name,
+      currentValue: latestValue,
+      windows,
       timeSeries: {
         fourYear: fourYearTimeSeries,
         twoYear: twoYearTimeSeries,
         since2015: since2015TimeSeries
       },
-      description: generateZScoreDescription(name, values[values.length - 1], fourYear),
+      description: generateZScoreDescription(metric.name, latestValue, windows.fourYear),
       maxSeverity,
       isAnomalyInAllWindows
     }
@@ -330,7 +352,7 @@ export default function DynamicsPage() {
       if (metricName.includes('Price')) {
         return `$${val.toLocaleString()}`
       } else if (metricName.includes('%')) {
-        return `${val.toFixed(1)}%`
+        return `${val.toFixed(2)}%`
       } else if (val >= 1e12) {
         return `$${(val / 1e12).toFixed(2)}T`
       } else if (val >= 1e9) {
@@ -338,11 +360,16 @@ export default function DynamicsPage() {
       } else if (val >= 1e6) {
         return `$${(val / 1e6).toFixed(2)}M`
       }
-      return val.toLocaleString()
+      return Math.round(val).toString();
     }
 
-    const direction = zResult.zScore > 0 ? 'above' : 'below'
-    return `${name} is ${formatValue(value, name)}, ${Math.abs(zResult.zScore).toFixed(1)}σ ${direction} 4-year mean`
+    const valueStr = formatValue(value, name);
+    const zScoreStr = zResult.zScore.toFixed(2);
+    const direction = zResult.zScore > 0 ? 'above' : 'below';
+    const bandPercentStr = zResult.timeInBandPercent.toFixed(1);
+    const band = Math.floor(Math.abs(zResult.zScore));
+
+    return `${name} is ${valueStr}. Its Z-score of ${zScoreStr}σ is in a band (${band}σ-${band+1}σ) where it has historically spent only ${bandPercentStr}% of its time.`
   }
 
   const getSeverityColor = (severity: ZScoreSeverity) => {
@@ -673,7 +700,7 @@ export default function DynamicsPage() {
                                 {analysis.windows.fourYear.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.fourYear.severity}
                             </p>
                           </div>
@@ -689,7 +716,7 @@ export default function DynamicsPage() {
                                 {analysis.windows.twoYear.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.twoYear.severity}
                             </p>
                           </div>
@@ -705,7 +732,7 @@ export default function DynamicsPage() {
                                 {analysis.windows.since2015.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.since2015.severity}
                             </p>
                           </div>
