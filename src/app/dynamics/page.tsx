@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, TrendingDown, AlertTriangle, Info, Zap, Target, Clock, Filter } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { brkClient } from "@/lib/api/brkClient"
 import dynamic from 'next/dynamic'
 
@@ -100,6 +100,10 @@ export default function DynamicsPage() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
   const [activeWindow, setActiveWindow] = useState<AnalysisWindow>('4year')
   const [filterMode, setFilterMode] = useState<'all' | 'allWindows' | 'cycleSpecific'>('all')
+
+  // Refs and state for pulse animation
+  const chartRefs = useRef<{ [key: string]: ChartJS<'line', number[], string | Date> | null }>({});
+  const [pulsePositions, setPulsePositions] = useState<{ [key: string]: { x: number; y: number } | null }>({});
 
   useEffect(() => {
     async function analyzeMetrics() {
@@ -225,6 +229,21 @@ export default function DynamicsPage() {
 
     analyzeMetrics()
   }, [])
+
+  useEffect(() => {
+    const newPositions: { [key: string]: { x: number; y: number } } = {};
+    Object.keys(chartRefs.current).forEach(key => {
+      const chart = chartRefs.current[key];
+      if (chart) {
+        const meta = chart.getDatasetMeta(0); // Z-score line
+        if (meta.data.length > 0) {
+          const lastPoint = meta.data[meta.data.length - 1];
+          newPositions[key] = { x: lastPoint.x, y: lastPoint.y };
+        }
+      }
+    });
+    setPulsePositions(newPositions);
+  }, [analyses, activeWindow]); // Recalculate on data or window change
 
   const calculateRarityAndSeverity = (historicalZScores: number[]): { severity: ZScoreSeverity; timeInBandPercent: number } => {
     if (historicalZScores.length < 30) {
@@ -744,13 +763,29 @@ export default function DynamicsPage() {
                     </div>
 
                     {/* Z-Score Chart - Right Side with More Height */}
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-4 relative">
                       <div className="h-48 w-full">
                         <ChartJSLine
+                          ref={el => chartRefs.current[analysis.id] = el as ChartJS<'line', number[], string | Date> | null}
                           data={createZScoreChartData(analysis, activeWindow)}
                           options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)}
                         />
                       </div>
+                      {pulsePositions[analysis.id] && (
+                        <div
+                          className="absolute pointer-events-none"
+                          style={{
+                            left: pulsePositions[analysis.id]?.x,
+                            top: pulsePositions[analysis.id]?.y,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                        >
+                          <div className="relative flex items-center justify-center">
+                            <div className="w-3 h-3 bg-white rounded-full z-10 pulse-dot" />
+                            <div className="absolute right-1/2 h-px bg-white z-0 pulse-line" />
+                          </div>
+                        </div>
+                      )}
                       <p className="text-xs text-muted-foreground text-center mt-1">
                         {activeWindow === '4year' ? '4-Year' : activeWindow === '2year' ? '2-Year' : '2015+'} Z-Score
                       </p>
