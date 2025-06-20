@@ -26,6 +26,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  ChartOptions,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
 
@@ -44,6 +45,11 @@ if (typeof window !== 'undefined') {
 }
 
 type AnalysisWindow = '4year' | '2year' | '2015plus'
+const windowMap: Record<AnalysisWindow, keyof MetricZScoreAnalysis['timeSeries']> = {
+  '4year': 'fourYear',
+  '2year': 'twoYear',
+  '2015plus': 'since2015'
+}
 type ZScoreSeverity = 'extreme' | 'high' | 'moderate' | 'normal'
 
 interface ZScoreResult {
@@ -382,171 +388,103 @@ export default function DynamicsPage() {
   }
 
   const createZScoreChartData = (analysis: MetricZScoreAnalysis, window: AnalysisWindow) => {
-    const timeSeries = analysis.timeSeries[window === '4year' ? 'fourYear' : window === '2year' ? 'twoYear' : 'since2015']
-    const currentZScore = analysis.windows[window === '4year' ? 'fourYear' : window === '2year' ? 'twoYear' : 'since2015'].zScore
-
+    const timeSeries = analysis.timeSeries[windowMap[window]]
     return {
+      labels: timeSeries.dates,
       datasets: [
-        // Z-score line
         {
           label: 'Z-Score',
-          data: timeSeries.dates.map((date, i) => ({
-            x: date,
-            y: timeSeries.zScores[i]
-          })),
+          data: timeSeries.zScores,
           borderColor: '#3b82f6',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
           pointRadius: 0,
-          tension: 0.1,
-          fill: false
+          tension: 0.4,
         },
-        // +2.5σ line (extreme)
+        // Dashed lines for std dev
         {
-          label: '+2.5σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: 2.5 })),
+          label: '2.0σ',
+          data: timeSeries.dates.map(() => 2.0),
           borderColor: '#ef4444',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
           borderDash: [5, 5],
           pointRadius: 0,
-          fill: false
         },
-        // +2σ line (high)
         {
-          label: '+2σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: 2.0 })),
+          label: '-2.0σ',
+          data: timeSeries.dates.map(() => -2.0),
+          borderColor: '#ef4444',
+          borderDash: [5, 5],
+          pointRadius: 0,
+        },
+        {
+          label: '1.5σ',
+          data: timeSeries.dates.map(() => 1.5),
           borderColor: '#f97316',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderDash: [3, 3],
+          borderDash: [5, 5],
           pointRadius: 0,
-          fill: false
         },
-        // +1.5σ line (moderate)
-        {
-          label: '+1.5σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: 1.5 })),
-          borderColor: '#eab308',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderDash: [2, 2],
-          pointRadius: 0,
-          fill: false
-        },
-        // Mean line
-        {
-          label: 'Mean',
-          data: timeSeries.dates.map(date => ({ x: date, y: 0 })),
-          borderColor: '#6b7280',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          pointRadius: 0,
-          fill: false
-        },
-        // -1.5σ line (moderate)
         {
           label: '-1.5σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: -1.5 })),
-          borderColor: '#eab308',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderDash: [2, 2],
-          pointRadius: 0,
-          fill: false
-        },
-        // -2σ line (high)
-        {
-          label: '-2σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: -2.0 })),
+          data: timeSeries.dates.map(() => -1.5),
           borderColor: '#f97316',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
-          borderDash: [3, 3],
-          pointRadius: 0,
-          fill: false
-        },
-        // -2.5σ line (extreme)
-        {
-          label: '-2.5σ',
-          data: timeSeries.dates.map(date => ({ x: date, y: -2.5 })),
-          borderColor: '#ef4444',
-          backgroundColor: 'transparent',
-          borderWidth: 1,
           borderDash: [5, 5],
           pointRadius: 0,
-          fill: false
         },
-        // Current value highlight
-        {
-          label: 'Current',
-          data: [{ x: timeSeries.dates[timeSeries.dates.length - 1], y: currentZScore }],
-          borderColor: '#ffffff',
-          backgroundColor: '#ffffff',
-          borderWidth: 2,
-          pointRadius: 4,
-          showLine: false
-        }
-      ]
+      ],
     }
   }
 
-  const zScoreChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index' as const,
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        display: false
+  const createZScoreChartOptions = (zScores: number[]): ChartOptions<'line'> => {
+    const dataMin = Math.min(...zScores);
+    const dataMax = Math.max(...zScores);
+    const padding = (dataMax - dataMin) * 0.15; // 15% padding
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
       },
-      tooltip: {
-        backgroundColor: 'rgba(59, 130, 246, 0.15)',
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        borderWidth: 0,
-        callbacks: {
-          label: function(context: any) {
-            const label = context.dataset.label || ''
-            if (label === 'Z-Score') {
-              return `Z-Score: ${context.parsed.y.toFixed(2)}σ`
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderWidth: 0,
+          callbacks: {
+            label: function(context: any) {
+              const label = context.dataset.label || ''
+              if (label === 'Z-Score') {
+                return `Z-Score: ${context.parsed.y.toFixed(2)}σ`
+              }
+              return '' // Hide other labels
             }
-            return label
           }
         }
-      }
-    },
-    scales: {
-      x: {
-        type: 'time' as const,
-        time: {
-          unit: 'month' as const,
-        },
-        grid: {
-          color: '#374151',
-          display: false
-        },
-        ticks: {
-          color: '#9ca3af',
-          maxTicksLimit: 4,
-          display: false
-        }
       },
-      y: {
-        grid: {
-          color: '#374151',
+      scales: {
+        x: {
+          type: 'time',
+          display: false,
         },
-        ticks: {
-          color: '#9ca3af',
-          callback: function(value: any) {
-            return `${value.toFixed(1)}σ`
+        y: {
+          min: dataMin - padding,
+          max: dataMax + padding,
+          grid: {
+            color: '#374151',
           },
-          maxTicksLimit: 7
-        },
-        min: -3.5,
-        max: 3.5
+          ticks: {
+            color: '#9ca3af',
+            maxTicksLimit: 8,
+            callback: function(value: string | number) {
+              return `${Number(value).toFixed(1)}σ`
+            }
+          }
+        }
       }
     }
   }
@@ -740,9 +678,9 @@ export default function DynamicsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                     {/* Window Analysis - Left Side */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-2">
                       <div className="p-3 rounded-lg border border-border bg-card">
                         <div className="space-y-2">
                           {/* 4-Year Window */}
@@ -797,11 +735,11 @@ export default function DynamicsPage() {
                     </div>
 
                     {/* Z-Score Chart - Right Side with More Height */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-3">
                       <div className="h-48 w-full">
                         <ChartJSLine 
                           data={createZScoreChartData(analysis, activeWindow)} 
-                          options={zScoreChartOptions} 
+                          options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)} 
                         />
                       </div>
                       <p className="text-xs text-muted-foreground text-center mt-1">
