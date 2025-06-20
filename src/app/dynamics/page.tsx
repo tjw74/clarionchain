@@ -693,14 +693,14 @@ export default function DynamicsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
                     {/* Window Analysis - Left Side */}
                     <div className="lg:col-span-2">
-                      <div className="p-3 rounded-lg border border-border bg-card">
+                      <div className="rounded-lg bg-card">
                         <div className="space-y-2">
                           {/* 4-Year Window */}
                           <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '4year' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}
+                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '4year' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('4year')}
                           >
                             <div className="flex items-center gap-2">
@@ -716,7 +716,7 @@ export default function DynamicsPage() {
 
                           {/* 2-Year Window */}
                           <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2year' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}
+                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2year' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('2year')}
                           >
                             <div className="flex items-center gap-2">
@@ -732,7 +732,7 @@ export default function DynamicsPage() {
 
                           {/* 2015+ Window */}
                           <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2015plus' ? 'bg-blue-500/10 border border-blue-500/50' : ''}`}
+                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('2015plus')}
                           >
                             <div className="flex items-center gap-2">
