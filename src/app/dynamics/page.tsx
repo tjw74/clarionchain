@@ -389,6 +389,7 @@ export default function DynamicsPage() {
 
   const createZScoreChartData = (analysis: MetricZScoreAnalysis, window: AnalysisWindow) => {
     const timeSeries = analysis.timeSeries[windowMap[window]]
+    const currentZScore = analysis.windows[windowMap[window]].zScore
     return {
       labels: timeSeries.dates,
       datasets: [
@@ -396,38 +397,16 @@ export default function DynamicsPage() {
           label: 'Z-Score',
           data: timeSeries.zScores,
           borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          fill: true,
+          borderWidth: 1.5,
           pointRadius: 0,
           tension: 0.4,
         },
-        // Dashed lines for std dev
         {
-          label: '2.0σ',
-          data: timeSeries.dates.map(() => 2.0),
-          borderColor: '#ef4444',
-          borderDash: [5, 5],
-          pointRadius: 0,
-        },
-        {
-          label: '-2.0σ',
-          data: timeSeries.dates.map(() => -2.0),
-          borderColor: '#ef4444',
-          borderDash: [5, 5],
-          pointRadius: 0,
-        },
-        {
-          label: '1.5σ',
-          data: timeSeries.dates.map(() => 1.5),
-          borderColor: '#f97316',
-          borderDash: [5, 5],
-          pointRadius: 0,
-        },
-        {
-          label: '-1.5σ',
-          data: timeSeries.dates.map(() => -1.5),
-          borderColor: '#f97316',
-          borderDash: [5, 5],
+          label: 'Current',
+          data: timeSeries.dates.map(() => currentZScore),
+          borderColor: '#ffffff',
+          borderWidth: 1,
+          borderDash: [2, 2],
           pointRadius: 0,
         },
       ],
@@ -479,9 +458,9 @@ export default function DynamicsPage() {
           },
           ticks: {
             color: '#9ca3af',
-            maxTicksLimit: 8,
+            stepSize: 1,
             callback: function(value: string | number) {
-              return `${Number(value).toFixed(1)}σ`
+              return `${Number(value).toFixed(0)}σ`
             }
           }
         }
