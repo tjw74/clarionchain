@@ -693,54 +693,48 @@ export default function DynamicsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+                  <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
                     {/* Window Analysis - Left Side */}
                     <div className="lg:col-span-2">
                       <div className="rounded-lg bg-card">
                         <div className="space-y-2">
                           {/* 4-Year Window */}
-                          <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '4year' ? 'bg-blue-500/10' : ''}`}
+                          <div
+                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '4year' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('4year')}
                           >
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium">4-Year</p>
-                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.fourYear.severity)}`}>
-                                {analysis.windows.fourYear.zScore.toFixed(1)}σ
-                              </Badge>
-                            </div>
+                            <p className="text-xs font-medium w-12 text-left">4-Year</p>
+                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.fourYear.severity)}`}>
+                              {analysis.windows.fourYear.zScore.toFixed(1)}σ
+                            </Badge>
                             <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.fourYear.severity}
                             </p>
                           </div>
 
                           {/* 2-Year Window */}
-                          <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2year' ? 'bg-blue-500/10' : ''}`}
+                          <div
+                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2year' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('2year')}
                           >
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium">2-Year</p>
-                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.twoYear.severity)}`}>
-                                {analysis.windows.twoYear.zScore.toFixed(1)}σ
-                              </Badge>
-                            </div>
+                            <p className="text-xs font-medium w-12 text-left">2-Year</p>
+                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.twoYear.severity)}`}>
+                              {analysis.windows.twoYear.zScore.toFixed(1)}σ
+                            </Badge>
                             <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.twoYear.severity}
                             </p>
                           </div>
 
                           {/* 2015+ Window */}
-                          <div 
-                            className={`flex justify-between items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
+                          <div
+                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
                             onClick={() => setActiveWindow('2015plus')}
                           >
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs font-medium">2015+</p>
-                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.since2015.severity)}`}>
-                                {analysis.windows.since2015.zScore.toFixed(1)}σ
-                              </Badge>
-                            </div>
+                            <p className="text-xs font-medium w-12 text-left">2015+</p>
+                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.since2015.severity)}`}>
+                              {analysis.windows.since2015.zScore.toFixed(1)}σ
+                            </Badge>
                             <p className="text-xs text-muted-foreground capitalize">
                               {analysis.windows.since2015.severity}
                             </p>
@@ -750,11 +744,11 @@ export default function DynamicsPage() {
                     </div>
 
                     {/* Z-Score Chart - Right Side with More Height */}
-                    <div className="lg:col-span-3">
+                    <div className="lg:col-span-4">
                       <div className="h-48 w-full">
-                        <ChartJSLine 
-                          data={createZScoreChartData(analysis, activeWindow)} 
-                          options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)} 
+                        <ChartJSLine
+                          data={createZScoreChartData(analysis, activeWindow)}
+                          options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground text-center mt-1">
