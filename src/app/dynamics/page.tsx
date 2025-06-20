@@ -27,6 +27,7 @@ import {
   Legend,
   Filler,
   ChartOptions,
+  Scale,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
 
@@ -374,10 +375,10 @@ export default function DynamicsPage() {
 
   const getSeverityColor = (severity: ZScoreSeverity) => {
     switch (severity) {
-      case 'extreme': return 'bg-red-500/20 text-red-400 border-red-500/50'
-      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/50'
-      case 'moderate': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50'
+      case 'extreme': return 'bg-red-500/20 text-red-400'
+      case 'high': return 'bg-orange-500/20 text-orange-400'
+      case 'moderate': return 'bg-yellow-500/20 text-yellow-400'
+      default: return 'bg-gray-500/20 text-gray-400'
     }
   }
 
@@ -485,10 +486,18 @@ export default function DynamicsPage() {
           },
           ticks: {
             color: '#9ca3af',
-            stepSize: 1,
             callback: function(value: string | number) {
               return `${Number(value).toFixed(0)}σ`
             }
+          },
+          afterBuildTicks: (axis: Scale) => {
+            const ticks = [];
+            const min = Math.floor(axis.min);
+            const max = Math.ceil(axis.max);
+            for (let i = min; i <= max; i++) {
+              ticks.push({ value: i });
+            }
+            axis.ticks = ticks;
           }
         }
       }
@@ -677,14 +686,14 @@ export default function DynamicsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={getSeverityColor(analysis.maxSeverity)}>
+                      <Badge className={`text-xs ${getSeverityColor(analysis.maxSeverity)}`}>
                         {analysis.maxSeverity.toUpperCase()}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-center">
                     {/* Window Analysis - Left Side */}
                     <div className="lg:col-span-2">
                       <div className="p-3 rounded-lg border border-border bg-card">
@@ -696,7 +705,7 @@ export default function DynamicsPage() {
                           >
                             <div className="flex items-center gap-2">
                               <p className="text-xs font-medium">4-Year</p>
-                              <Badge variant="outline" className={`text-xs ${getSeverityColor(analysis.windows.fourYear.severity)}`}>
+                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.fourYear.severity)}`}>
                                 {analysis.windows.fourYear.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
@@ -712,7 +721,7 @@ export default function DynamicsPage() {
                           >
                             <div className="flex items-center gap-2">
                               <p className="text-xs font-medium">2-Year</p>
-                              <Badge variant="outline" className={`text-xs ${getSeverityColor(analysis.windows.twoYear.severity)}`}>
+                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.twoYear.severity)}`}>
                                 {analysis.windows.twoYear.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
@@ -728,7 +737,7 @@ export default function DynamicsPage() {
                           >
                             <div className="flex items-center gap-2">
                               <p className="text-xs font-medium">2015+</p>
-                              <Badge variant="outline" className={`text-xs ${getSeverityColor(analysis.windows.since2015.severity)}`}>
+                              <Badge className={`text-xs ${getSeverityColor(analysis.windows.since2015.severity)}`}>
                                 {analysis.windows.since2015.zScore.toFixed(1)}σ
                               </Badge>
                             </div>
