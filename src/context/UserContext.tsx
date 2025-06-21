@@ -10,11 +10,15 @@ interface NostrProfile {
   banner?: string
 }
 
+interface User {
+  pubkey: string;
+  profile: NostrProfile | null;
+}
+
 interface UserContextType {
-  pubkey: string | null
-  profile: NostrProfile | null
-  login: () => Promise<void>
-  logout: () => void
+  user: User | null;
+  login: () => Promise<void>;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -22,14 +26,12 @@ const UserContext = createContext<UserContextType | undefined>(undefined)
 const RELAYS = ['wss://relay.damus.io', 'wss://relay.primal.net', 'wss://nos.lol']
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [pubkey, setPubkey] = useState<string | null>(null)
-  const [profile, setProfile] = useState<NostrProfile | null>(null)
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Check if user is already "logged in" from a previous session
     const storedPubkey = localStorage.getItem('nostr-pubkey')
     if (storedPubkey) {
-      setPubkey(storedPubkey)
       fetchProfile(storedPubkey)
     }
   }, [])
@@ -42,11 +44,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
         kinds: [0],
         limit: 1,
       })
-      if (profileEvent) {
-        setProfile(JSON.parse(profileEvent.content))
-      }
+      
+      const userProfile = profileEvent ? JSON.parse(profileEvent.content) : null
+      setUser({ pubkey: pk, profile: userProfile });
+      
     } catch (error) {
       console.error("Failed to fetch Nostr profile:", error)
+      // Set user even if profile fails to fetch
+      setUser({ pubkey: pk, profile: null });
     } finally {
       pool.close(RELAYS)
     }
@@ -56,7 +61,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (window.nostr) {
       try {
         const userPubkey = await window.nostr.getPublicKey()
-        setPubkey(userPubkey)
         localStorage.setItem('nostr-pubkey', userPubkey)
         await fetchProfile(userPubkey)
       } catch (error) {
@@ -69,12 +73,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = () => {
-    setPubkey(null)
-    setProfile(null)
+    setUser(null)
     localStorage.removeItem('nostr-pubkey')
   }
 
-  const value = { pubkey, profile, login, logout }
+  const value = { user, login, logout }
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }

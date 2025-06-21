@@ -1,5 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "m.primal.net",
+      },
+      {
+        protocol: "https",
+        hostname: "nostr.build",
+      },
+    ],
+  },
   eslint: {
     // Disable ESLint during builds to fix deployment
     ignoreDuringBuilds: true,

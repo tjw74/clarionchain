@@ -128,7 +128,7 @@ const navigation = [
 
 export default function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   const pathname = usePathname()
-  const { pubkey, profile, login, logout } = useUser()
+  const { user, login, logout } = useUser()
 
   return (
     <SidebarProvider>
@@ -197,14 +197,22 @@ export default function DashboardLayout({ children, title, description }: Dashbo
                 {description && <p className="text-muted-foreground">{description}</p>}
               </div>
               <div>
-                {pubkey ? (
+                {user ? (
                   <div className="flex items-center gap-4">
-                    <span className="text-sm">
-                      Welcome, {profile?.name || `${pubkey.substring(0, 8)}...`}
-                    </span>
-                    <Button variant="outline" size="sm" onClick={logout}>
-                      Logout
-                    </Button>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm">{user.profile?.name || 'Anonymous'}</p>
+                      <p className="text-xs text-muted-foreground truncate max-w-[100px]">{user.pubkey}</p>
+                    </div>
+                    {user.profile?.picture && (
+                      <Image
+                        src={user.profile.picture}
+                        alt={user.profile.name || 'user profile picture'}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    )}
+                    <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
                   </div>
                 ) : (
                   <Button onClick={login}>Login with Nostr</Button>

@@ -8,6 +8,10 @@ import { TrendingUp, TrendingDown, AlertTriangle, Info, Zap, Target, Clock, Filt
 import { useEffect, useState, useRef } from "react"
 import { brkClient } from "@/lib/api/brkClient"
 import dynamic from 'next/dynamic'
+import html2canvas from 'html2canvas'
+import { useUser } from '@/context/UserContext'
+import { useNostr } from '@/hooks/useNostr'
+import { ChartJSOrUndefined } from "react-chartjs-2/dist/types"
 
 // Dynamic Chart.js imports to avoid SSR issues
 const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
@@ -101,8 +105,13 @@ export default function DynamicsPage() {
   const [activeWindow, setActiveWindow] = useState<AnalysisWindow>('4year')
   const [filterMode, setFilterMode] = useState<'all' | 'allWindows' | 'cycleSpecific'>('all')
 
+  // Refs for sharing individual metric cards
+  const metricCardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const { user } = useUser()
+  const { publish, isPublishing, error } = useNostr()
+
   // Refs and state for pulse animation
-  const chartRefs = useRef<{ [key: string]: ChartJS<'line', number[], string | Date> | null }>({});
+  const chartRefs = useRef<{ [key: string]: ChartJSOrUndefined<'line', number[], string | Date> | null }>({});
   const [pulsePositions, setPulsePositions] = useState<{ [key: string]: { x: number; y: number } | null }>({});
 
   useEffect(() => {
@@ -393,11 +402,16 @@ export default function DynamicsPage() {
   }
 
   const getSeverityColor = (severity: ZScoreSeverity) => {
+    // This function is no longer used for styling borders, but kept for logic if needed elsewhere
     switch (severity) {
-      case 'extreme': return 'bg-red-500/20 text-red-400'
-      case 'high': return 'bg-orange-500/20 text-orange-400'
-      case 'moderate': return 'bg-yellow-500/20 text-yellow-400'
-      default: return 'bg-gray-500/20 text-gray-400'
+      case 'extreme':
+        return 'border-red-500'
+      case 'high':
+        return 'border-yellow-500'
+      case 'moderate':
+        return 'border-blue-500'
+      default:
+        return 'border-gray-700'
     }
   }
 
@@ -523,6 +537,48 @@ export default function DynamicsPage() {
     }
   }
 
+  const handleShare = async (metricId: string, metricName: string) => {
+    if (!user) {
+      alert("Please log in with your Nostr extension to share.")
+      return
+    }
+
+    const cardElement = metricCardRefs.current[metricId]
+    if (!cardElement) {
+      console.error("Card element not found for sharing.")
+      return
+    }
+
+    try {
+      // 1. Capture the image using html2canvas
+      const canvas = await html2canvas(cardElement, {
+        backgroundColor: '#111827', // Use a background color to avoid transparent parts
+        useCORS: true, // Important for external images if any
+      });
+      const imageUrl = canvas.toDataURL('image/png');
+
+      // TODO: Upload the image data to an image hosting service (e.g., nostr.build, imgur)
+      // For now, we'll just use a placeholder and publish text.
+      // In a real implementation, you'd get a URL from the upload service.
+      const uploadedImageUrl = "https://clarion-chain.com/placeholder.png"; // Placeholder
+
+      // 2. Construct the Nostr note
+      const noteContent = `Check out this Bitcoin metric analysis from ClarionChain:\n\n${metricName}\n\n${uploadedImageUrl}\n\n#Bitcoin #OnChain #ClarionChain`;
+
+      // 3. Publish the note
+      const eventId = await publish(noteContent);
+
+      if (eventId) {
+        alert(`Successfully shared analysis! Event ID: ${eventId}`);
+      } else {
+        alert(`Failed to share. ${error}`);
+      }
+    } catch (e) {
+      console.error("Sharing failed:", e);
+      alert("An error occurred while trying to share the chart.");
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout title="Dynamics" description="Multi-window Z-score anomaly detection for Bitcoin metrics">
@@ -593,78 +649,60 @@ export default function DynamicsPage() {
           </div>
         </div>
 
-        {/* Z-Score Heatmap Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">4-Year Window</p>
-                  <p className="text-lg font-bold">{fourYearSummary.total} anomalies</p>
-                </div>
-                <Target className="h-6 w-6 text-blue-500" />
-              </div>
-              <div className="flex gap-1 mt-2">
-                <div className="h-2 bg-red-500 rounded" style={{width: `${(fourYearSummary.extreme/fourYearSummary.total)*100}%`}}></div>
-                <div className="h-2 bg-orange-500 rounded" style={{width: `${(fourYearSummary.high/fourYearSummary.total)*100}%`}}></div>
-                <div className="h-2 bg-yellow-500 rounded" style={{width: `${(fourYearSummary.moderate/fourYearSummary.total)*100}%`}}></div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                4-Year Window
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{fourYearSummary.total} anomalies</div>
+              <p className="text-xs text-muted-foreground">
                 {fourYearSummary.extreme} extreme, {fourYearSummary.high} high
               </p>
             </CardContent>
           </Card>
-
-          <Card className="border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">2-Year Window</p>
-                  <p className="text-lg font-bold">{twoYearSummary.total} anomalies</p>
-                </div>
-                <TrendingUp className="h-6 w-6 text-green-500" />
-              </div>
-              <div className="flex gap-1 mt-2">
-                <div className="h-2 bg-red-500 rounded" style={{width: `${(twoYearSummary.extreme/twoYearSummary.total)*100}%`}}></div>
-                <div className="h-2 bg-orange-500 rounded" style={{width: `${(twoYearSummary.high/twoYearSummary.total)*100}%`}}></div>
-                <div className="h-2 bg-yellow-500 rounded" style={{width: `${(twoYearSummary.moderate/twoYearSummary.total)*100}%`}}></div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                2-Year Window
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{twoYearSummary.total} anomalies</div>
+              <p className="text-xs text-muted-foreground">
                 {twoYearSummary.extreme} extreme, {twoYearSummary.high} high
               </p>
             </CardContent>
           </Card>
-
-          <Card className="border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">2015+ Era</p>
-                  <p className="text-lg font-bold">{since2015Summary.total} anomalies</p>
-                </div>
-                <AlertTriangle className="h-6 w-6 text-orange-500" />
-              </div>
-              <div className="flex gap-1 mt-2">
-                <div className="h-2 bg-red-500 rounded" style={{width: `${(since2015Summary.extreme/since2015Summary.total)*100}%`}}></div>
-                <div className="h-2 bg-orange-500 rounded" style={{width: `${(since2015Summary.high/since2015Summary.total)*100}%`}}></div>
-                <div className="h-2 bg-yellow-500 rounded" style={{width: `${(since2015Summary.moderate/since2015Summary.total)*100}%`}}></div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                2015+ Era
+                <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{since2015Summary.total} anomalies</div>
+              <p className="text-xs text-muted-foreground">
                 {since2015Summary.extreme} extreme, {since2015Summary.high} high
               </p>
             </CardContent>
           </Card>
-
-          <Card className="border-border">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Last Update</p>
-                  <p className="text-sm font-medium">{lastUpdate.toLocaleTimeString()}</p>
-                </div>
-                <Clock className="h-6 w-6 text-blue-500" />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                Last Update
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{lastUpdate.toLocaleTimeString()}</div>
+              <p className="text-xs text-muted-foreground">
                 Showing {filteredAnalyses.length} of {analyses.length} metrics
               </p>
             </CardContent>
@@ -684,116 +722,126 @@ export default function DynamicsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {filteredAnalyses.map((analysis) => (
-              <Card key={analysis.id} className="border-border">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg border ${getSeverityColor(analysis.maxSeverity)}`}>
-                        {getSeverityIcon(analysis.maxSeverity)}
-                      </div>
+            {filteredAnalyses.map((analysis) => {
+              const windowResult = analysis.windows[windowMap[activeWindow]]
+              if (!analysis) return null
+              return (
+                <Card
+                  key={analysis.id}
+                  ref={(el: HTMLDivElement | null) => {
+                    if (metricCardRefs.current) {
+                      metricCardRefs.current[analysis.id] = el
+                    }
+                  }}
+                >
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {analysis.name}
-                          {analysis.isAnomalyInAllWindows && (
-                            <Badge variant="outline" className="text-xs">
-                              ALL WINDOWS
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>{analysis.description}</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={`text-xs ${getSeverityColor(analysis.maxSeverity)}`}>
-                        {analysis.maxSeverity.toUpperCase()}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
-                    {/* Window Analysis - Left Side */}
-                    <div className="lg:col-span-2">
-                      <div className="rounded-lg bg-card">
-                        <div className="space-y-2">
-                          {/* 4-Year Window */}
-                          <div
-                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '4year' ? 'bg-blue-500/10' : ''}`}
-                            onClick={() => setActiveWindow('4year')}
-                          >
-                            <p className="text-xs font-medium w-12 text-left">4-Year</p>
-                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.fourYear.severity)}`}>
-                              {analysis.windows.fourYear.zScore.toFixed(1)}σ
-                            </Badge>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {analysis.windows.fourYear.severity}
-                            </p>
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg border border-gray-700">
+                            {getSeverityIcon(analysis.maxSeverity)}
                           </div>
-
-                          {/* 2-Year Window */}
-                          <div
-                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2year' ? 'bg-blue-500/10' : ''}`}
-                            onClick={() => setActiveWindow('2year')}
-                          >
-                            <p className="text-xs font-medium w-12 text-left">2-Year</p>
-                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.twoYear.severity)}`}>
-                              {analysis.windows.twoYear.zScore.toFixed(1)}σ
-                            </Badge>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {analysis.windows.twoYear.severity}
-                            </p>
-                          </div>
-
-                          {/* 2015+ Window */}
-                          <div
-                            className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
-                            onClick={() => setActiveWindow('2015plus')}
-                          >
-                            <p className="text-xs font-medium w-12 text-left">2015+</p>
-                            <Badge className={`text-xs ${getSeverityColor(analysis.windows.since2015.severity)}`}>
-                              {analysis.windows.since2015.zScore.toFixed(1)}σ
-                            </Badge>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {analysis.windows.since2015.severity}
-                            </p>
+                          <div>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                              {analysis.name}
+                              {analysis.isAnomalyInAllWindows && (
+                              <Badge variant="outline" className="text-xs">
+                                ALL WINDOWS
+                              </Badge>
+                              )}
+                            </CardTitle>
+                            <CardDescription>{analysis.description}</CardDescription>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Z-Score Chart - Right Side with More Height */}
-                    <div className="lg:col-span-4 relative">
-                      <div className="h-48 w-full">
-                        <ChartJSLine
-                          ref={el => chartRefs.current[analysis.id] = el as ChartJS<'line', number[], string | Date> | null}
-                          data={createZScoreChartData(analysis, activeWindow)}
-                          options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)}
-                        />
-                      </div>
-                      {pulsePositions[analysis.id] && (
-                        <div
-                          className="absolute pointer-events-none"
-                          style={{
-                            left: pulsePositions[analysis.id]?.x,
-                            top: pulsePositions[analysis.id]?.y,
-                            transform: 'translate(-50%, -50%)',
-                          }}
-                        >
-                          <div className="relative flex items-center justify-center">
-                            <div className="w-3 h-3 bg-white rounded-full z-10 pulse-dot" />
-                            <div className="absolute right-1/2 h-px bg-white z-0 pulse-line" />
-                          </div>
-                        </div>
+                      {user && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-gray-800 hover:bg-gray-700"
+                        onClick={() => handleShare(analysis.id, analysis.name)}
+                        disabled={isPublishing}
+                      >
+                        {isPublishing ? "Sharing..." : "Share"}
+                      </Button>
                       )}
-                      <p className="text-xs text-muted-foreground text-center mt-1">
-                        {activeWindow === '4year' ? '4-Year' : activeWindow === '2year' ? '2-Year' : '2015+'} Z-Score
-                      </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
+                      {/* Window Analysis - Left Side */}
+                      <div className="lg:col-span-2">
+                        <div className="rounded-lg bg-card">
+                          <div className="space-y-2">
+                            {/* 4-Year Window */}
+                            <div
+                              className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '4year' ? 'bg-blue-500/10' : ''}`}
+                              onClick={() => setActiveWindow('4year')}
+                            >
+                              <p className="text-xs font-medium w-12 text-left">4-Year</p>
+                              <Badge variant="secondary" className="text-xs">
+                                {analysis.windows.fourYear.zScore.toFixed(1)}σ
+                              </Badge>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {analysis.windows.fourYear.severity}
+                              </p>
+                            </div>
+
+                            {/* 2-Year Window */}
+                            <div
+                              className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2year' ? 'bg-blue-500/10' : ''}`}
+                              onClick={() => setActiveWindow('2year')}
+                            >
+                              <p className="text-xs font-medium w-12 text-left">2-Year</p>
+                              <Badge variant="secondary" className="text-xs">
+                                {analysis.windows.twoYear.zScore.toFixed(1)}σ
+                              </Badge>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {analysis.windows.twoYear.severity}
+                              </p>
+                            </div>
+
+                            {/* 2015+ Window */}
+                            <div
+                              className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
+                              onClick={() => setActiveWindow('2015plus')}
+                            >
+                              <p className="text-xs font-medium w-12 text-left">2015+</p>
+                              <Badge variant="secondary" className="text-xs">
+                                {analysis.windows.since2015.zScore.toFixed(1)}σ
+                              </Badge>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {analysis.windows.since2015.severity}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Z-Score Chart - Right Side with More Height */}
+                      <div className="lg:col-span-4 relative">
+                        <div className="h-48 w-full">
+                          <ChartJSLine
+                            ref={el => chartRefs.current[analysis.id] = el}
+                            data={createZScoreChartData(analysis, activeWindow)}
+                            options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)}
+                          />
+                        </div>
+                        {pulsePositions[analysis.id] && (
+                        <div
+                          className="absolute rounded-full w-3 h-3 bg-blue-400 animate-pulse"
+                          style={{ left: pulsePositions[analysis.id]!.x - 6, top: pulsePositions[analysis.id]!.y - 6 }}
+                        ></div>
+                        )}
+                        <p className="text-xs text-muted-foreground text-center mt-1">
+                          {activeWindow === '4year' ? '4-Year' : activeWindow === '2year' ? '2-Year' : '2-Year'} Z-Score
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>
