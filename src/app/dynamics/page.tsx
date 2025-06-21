@@ -11,7 +11,6 @@ import dynamic from 'next/dynamic'
 import html2canvas from 'html2canvas'
 import { useUser } from '@/context/UserContext'
 import { useNostr } from '@/hooks/useNostr'
-import { ChartJSOrUndefined } from "react-chartjs-2/dist/types"
 
 // Dynamic Chart.js imports to avoid SSR issues
 const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
@@ -49,11 +48,11 @@ if (typeof window !== 'undefined') {
   )
 }
 
-type AnalysisWindow = '4year' | '2year' | '2015plus'
+type AnalysisWindow = '4year' | '2year' | 'full'
 const windowMap: Record<AnalysisWindow, keyof MetricZScoreAnalysis['timeSeries']> = {
   '4year': 'fourYear',
   '2year': 'twoYear',
-  '2015plus': 'since2015'
+  'full': 'full'
 }
 type ZScoreSeverity = 'extreme' | 'high' | 'moderate' | 'normal'
 
@@ -79,12 +78,12 @@ interface MetricZScoreAnalysis {
   windows: {
     fourYear: ZScoreResult
     twoYear: ZScoreResult
-    since2015: ZScoreResult
+    full: ZScoreResult
   }
   timeSeries: {
     fourYear: ZScoreTimeSeries
     twoYear: ZScoreTimeSeries
-    since2015: ZScoreTimeSeries
+    full: ZScoreTimeSeries
   }
   description: string
   maxSeverity: ZScoreSeverity
@@ -111,7 +110,7 @@ export default function DynamicsPage() {
   const { publish, isPublishing, error } = useNostr()
 
   // Refs and state for pulse animation
-  const chartRefs = useRef<{ [key: string]: ChartJSOrUndefined<'line', number[], string | Date> | null }>({});
+  const chartRefs = useRef<{ [key: string]: ChartJS<'line', number[], string | Date> | null }>({});
   const [pulsePositions, setPulsePositions] = useState<{ [key: string]: { x: number; y: number } | null }>({});
 
   useEffect(() => {
@@ -148,53 +147,52 @@ export default function DynamicsPage() {
           return date
         })
 
-        // Filter data from Jan 1, 2015 onwards (assuming daily data)
-        // Rough calculation: 2015-01-01 to present
-        const daysSince2015 = Math.floor((new Date().getTime() - new Date('2015-01-01').getTime()) / (1000 * 60 * 60 * 24))
-        const since2015Index = Math.max(0, priceHistory.length - daysSince2015)
+        // Filter data from Jan 1, 2012 onwards for "Full History"
+        const daysSince2012 = Math.floor((new Date().getTime() - new Date('2012-01-01').getTime()) / (1000 * 60 * 60 * 24))
+        const fullHistoryIndex = Math.max(0, priceHistory.length - daysSince2012)
 
         const metrics = [
           {
             name: "Bitcoin Price",
             values: priceHistory,
-            since2015Values: priceHistory.slice(since2015Index),
+            fullHistoryValues: priceHistory.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           },
           {
             name: "Market Value", 
             values: marketCapHistory,
-            since2015Values: marketCapHistory.slice(since2015Index),
+            fullHistoryValues: marketCapHistory.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           },
           {
             name: "Realized Value",
             values: realizedCapHistory,
-            since2015Values: realizedCapHistory.slice(since2015Index),
+            fullHistoryValues: realizedCapHistory.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           },
           {
             name: "Realized Price",
             values: realizedPriceHistory,
-            since2015Values: realizedPriceHistory.slice(since2015Index),
+            fullHistoryValues: realizedPriceHistory.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           },
           {
             name: "LTH Supply %",
             values: lthPercentage,
-            since2015Values: lthPercentage.slice(since2015Index),
+            fullHistoryValues: lthPercentage.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           },
           {
             name: "STH Supply %",
             values: sthPercentage,
-            since2015Values: sthPercentage.slice(since2015Index),
+            fullHistoryValues: sthPercentage.slice(fullHistoryIndex),
             dates: dates,
-            since2015Dates: dates.slice(since2015Index)
+            fullHistoryDates: dates.slice(fullHistoryIndex)
           }
         ]
 
@@ -217,12 +215,12 @@ export default function DynamicsPage() {
           const aMaxZ = Math.max(
             Math.abs(a.windows.fourYear.zScore),
             Math.abs(a.windows.twoYear.zScore), 
-            Math.abs(a.windows.since2015.zScore)
+            Math.abs(a.windows.full.zScore)
           )
           const bMaxZ = Math.max(
             Math.abs(b.windows.fourYear.zScore),
             Math.abs(b.windows.twoYear.zScore),
-            Math.abs(b.windows.since2015.zScore)
+            Math.abs(b.windows.full.zScore)
           )
           return bMaxZ - aMaxZ
         })
@@ -309,20 +307,20 @@ export default function DynamicsPage() {
   const analyzeMetricZScores = (metric: { 
     name: string, 
     values: number[], 
-    since2015Values: number[],
+    fullHistoryValues: number[],
     dates: Date[],
-    since2015Dates: Date[]
+    fullHistoryDates: Date[]
   }, id: string): MetricZScoreAnalysis | null => {
-    if (metric.values.length < 365 * 2) return null; // Need at least 2 years of data
+    if (metric.values.length === 0) return null
 
     // Full history analysis for each window
     const fourYearTimeSeries = calculateZScoreTimeSeries(metric.values, metric.dates, 365 * 4);
     const twoYearTimeSeries = calculateZScoreTimeSeries(metric.values, metric.dates, 365 * 2);
-    const since2015TimeSeries = calculateZScoreTimeSeries(metric.since2015Values, metric.since2015Dates);
+    const fullHistoryTimeSeries = calculateZScoreTimeSeries(metric.fullHistoryValues, metric.fullHistoryDates);
 
     const fourYearResult = calculateRarityAndSeverity(fourYearTimeSeries.zScores);
     const twoYearResult = calculateRarityAndSeverity(twoYearTimeSeries.zScores);
-    const since2015Result = calculateRarityAndSeverity(since2015TimeSeries.zScores);
+    const fullHistoryResult = calculateRarityAndSeverity(fullHistoryTimeSeries.zScores);
 
     const latestValue = metric.values[metric.values.length - 1]
 
@@ -341,16 +339,16 @@ export default function DynamicsPage() {
         zScore: twoYearTimeSeries.zScores[twoYearTimeSeries.zScores.length - 1],
         ...twoYearResult
       },
-      since2015: {
+      full: {
         value: latestValue,
         mean: 0,
         stdDev: 1,
-        zScore: since2015TimeSeries.zScores[since2015TimeSeries.zScores.length - 1],
-        ...since2015Result
+        zScore: fullHistoryTimeSeries.zScores[fullHistoryTimeSeries.zScores.length - 1],
+        ...fullHistoryResult
       }
     };
 
-    const severities = [windows.fourYear.severity, windows.twoYear.severity, windows.since2015.severity];
+    const severities = [windows.fourYear.severity, windows.twoYear.severity, windows.full.severity];
     const severityOrder: Record<ZScoreSeverity, number> = { extreme: 4, high: 3, moderate: 2, normal: 1 };
     const maxSeverity = severities.reduce((max, current) => severityOrder[current] > severityOrder[max] ? current : max, 'normal');
 
@@ -368,7 +366,7 @@ export default function DynamicsPage() {
       timeSeries: {
         fourYear: fourYearTimeSeries,
         twoYear: twoYearTimeSeries,
-        since2015: since2015TimeSeries
+        full: fullHistoryTimeSeries
       },
       description: generateZScoreDescription(metric.name, latestValue, windows.fourYear),
       maxSeverity,
@@ -441,7 +439,7 @@ export default function DynamicsPage() {
       case 'cycleSpecific':
         return analyses.filter(a => 
           a.windows.fourYear.severity !== 'normal' && 
-          a.windows.since2015.severity === 'normal'
+          a.windows.full.severity === 'normal'
         )
       default:
         return analyses
@@ -546,36 +544,46 @@ export default function DynamicsPage() {
     const cardElement = metricCardRefs.current[metricId]
     if (!cardElement) {
       console.error("Card element not found for sharing.")
+      alert("An error occurred: Component reference not found for sharing.")
       return
     }
 
+    const chart = chartRefs.current[metricId];
+    // Temporarily disable animations for a stable capture
+    if (chart) {
+      chart.options.animation = false;
+      chart.update('none');
+    }
+
     try {
-      // 1. Capture the image using html2canvas
       const canvas = await html2canvas(cardElement, {
-        backgroundColor: '#111827', // Use a background color to avoid transparent parts
-        useCORS: true, // Important for external images if any
+        backgroundColor: '#111827', // The original dark background
+        useCORS: true,
+        allowTaint: true // This can help with rendering external/complex elements
       });
+      
       const imageUrl = canvas.toDataURL('image/png');
 
-      // TODO: Upload the image data to an image hosting service (e.g., nostr.build, imgur)
-      // For now, we'll just use a placeholder and publish text.
-      // In a real implementation, you'd get a URL from the upload service.
-      const uploadedImageUrl = "https://clarion-chain.com/placeholder.png"; // Placeholder
+      // TODO: Replace placeholder with a real image upload service
+      const uploadedImageUrl = "https://clarion-chain.com/placeholder.png"; 
 
-      // 2. Construct the Nostr note
       const noteContent = `Check out this Bitcoin metric analysis from ClarionChain:\n\n${metricName}\n\n${uploadedImageUrl}\n\n#Bitcoin #OnChain #ClarionChain`;
 
-      // 3. Publish the note
       const eventId = await publish(noteContent);
 
       if (eventId) {
         alert(`Successfully shared analysis! Event ID: ${eventId}`);
       } else {
-        alert(`Failed to share. ${error}`);
+        alert(`Failed to share. Please check your Nostr extension. ${error || ''}`);
       }
     } catch (e) {
-      console.error("Sharing failed:", e);
-      alert("An error occurred while trying to share the chart.");
+      console.error("Sharing failed during canvas capture:", e);
+      alert("An error occurred while trying to capture the chart image.");
+    } finally {
+      // Re-enable animations after the process
+      if (chart) {
+        chart.options.animation = {};
+      }
     }
   };
 
@@ -592,7 +600,7 @@ export default function DynamicsPage() {
   const filteredAnalyses = getFilteredAnalyses()
   const fourYearSummary = getWindowSummary('fourYear')
   const twoYearSummary = getWindowSummary('twoYear')
-  const since2015Summary = getWindowSummary('since2015')
+  const fullHistorySummary = getWindowSummary('full')
 
   return (
     <DashboardLayout title="Dynamics" description="Multi-window Z-score anomaly detection for Bitcoin metrics">
@@ -615,11 +623,11 @@ export default function DynamicsPage() {
               2-Year Trend
             </Button>
             <Button
-              variant={activeWindow === '2015plus' ? 'default' : 'outline'}
+              variant={activeWindow === 'full' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setActiveWindow('2015plus')}
+              onClick={() => setActiveWindow('full')}
             >
-              2015+ Era
+              Full History
             </Button>
           </div>
           
@@ -654,7 +662,7 @@ export default function DynamicsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
-                4-Year Window
+                4-Year Cycle
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardTitle>
             </CardHeader>
@@ -668,7 +676,7 @@ export default function DynamicsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
-                2-Year Window
+                2-Year Trend
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
               </CardTitle>
             </CardHeader>
@@ -682,14 +690,14 @@ export default function DynamicsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
-                2015+ Era
+                Full History
                 <AlertTriangle className="h-4 w-4 text-muted-foreground" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{since2015Summary.total} anomalies</div>
+              <div className="text-2xl font-bold">{fullHistorySummary.total} anomalies</div>
               <p className="text-xs text-muted-foreground">
-                {since2015Summary.extreme} extreme, {since2015Summary.high} high
+                {fullHistorySummary.extreme} extreme, {fullHistorySummary.high} high
               </p>
             </CardContent>
           </Card>
@@ -803,15 +811,15 @@ export default function DynamicsPage() {
 
                             {/* 2015+ Window */}
                             <div
-                              className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === '2015plus' ? 'bg-blue-500/10' : ''}`}
-                              onClick={() => setActiveWindow('2015plus')}
+                              className={`flex items-center p-2 rounded cursor-pointer transition-colors hover:bg-muted/50 gap-4 ${activeWindow === 'full' ? 'bg-blue-500/10' : ''}`}
+                              onClick={() => setActiveWindow('full')}
                             >
-                              <p className="text-xs font-medium w-12 text-left">2015+</p>
+                              <p className="text-xs font-medium w-12 text-left">Full</p>
                               <Badge variant="secondary" className="text-xs">
-                                {analysis.windows.since2015.zScore.toFixed(1)}σ
+                                {analysis.windows.full.zScore.toFixed(1)}σ
                               </Badge>
                               <p className="text-xs text-muted-foreground capitalize">
-                                {analysis.windows.since2015.severity}
+                                {analysis.windows.full.severity}
                               </p>
                             </div>
                           </div>
@@ -822,7 +830,7 @@ export default function DynamicsPage() {
                       <div className="lg:col-span-4 relative">
                         <div className="h-48 w-full">
                           <ChartJSLine
-                            ref={el => chartRefs.current[analysis.id] = el}
+                            ref={el => chartRefs.current[analysis.id] = el as ChartJS<'line', number[], string | Date> | null}
                             data={createZScoreChartData(analysis, activeWindow)}
                             options={createZScoreChartOptions(analysis.timeSeries[windowMap[activeWindow]].zScores)}
                           />
@@ -834,7 +842,7 @@ export default function DynamicsPage() {
                         ></div>
                         )}
                         <p className="text-xs text-muted-foreground text-center mt-1">
-                          {activeWindow === '4year' ? '4-Year' : activeWindow === '2year' ? '2-Year' : '2-Year'} Z-Score
+                          {activeWindow === '4year' ? '4-Year' : activeWindow === '2year' ? '2-Year' : 'Full History'} Z-Score
                         </p>
                       </div>
                     </div>
