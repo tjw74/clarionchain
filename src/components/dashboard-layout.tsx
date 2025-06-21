@@ -35,6 +35,7 @@ import {
   SidebarProvider,
   SidebarTrigger 
 } from "@/components/ui/sidebar"
+import { useUser } from "@/context/UserContext"
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -127,6 +128,7 @@ const navigation = [
 
 export default function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const { pubkey, profile, login, logout } = useUser()
 
   return (
     <SidebarProvider>
@@ -189,6 +191,26 @@ export default function DashboardLayout({ children, title, description }: Dashbo
           </header>
           
           <main className="flex-1 p-6 min-w-0">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {description && <p className="text-muted-foreground">{description}</p>}
+              </div>
+              <div>
+                {pubkey ? (
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm">
+                      Welcome, {profile?.name || `${pubkey.substring(0, 8)}...`}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={logout}>
+                      Logout
+                    </Button>
+                  </div>
+                ) : (
+                  <Button onClick={login}>Login with Nostr</Button>
+                )}
+              </div>
+            </div>
             {children}
           </main>
         </div>
