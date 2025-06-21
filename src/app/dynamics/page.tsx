@@ -752,11 +752,6 @@ export default function DynamicsPage() {
                           <div>
                             <CardTitle className="text-lg flex items-center gap-2">
                               {analysis.name}
-                              {analysis.isAnomalyInAllWindows && (
-                              <Badge variant="outline" className="text-xs">
-                                ALL WINDOWS
-                              </Badge>
-                              )}
                             </CardTitle>
                             <CardDescription>{analysis.description}</CardDescription>
                           </div>
