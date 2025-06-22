@@ -237,21 +237,6 @@ export default function DynamicsPage() {
     analyzeMetrics()
   }, [])
 
-  useEffect(() => {
-    const newPositions: { [key: string]: { x: number; y: number } } = {};
-    Object.keys(chartRefs.current).forEach(key => {
-      const chart = chartRefs.current[key];
-      if (chart) {
-        const meta = chart.getDatasetMeta(0); // Z-score line
-        if (meta.data.length > 0) {
-          const lastPoint = meta.data[meta.data.length - 1];
-          newPositions[key] = { x: lastPoint.x, y: lastPoint.y };
-        }
-      }
-    });
-    setPulsePositions(newPositions);
-  }, [analyses, activeWindow]); // Recalculate on data or window change
-
   const calculateRarityAndSeverity = (historicalZScores: number[]): { severity: ZScoreSeverity; timeInBandPercent: number } => {
     if (historicalZScores.length < 30) {
       return { severity: 'normal', timeInBandPercent: 100 };
@@ -434,6 +419,8 @@ export default function DynamicsPage() {
 
   const getFilteredAnalyses = () => {
     switch (filterMode) {
+      case 'all':
+        return analyses
       case 'allWindows':
         return analyses.filter(a => a.isAnomalyInAllWindows)
       case 'cycleSpecific':
@@ -445,6 +432,25 @@ export default function DynamicsPage() {
         return analyses
     }
   }
+
+  useEffect(() => {
+    // This effect runs after the component renders and charts are available.
+    // It's responsible for calculating the position of the pulsing dot.
+    const newPulsePositions: { [key: string]: { x: number, y: number } } = {};
+    
+    getFilteredAnalyses().forEach(analysis => {
+      const chart = chartRefs.current[analysis.id];
+      if (chart && chart.getDatasetMeta(0)?.data?.length > 0) {
+        const meta = chart.getDatasetMeta(0);
+        const lastDataPoint = meta.data[meta.data.length - 1];
+        if (lastDataPoint) {
+          newPulsePositions[analysis.id] = { x: lastDataPoint.x, y: lastDataPoint.y };
+        }
+      }
+    });
+
+    setPulsePositions(newPulsePositions);
+  }, [analyses, filterMode, activeWindow]); // Rerun when data or window changes
 
   const createZScoreChartData = (analysis: MetricZScoreAnalysis, window: AnalysisWindow) => {
     const timeSeries = analysis.timeSeries[windowMap[window]]
@@ -832,8 +838,13 @@ export default function DynamicsPage() {
                         </div>
                         {pulsePositions[analysis.id] && (
                         <div
-                          className="absolute rounded-full w-3 h-3 bg-blue-400 animate-pulse"
-                          style={{ left: pulsePositions[analysis.id]!.x - 6, top: pulsePositions[analysis.id]!.y - 6 }}
+                          // Uses custom `pulse-dot` animation from globals.css, not Tailwind's `animate-pulse`.
+                          className="absolute rounded-full w-3 h-3 bg-blue-400 pulse-dot pointer-events-none"
+                          style={{ 
+                            left: pulsePositions[analysis.id]!.x, 
+                            top: pulsePositions[analysis.id]!.y,
+                            transform: 'translate(-50%, -50%)'
+                          }}
                         ></div>
                         )}
                         <p className="text-xs text-muted-foreground text-center mt-1">
