@@ -152,8 +152,13 @@ export default function MiscPage() {
           },
         },
         zoom: {
-          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' as const },
-          pan: { enabled: true, mode: 'xy' as const },
+          // Enable independent panning for y and y2 axes (official config)
+          pan: {
+            enabled: true,
+            scales: {
+              y: { enabled: true, axis: 'y' },
+            },
+          },
         },
       },
       scales: {
@@ -169,6 +174,7 @@ export default function MiscPage() {
           grid: { color: 'rgba(55, 65, 81, 0.5)' },
           ticks: {
             color: '#9ca3af',
+            font: { family: 'monospace', size: 12 },
             callback: (value: number | string) => formatGrafanaShort(typeof value === 'string' ? parseFloat(value) : value),
           },
           afterBuildTicks: (axis: any) => {
@@ -181,7 +187,7 @@ export default function MiscPage() {
     }
   }, [marketValues])
 
-  // Chart data: MV (blue), RV (yellow), MVRV (white)
+  // Chart data: MV (blue), RV (yellow)
   const chartData = useMemo(() => ({
     labels: dates,
     datasets: [
@@ -201,22 +207,12 @@ export default function MiscPage() {
         pointRadius: 0,
         tension: 0.1,
       },
-      {
-        label: 'MVRV Ratio',
-        data: mvrvRatios,
-        borderColor: '#ffffff',
-        borderWidth: 1,
-        pointRadius: 0,
-        tension: 0.1,
-        yAxisID: 'y2',
-      },
     ],
-  }), [dates, marketValues, realizedValues, mvrvRatios])
+  }), [dates, marketValues, realizedValues])
 
-  // Legend: MV (blue), RV (yellow), MVRV (white), with latest values
+  // Legend: MV (blue), RV (yellow), with latest values
   const latestMV = marketValues.length > 0 ? marketValues[marketValues.length - 1] : null
   const latestRV = realizedValues.length > 0 ? realizedValues[realizedValues.length - 1] : null
-  const latestMVRV = mvrvRatios.length > 0 ? mvrvRatios[mvrvRatios.length - 1] : null
 
   return (
     <DashboardLayout title="MVRV">
@@ -277,23 +273,6 @@ export default function MiscPage() {
                 {latestRV !== null && (
                   <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
                     {formatGrafanaShort(latestRV)}
-                  </span>
-                )}
-              </div>
-              {/* MVRV Ratio */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#ffffff',
-                  marginRight: 8,
-                }} />
-                <span style={{ color: '#fff', fontSize: 14 }}>MVRV</span>
-                {latestMVRV !== null && (
-                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
-                    {latestMVRV.toFixed(2)}
                   </span>
                 )}
               </div>
