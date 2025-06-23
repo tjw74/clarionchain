@@ -191,11 +191,7 @@ export default function DashboardLayout({ children, title, description }: Dashbo
           </header>
           
           <main className="flex-1 p-6 min-w-0">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-2xl font-bold">{title}</h1>
-                {description && <p className="text-muted-foreground">{description}</p>}
-              </div>
+            <div className="flex justify-end items-center mb-6">
               <div>
                 {user ? (
                   <div className="flex items-center gap-4">
