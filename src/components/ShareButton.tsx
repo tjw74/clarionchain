@@ -26,7 +26,11 @@ export default function ShareButton({ chartId, userNpub }: ShareButtonProps) {
         throw new Error('Chart element not found')
       }
 
-      const canvas = await html2canvas(chartElement)
+      const canvas = await html2canvas(chartElement, {
+        foreignObjectRendering: false,
+        backgroundColor: '#000',
+        logging: true,
+      })
       const imageDataUrl = canvas.toDataURL('image/png')
 
       const response = await fetch('/api/share/nostr', {
