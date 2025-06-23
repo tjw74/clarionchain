@@ -1,18 +1,59 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { format } from 'date-fns'
+import dynamic from "next/dynamic"
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LogarithmicScale,
+  TimeScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js'
+import 'chartjs-adapter-date-fns'
+import zoomPlugin from 'chartjs-plugin-zoom'
+
+const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
+  ssr: false,
+})
+
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    LogarithmicScale,
+    TimeScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    zoomPlugin
+  )
+}
+
+function formatGrafanaShort(v: number): string {
+  if (typeof v !== 'number' || !isFinite(v)) return '$0'
+  if (v >= 1e6) return `$${(v / 1e6).toPrecision(3)}M`
+  if (v >= 1e3) return `$${(v / 1e3).toPrecision(3)}K`
+  if (v >= 1) return `$${v.toPrecision(3)}`
+  return `$${v}`
+}
 
 export default function MiscPage() {
   const [priceData, setPriceData] = useState<Array<{ date: string; price: number }>>([])
 
   useEffect(() => {
     async function fetchData() {
-      // Fetch full history since Jan 1, 2012
       const today = new Date()
       const jan2012 = new Date('2012-01-01')
       const days = Math.floor((today.getTime() - jan2012.getTime()) / (1000 * 60 * 60 * 24)) + 1
@@ -30,64 +71,96 @@ export default function MiscPage() {
     fetchData()
   }, [])
 
-  // Custom log tick generation (Grafana style: powers of 2)
-  const { logTicks, paddedDomain } = useMemo(() => {
-    if (!priceData.length) return { logTicks: [], paddedDomain: [2, 131072] }
+  const chartOptions = useMemo(() => {
+    if (!priceData.length) return {}
     const values = priceData.map(d => d.price).filter(v => v > 0)
-    if (!values.length) return { logTicks: [], paddedDomain: [2, 131072] }
+    if (!values.length) return {}
+    
     const minVal = Math.min(...values)
     const maxVal = Math.max(...values)
-    // Find nearest powers of 2
     const minPow = Math.floor(Math.log2(minVal))
     const maxPow = Math.ceil(Math.log2(maxVal))
-    // Add 1 extra tick below and above for padding
     const startPow = Math.max(1, minPow - 1)
     const endPow = maxPow + 1
-    const ticks = []
+    
+    const calculatedTicks: number[] = []
     for (let p = startPow; p <= endPow; p++) {
-      ticks.push(Math.pow(2, p))
+      calculatedTicks.push(Math.pow(2, p))
     }
-    const paddedDomain = [Math.pow(2, startPow), Math.pow(2, endPow)]
-    return { logTicks: ticks, paddedDomain }
+
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index' as const,
+        intersect: false,
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          borderWidth: 0,
+          callbacks: {
+            label: (context: any) => `Price: $${context.parsed.y.toLocaleString()}`,
+          },
+        },
+        zoom: {
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' as const },
+          pan: { enabled: true, mode: 'xy' as const },
+        },
+      },
+      scales: {
+        x: {
+          type: 'time' as const,
+          time: { unit: 'year' as const },
+          grid: { color: 'rgba(55, 65, 81, 0.5)' },
+          ticks: { color: '#9ca3af' },
+        },
+        y: {
+          type: 'logarithmic' as const,
+          position: 'right' as const,
+          grid: { color: 'rgba(55, 65, 81, 0.5)' },
+          ticks: {
+            color: '#9ca3af',
+            callback: (value: number | string) => formatGrafanaShort(typeof value === 'string' ? parseFloat(value) : value),
+          },
+          afterBuildTicks: (axis: any) => {
+            axis.ticks = calculatedTicks.map(v => ({ value: v }))
+          },
+          min: Math.pow(2, startPow),
+          max: Math.pow(2, endPow),
+        },
+      },
+    }
   }, [priceData])
 
-  // Grafana-style short formatter (3 significant digits, K for thousands)
-  function formatGrafanaShort(v: number) {
-    if (v >= 1e6) return `$${(v / 1e6).toPrecision(3)}M`
-    if (v >= 1e3) return `$${(v / 1e3).toPrecision(3)}K`
-    if (v >= 1) return `$${v.toPrecision(3)}`
-    return `$${v}`
-  }
+  const chartData = useMemo(() => ({
+    labels: priceData.map(d => d.date),
+    datasets: [{
+      label: 'Price',
+      data: priceData.map(d => d.price),
+      borderColor: '#3b82f6',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.1,
+    }],
+  }), [priceData])
 
   return (
     <DashboardLayout title="Misc">
       <Card>
         <CardHeader>
-          <CardTitle>BTC Close Price (Full History)</CardTitle>
+          <CardTitle>Price</CardTitle>
         </CardHeader>
         <CardContent>
-          <div style={{ width: "100%", height: 520 }}>
-            <ResponsiveContainer width="100%" height={520}>
-              <LineChart data={priceData} margin={{ left: 16, right: 16, top: 16, bottom: 16 }}>
-                <CartesianGrid strokeDasharray="" stroke="#374151" opacity={0.5} />
-                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#9ca3af' }} minTickGap={32} tickFormatter={date => {
-                  // date is in YYYY-MM-DD format
-                  return date.slice(0, 4)
-                }} />
-                <YAxis 
-                  tick={{ fontSize: 12, fill: '#9ca3af' }} 
-                  tickFormatter={formatGrafanaShort}
-                  orientation="right"
-                  scale="log"
-                  domain={paddedDomain}
-                  ticks={logTicks}
-                  allowDataOverflow={true}
-                  type="number"
-                />
-                <Tooltip formatter={v => `$${v.toLocaleString()}`} contentStyle={{ background: '#1e293b', color: '#fff', border: 0 }} />
-                <Line type="monotone" dataKey="price" stroke="#3b82f6" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div style={{ height: 520 }}>
+            {priceData.length > 0 ? (
+              <Line options={chartOptions} data={chartData} />
+            ) : (
+              <div className="h-[520px] w-full bg-gray-900 animate-pulse rounded-md" />
+            )}
           </div>
         </CardContent>
       </Card>
