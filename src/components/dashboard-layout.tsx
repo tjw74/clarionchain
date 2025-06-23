@@ -124,6 +124,11 @@ const navigation = [
     href: "/settings",
     icon: Settings,
   },
+  {
+    name: "Misc",
+    href: "/misc",
+    icon: Layers,
+  },
 ]
 
 export default function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
