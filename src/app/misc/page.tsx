@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import dynamic from "next/dynamic"
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
@@ -51,6 +51,7 @@ function formatGrafanaShort(v: number): string {
 
 export default function MiscPage() {
   const [priceData, setPriceData] = useState<Array<{ date: string; price: number }>>([])
+  const chartRef = useRef<any>(null)
 
   useEffect(() => {
     async function fetchData() {
@@ -157,7 +158,18 @@ export default function MiscPage() {
         <CardContent>
           <div style={{ height: 520 }}>
             {priceData.length > 0 ? (
-              <Line options={chartOptions} data={chartData} />
+              <Line 
+                ref={chartRef}
+                options={chartOptions} 
+                data={chartData} 
+                onDoubleClick={() => {
+                  if (chartRef.current && chartRef.current.resetZoom) {
+                    chartRef.current.resetZoom()
+                  } else if (chartRef.current && chartRef.current.chart && chartRef.current.chart.resetZoom) {
+                    chartRef.current.chart.resetZoom()
+                  }
+                }}
+              />
             ) : (
               <div className="h-[520px] w-full bg-gray-900 animate-pulse rounded-md" />
             )}
