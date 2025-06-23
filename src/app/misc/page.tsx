@@ -225,7 +225,7 @@ export default function MiscPage() {
           <CardTitle>MVRV</CardTitle>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 520 }}>
+          <div style={{ height: 624 }}>
             {marketValues.length > 0 ? (
               <Line 
                 ref={chartRef}
