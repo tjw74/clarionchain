@@ -143,7 +143,7 @@ export default function MiscPage() {
       label: 'Price',
       data: priceData.map(d => d.price),
       borderColor: '#3b82f6',
-      borderWidth: 2,
+      borderWidth: 1,
       pointRadius: 0,
       tension: 0.1,
     }],
