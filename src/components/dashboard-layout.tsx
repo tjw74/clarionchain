@@ -138,8 +138,8 @@ export default function DashboardLayout({ children, title, description }: Dashbo
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <Sidebar variant="sidebar" className="border-r border-border">
-          <SidebarHeader className="border-b border-border p-4">
+        <Sidebar variant="sidebar">
+          <SidebarHeader className="p-4">
             <div className="flex items-center gap-2">
               <Image
                 src="/clarion_chain_logo.png"
