@@ -76,6 +76,14 @@ export default function MiscPage() {
           Filler,
           zoomPlugin.default
         )
+        // Register custom tooltip positioner
+        if (Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
+          (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
+            if (!items.length) return false
+            // Always place tooltip at a fixed offset from the top of the chart area
+            return { x: eventPosition.x, y: 32 }
+          }
+        }
       })
     }
   }, [])
@@ -111,6 +119,7 @@ export default function MiscPage() {
           titleColor: '#ffffff',
           bodyColor: '#ffffff',
           borderWidth: 0,
+          position: ((): any => (ctx: any, options: any) => 'customAbove')(),
           callbacks: {
             label: (context: any) => `Price: $${context.parsed.y.toLocaleString()}`,
           },
