@@ -149,6 +149,9 @@ export default function MiscPage() {
     }],
   }), [priceData])
 
+  // Get latest value for legend
+  const latestValue = priceData.length > 0 ? priceData[priceData.length - 1].price : null
+
   return (
     <DashboardLayout title="Misc">
       <Card>
@@ -173,6 +176,26 @@ export default function MiscPage() {
             ) : (
               <div className="h-[520px] w-full bg-gray-900 animate-pulse rounded-md" />
             )}
+          </div>
+          {/* Custom Legend: lower right, solid dot, right-aligned */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{
+                display: 'inline-block',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#3b82f6',
+                marginRight: 8,
+              }} />
+              <span style={{ color: '#fff', fontSize: 14 }}>Price</span>
+              <span style={{ color: '#fff', fontSize: 14, margin: '0 8px' }}>:</span>
+              {latestValue !== null && (
+                <span style={{ color: '#fff', fontSize: 14 }}>
+                  {formatGrafanaShort(latestValue)}
+                </span>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
