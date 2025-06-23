@@ -119,7 +119,7 @@ export default function AIAnalysisPage() {
 
   return (
     <DashboardLayout 
-      title="AI Analysis"
+      title="AI Workbench"
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -153,7 +153,7 @@ export default function AIAnalysisPage() {
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <Brain className="h-5 w-5" />
-                  <CardTitle>AI Analysis</CardTitle>
+                  <CardTitle>AI</CardTitle>
                 </div>
                 <div className="flex items-center gap-2">
                   <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>

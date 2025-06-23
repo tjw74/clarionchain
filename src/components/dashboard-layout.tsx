@@ -55,7 +55,7 @@ const navigation = [
     icon: Gauge,
   },
   {
-    name: "AI Analysis",
+    name: "AI Workbench",
     href: "/ai-analysis",
     icon: Brain,
   },
@@ -182,44 +182,43 @@ export default function DashboardLayout({ children, title, description }: Dashbo
         </Sidebar>
         
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex h-16 items-center gap-4 border-b border-border px-6">
-            <SidebarTrigger />
-            {title && (
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold">{title}</h1>
-                {description && (
-                  <p className="text-sm text-muted-foreground">{description}</p>
-                )}
-              </div>
-            )}
-            {!title && <div className="flex-1" />}
-          </header>
-          
-          <main className="flex-1 p-6 min-w-0">
-            <div className="flex justify-end items-center mb-6">
-              <div>
-                {user ? (
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold text-sm">{user.profile?.name || 'Anonymous'}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[100px]">{user.pubkey}</p>
-                    </div>
-                    {user.profile?.picture && (
-                      <Image
-                        src={user.profile.picture}
-                        alt={user.profile.name || 'user profile picture'}
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                    )}
-                    <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
-                  </div>
-                ) : (
-                  <Button onClick={login}>Login with Nostr</Button>
-                )}
-              </div>
+          <header className="flex h-16 items-center gap-4 border-b border-border px-6 justify-between">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              {title && (
+                <div>
+                  <h1 className="text-2xl font-bold">{title}</h1>
+                  {description && (
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                  )}
+                </div>
+              )}
+              {!title && <div />}
             </div>
+            <div>
+              {user ? (
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-semibold text-sm">{user.profile?.name || 'Anonymous'}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[100px]">{user.pubkey}</p>
+                  </div>
+                  {user.profile?.picture && (
+                    <Image
+                      src={user.profile.picture}
+                      alt={user.profile.name || 'user profile picture'}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  )}
+                  <Button variant="outline" size="sm" onClick={logout}>Logout</Button>
+                </div>
+              ) : (
+                <Button onClick={login}>Login with Nostr</Button>
+              )}
+            </div>
+          </header>
+          <main className="flex-1 p-6 min-w-0">
             {children}
           </main>
         </div>
