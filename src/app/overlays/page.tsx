@@ -125,7 +125,8 @@ export default function OverlaysPage() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">AI-Powered Chart Overlays</h1>
+            {/* Removed redundant main content title */}
+            {/* <h1 className="text-3xl font-bold mb-2">AI-Powered Chart Overlays</h1> */}
             <p className="text-muted-foreground">
               Generate intelligent chart overlays using natural language or choose from predefined templates
             </p>

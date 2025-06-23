@@ -24,9 +24,8 @@ export default function ComingSoonPage({ title, description }: ComingSoonPagePro
           
           {/* Coming Soon Text */}
           <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold text-foreground">
-              Coming Soon...
-            </h1>
+            {/* Removed redundant main content title */}
+            {/* <h1 className="text-4xl font-bold text-foreground">Coming Soon...</h1> */}
             <p className="text-lg text-muted-foreground max-w-md">
               We're working hard to bring you advanced Bitcoin analytics. 
               Stay tuned for powerful insights and tools.

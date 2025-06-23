@@ -36,7 +36,8 @@ export default function BRKPage() {
         {/* Custom header with title and BRK info */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold mb-2">BRK Dataset</h1>
+            {/* Removed redundant main content title */}
+            {/* <h1 className="text-2xl font-bold mb-2">BRK Dataset</h1> */}
             <p className="text-muted-foreground">Advanced Bitcoin on-chain analytics and metrics</p>
           </div>
           <div className="text-right space-y-2">
