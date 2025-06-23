@@ -121,7 +121,18 @@ export default function MiscPage() {
           borderWidth: 0,
           position: ((): any => (ctx: any, options: any) => 'customAbove')(),
           callbacks: {
-            label: (context: any) => `Price: $${context.parsed.y.toLocaleString()}`,
+            label: (context: any) => {
+              // Use correct color and label for each dataset
+              const label = context.dataset.label || ''
+              const value = context.parsed.y
+              let color = '#ffffff'
+              if (label === 'Price') color = '#3b82f6'
+              if (label === 'STH Realized Price') color = '#fbbf24'
+              return (
+                // Use a colored square as legend marker
+                `\u25A0 ` + label + ': $' + value.toLocaleString(undefined, { maximumFractionDigits: 6 })
+              )
+            },
           },
         },
         zoom: {
