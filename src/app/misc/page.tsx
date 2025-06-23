@@ -51,6 +51,7 @@ function formatGrafanaShort(v: number): string {
 
 export default function MiscPage() {
   const [priceData, setPriceData] = useState<Array<{ date: string; price: number }>>([])
+  const [sthRealizedPriceData, setSthRealizedPriceData] = useState<number[]>([])
   const chartRef = useRef<any>(null)
 
   useEffect(() => {
@@ -58,7 +59,10 @@ export default function MiscPage() {
       const today = new Date()
       const jan2012 = new Date('2012-01-01')
       const days = Math.floor((today.getTime() - jan2012.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      const closePrices = await brkClient.fetchDailyCloseHistory(days)
+      const [closePrices, sthRealizedPrices] = await Promise.all([
+        brkClient.fetchDailyCloseHistory(days),
+        brkClient.fetchSTHRealizedPriceHistory(days)
+      ])
       const data = closePrices.map((price, i) => {
         const date = new Date(jan2012)
         date.setDate(jan2012.getDate() + i)
@@ -68,6 +72,7 @@ export default function MiscPage() {
         }
       })
       setPriceData(data)
+      setSthRealizedPriceData(sthRealizedPrices)
     }
     fetchData()
   }, [])
@@ -139,24 +144,35 @@ export default function MiscPage() {
 
   const chartData = useMemo(() => ({
     labels: priceData.map(d => d.date),
-    datasets: [{
-      label: 'Price',
-      data: priceData.map(d => d.price),
-      borderColor: '#3b82f6',
-      borderWidth: 1,
-      pointRadius: 0,
-      tension: 0.1,
-    }],
-  }), [priceData])
+    datasets: [
+      {
+        label: 'Price',
+        data: priceData.map(d => d.price),
+        borderColor: '#3b82f6',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+      },
+      {
+        label: 'STH Realized Price',
+        data: sthRealizedPriceData.slice(-priceData.length),
+        borderColor: '#fbbf24',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+      },
+    ],
+  }), [priceData, sthRealizedPriceData])
 
-  // Get latest value for legend
-  const latestValue = priceData.length > 0 ? priceData[priceData.length - 1].price : null
+  // Get latest values for legend
+  const latestPrice = priceData.length > 0 ? priceData[priceData.length - 1].price : null
+  const latestSTH = sthRealizedPriceData.length > 0 ? sthRealizedPriceData[sthRealizedPriceData.length - 1] : null
 
   return (
     <DashboardLayout title="Misc">
       <Card>
         <CardHeader>
-          <CardTitle>Price</CardTitle>
+          <CardTitle>Price : STH Realized Price</CardTitle>
         </CardHeader>
         <CardContent>
           <div style={{ height: 520 }}>
@@ -179,22 +195,41 @@ export default function MiscPage() {
           </div>
           {/* Custom Legend: lower right, solid dot, right-aligned */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <span style={{
-                display: 'inline-block',
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#3b82f6',
-                marginRight: 8,
-              }} />
-              <span style={{ color: '#fff', fontSize: 14 }}>Price</span>
-              <span style={{ color: '#fff', fontSize: 14, margin: '0 8px' }}>:</span>
-              {latestValue !== null && (
-                <span style={{ color: '#fff', fontSize: 14 }}>
-                  {formatGrafanaShort(latestValue)}
-                </span>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+              {/* Price */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#3b82f6',
+                  marginRight: 8,
+                }} />
+                <span style={{ color: '#fff', fontSize: 14 }}>Price</span>
+                {latestPrice !== null && (
+                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
+                    {formatGrafanaShort(latestPrice)}
+                  </span>
+                )}
+              </div>
+              {/* STH Realized Price */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#fbbf24',
+                  marginRight: 8,
+                }} />
+                <span style={{ color: '#fff', fontSize: 14 }}>STH Realized Price</span>
+                {latestSTH !== null && (
+                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
+                    {formatGrafanaShort(latestSTH)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
