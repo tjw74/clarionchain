@@ -14,6 +14,8 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { useUser } from "@/context/UserContext"
+import ShareButton from "@/components/ShareButton"
 
 // Mock data for initial display
 const mockMetrics: MetricCard[] = [
@@ -105,6 +107,7 @@ export default function Dashboard() {
   const [, setError] = useState<string | null>(null)
   const [priceChartData, setPriceChartData] = useState<Array<{date: string, price: number, realizedPrice: number}>>([])
   const [sthChartData, setSthChartData] = useState<Array<{date: string, price: number, bitcoinPrice: number}>>([])
+  const { user } = useUser()
   
   // Zoom state for charts
   const [priceZoomDomain, setPriceZoomDomain] = useState<{left?: number, right?: number}>({})
@@ -641,12 +644,13 @@ export default function Dashboard() {
 
         {/* Chart Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Price Models</CardTitle>
-              <CardDescription>
-                Bitcoin price trend over the last 8 years
-              </CardDescription>
+          <Card id="price-chart-card">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Price Models</CardTitle>
+                <CardDescription>Bitcoin price trend over the last 8 years</CardDescription>
+              </div>
+              <ShareButton chartId="price-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
             <CardContent className="space-y-4">
               <div 
@@ -765,12 +769,13 @@ export default function Dashboard() {
             </CardFooter>
           </Card>
           
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>STH Cost Basis : Realized Price</CardTitle>
-              <CardDescription>
-                STH realized price over the last 2 years
-              </CardDescription>
+          <Card id="sth-chart-card">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>STH Cost Basis : Realized Price</CardTitle>
+                <CardDescription>STH realized price over the last 2 years</CardDescription>
+              </div>
+              <ShareButton chartId="sth-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
             <CardContent className="space-y-4">
               <div 
