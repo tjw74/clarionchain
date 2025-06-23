@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getPublicKey, nip19, SimplePool, Event, getEventHash, signEvent } from 'nostr-tools'
+import { nip19, SimplePool, Event, finalizeEvent } from 'nostr-tools'
 
 // A simple, public relay for the app to publish to.
 const APP_RELAY = 'wss://relay.damus.io'
@@ -38,30 +38,25 @@ export async function POST(req: NextRequest) {
     const imageUrl = await uploadImage(imageDataUrl)
 
     // Decode user's npub to a hex public key
-    const { data: userPublicKeyHex } = nip19.decode(userNpub)
+    const decoded = nip19.decode(userNpub)
+    // @ts-ignore
+    if (decoded.type !== 'npub') {
+      throw new Error('A valid Nostr npub for the user was not provided.')
+    }
+    const userPublicKeyHex = decoded.data as any
 
     // Private key must be a Uint8Array for signing
     const privateKeyBytes = new Uint8Array(Buffer.from(appNostrPrivateKeyHex, 'hex'))
-    const appPublicKeyHex = getPublicKey(privateKeyBytes)
 
-    const unsignedEvent: Omit<Event, 'id' | 'sig'> = {
+    const eventTemplate = {
       kind: 1,
-      pubkey: appPublicKeyHex,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['p', userPublicKeyHex as string]],
+      tags: [['p', userPublicKeyHex]],
       content: `Check out this Bitcoin metric analysis from ClarionChain!\n\n${imageUrl}`,
     }
-    
-    // Manually create the signed event using fundamental functions
-    const id = getEventHash(unsignedEvent)
-    const sig = signEvent(unsignedEvent, privateKeyBytes)
 
-    const signedEvent: Event = {
-      ...unsignedEvent,
-      id,
-      sig,
-    }
-    
+    const signedEvent: Event = finalizeEvent(eventTemplate, privateKeyBytes)
+
     // Use SimplePool to publish the event
     const pool = new SimplePool()
     await pool.publish(RELAYS, signedEvent)
