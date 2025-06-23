@@ -16,7 +16,7 @@ type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
 export default function AIAnalysisPage() {
   const [apiKey, setApiKey] = useState("")
   const [provider, setProvider] = useState("openai")
-  const [selectedMetric, setSelectedMetric] = useState<MetricType>('mvrv')
+  const [selectedMetric, setSelectedMetric] = useState<MetricType>('price')
 
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
@@ -135,10 +135,8 @@ export default function AIAnalysisPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="mvrv">MVRV Analysis</SelectItem>
-                    <SelectItem value="price">Price Analysis</SelectItem>
-                    <SelectItem value="volume">Volume Analysis</SelectItem>
-                    <SelectItem value="onchain">On-Chain Metrics</SelectItem>
+                    <SelectItem value="price">Price</SelectItem>
+                    <SelectItem value="mvrv">MVRV</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
