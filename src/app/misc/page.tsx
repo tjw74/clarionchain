@@ -24,38 +24,56 @@ const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false,
 })
 
+// --- ClarionChain: Misc Page ---
+// This page now fetches and displays Market Value, Realized Value, and MVRV Ratio.
+// Chart uses Chart.js with log Y-axis, short-form USD formatting, and custom legend.
+// Legend and Y-axis formatting updated to always use $1.2M, $500K, $2.1B, etc.
+// MVRV Ratio is plotted in white, MV in blue, RV in yellow.
+// --------------------------------
+
 function formatGrafanaShort(v: number): string {
   if (typeof v !== 'number' || !isFinite(v)) return '$0'
-  if (v >= 1e6) return `$${(v / 1e6).toPrecision(3)}M`
-  if (v >= 1e3) return `$${(v / 1e3).toPrecision(3)}K`
-  if (v >= 1) return `$${v.toPrecision(3)}`
-  return `$${v}`
+  if (v >= 1e12) return `$${(v / 1e12).toFixed(1)}T`
+  if (v >= 1e9) return `$${(v / 1e9).toFixed(1)}B`
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(1)}K`
+  if (v >= 1) return `$${Math.round(v)}`
+  return `$${v.toFixed(2)}`
 }
 
 export default function MiscPage() {
-  const [priceData, setPriceData] = useState<Array<{ date: string; price: number }>>([])
-  const [sthRealizedPriceData, setSthRealizedPriceData] = useState<number[]>([])
+  const [dates, setDates] = useState<string[]>([])
+  const [marketValues, setMarketValues] = useState<number[]>([])
+  const [realizedValues, setRealizedValues] = useState<number[]>([])
+  const [mvrvRatios, setMvrvRatios] = useState<number[]>([])
   const chartRef = useRef<any>(null)
 
+  // Fetch Market Value, Realized Value, and compute MVRV Ratio
   useEffect(() => {
     async function fetchData() {
       const today = new Date()
       const jan2012 = new Date('2012-01-01')
       const days = Math.floor((today.getTime() - jan2012.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      const [closePrices, sthRealizedPrices] = await Promise.all([
-        brkClient.fetchDailyCloseHistory(days),
-        brkClient.fetchSTHRealizedPriceHistory(days)
+      // Fetch full history for both metrics
+      const [marketCap, realizedCap] = await Promise.all([
+        brkClient.fetchMarketCapHistory(days),
+        brkClient.fetchRealizedCapHistory(days)
       ])
-      const data = closePrices.map((price, i) => {
+      // Build date array
+      const dateArr = Array.from({ length: marketCap.length }, (_, i) => {
         const date = new Date(jan2012)
         date.setDate(jan2012.getDate() + i)
-        return {
-          date: date.toISOString().split("T")[0],
-          price,
-        }
+        return date.toISOString().split('T')[0]
       })
-      setPriceData(data)
-      setSthRealizedPriceData(sthRealizedPrices)
+      // Calculate MVRV Ratio (MV / RV)
+      const mvrv = marketCap.map((mv, i) => {
+        const rv = realizedCap[i]
+        return rv && rv !== 0 ? mv / rv : NaN
+      })
+      setDates(dateArr)
+      setMarketValues(marketCap)
+      setRealizedValues(realizedCap)
+      setMvrvRatios(mvrv)
     }
     fetchData()
   }, [])
@@ -88,23 +106,22 @@ export default function MiscPage() {
     }
   }, [])
 
+  // Chart options: log Y-axis, short-form USD ticks, custom tooltip, zoom/pan
   const chartOptions = useMemo(() => {
-    if (!priceData.length) return {}
-    const values = priceData.map(d => d.price).filter(v => v > 0)
+    if (!marketValues.length) return {}
+    const values = marketValues.filter(v => v > 0)
     if (!values.length) return {}
-    
+    // Calculate log ticks for Y-axis
     const minVal = Math.min(...values)
     const maxVal = Math.max(...values)
     const minPow = Math.floor(Math.log2(minVal))
     const maxPow = Math.ceil(Math.log2(maxVal))
     const startPow = Math.max(1, minPow - 1)
     const endPow = maxPow + 1
-    
     const calculatedTicks: number[] = []
     for (let p = startPow; p <= endPow; p++) {
       calculatedTicks.push(Math.pow(2, p))
     }
-
     return {
       responsive: true,
       maintainAspectRatio: false,
@@ -122,14 +139,13 @@ export default function MiscPage() {
           position: ((): any => (ctx: any, options: any) => 'customAbove')(),
           callbacks: {
             label: (context: any) => {
-              // Use correct color and label for each dataset
               const label = context.dataset.label || ''
               const value = context.parsed.y
               let color = '#ffffff'
-              if (label === 'Price') color = '#3b82f6'
-              if (label === 'STH Realized Price') color = '#fbbf24'
+              if (label === 'Market Value') color = '#3b82f6'
+              if (label === 'Realized Value') color = '#fbbf24'
+              if (label === 'MVRV Ratio') color = '#ffffff'
               return (
-                // Use a colored square as legend marker
                 `\u25A0 ` + label + ': $' + value.toLocaleString(undefined, { maximumFractionDigits: 6 })
               )
             },
@@ -163,43 +179,54 @@ export default function MiscPage() {
         },
       },
     }
-  }, [priceData])
+  }, [marketValues])
 
+  // Chart data: MV (blue), RV (yellow), MVRV (white)
   const chartData = useMemo(() => ({
-    labels: priceData.map(d => d.date),
+    labels: dates,
     datasets: [
       {
-        label: 'Price',
-        data: priceData.map(d => d.price),
+        label: 'Market Value',
+        data: marketValues,
         borderColor: '#3b82f6',
         borderWidth: 1,
         pointRadius: 0,
         tension: 0.1,
       },
       {
-        label: 'STH Realized Price',
-        data: sthRealizedPriceData.slice(-priceData.length),
+        label: 'Realized Value',
+        data: realizedValues,
         borderColor: '#fbbf24',
         borderWidth: 1,
         pointRadius: 0,
         tension: 0.1,
       },
+      {
+        label: 'MVRV Ratio',
+        data: mvrvRatios,
+        borderColor: '#ffffff',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+        yAxisID: 'y2',
+      },
     ],
-  }), [priceData, sthRealizedPriceData])
+  }), [dates, marketValues, realizedValues, mvrvRatios])
 
-  // Get latest values for legend
-  const latestPrice = priceData.length > 0 ? priceData[priceData.length - 1].price : null
-  const latestSTH = sthRealizedPriceData.length > 0 ? sthRealizedPriceData[sthRealizedPriceData.length - 1] : null
+  // Legend: MV (blue), RV (yellow), MVRV (white), with latest values
+  const latestMV = marketValues.length > 0 ? marketValues[marketValues.length - 1] : null
+  const latestRV = realizedValues.length > 0 ? realizedValues[realizedValues.length - 1] : null
+  const latestMVRV = mvrvRatios.length > 0 ? mvrvRatios[mvrvRatios.length - 1] : null
 
   return (
-    <DashboardLayout title="Misc">
+    <DashboardLayout title="MVRV">
       <Card>
         <CardHeader>
-          <CardTitle>Price : STH Realized Price</CardTitle>
+          <CardTitle>MVRV</CardTitle>
         </CardHeader>
         <CardContent>
           <div style={{ height: 520 }}>
-            {priceData.length > 0 ? (
+            {marketValues.length > 0 ? (
               <Line 
                 ref={chartRef}
                 options={chartOptions} 
@@ -219,7 +246,7 @@ export default function MiscPage() {
           {/* Custom Legend: lower right, solid dot, right-aligned */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-              {/* Price */}
+              {/* Market Value */}
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{
                   display: 'inline-block',
@@ -229,14 +256,14 @@ export default function MiscPage() {
                   background: '#3b82f6',
                   marginRight: 8,
                 }} />
-                <span style={{ color: '#fff', fontSize: 14 }}>Price</span>
-                {latestPrice !== null && (
+                <span style={{ color: '#fff', fontSize: 14 }}>MV</span>
+                {latestMV !== null && (
                   <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
-                    {formatGrafanaShort(latestPrice)}
+                    {formatGrafanaShort(latestMV)}
                   </span>
                 )}
               </div>
-              {/* STH Realized Price */}
+              {/* Realized Value */}
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{
                   display: 'inline-block',
@@ -246,10 +273,27 @@ export default function MiscPage() {
                   background: '#fbbf24',
                   marginRight: 8,
                 }} />
-                <span style={{ color: '#fff', fontSize: 14 }}>STH Realized Price</span>
-                {latestSTH !== null && (
+                <span style={{ color: '#fff', fontSize: 14 }}>RV</span>
+                {latestRV !== null && (
                   <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
-                    {formatGrafanaShort(latestSTH)}
+                    {formatGrafanaShort(latestRV)}
+                  </span>
+                )}
+              </div>
+              {/* MVRV Ratio */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#ffffff',
+                  marginRight: 8,
+                }} />
+                <span style={{ color: '#fff', fontSize: 14 }}>MVRV</span>
+                {latestMVRV !== null && (
+                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
+                    {latestMVRV.toFixed(2)}
                   </span>
                 )}
               </div>

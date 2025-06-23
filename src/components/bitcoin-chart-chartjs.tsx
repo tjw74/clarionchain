@@ -54,10 +54,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   // Get sidebar state
   const { state: sidebarState } = useSidebar()
 
-  // Register Chart.js components in useEffect to avoid SSR issues
+  // Register Chart.js components and plugins in useEffect (client-only)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Register basic Chart.js components first
       ChartJS.register(
         CategoryScale,
         LinearScale,
@@ -70,17 +69,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         TimeScale,
         Filler
       )
-
-      // Then dynamically import and register zoom plugin
       import('chartjs-plugin-zoom').then((zoomModule) => {
         ChartJS.register(zoomModule.default)
         setChartReady(true)
+        console.log('[ChartJS] Registered Chart.js and zoomPlugin (client)')
       }).catch((error) => {
         console.error('Failed to load zoom plugin:', error)
-        // Still set chart ready even if zoom fails, so basic charts work
         setChartReady(true)
       })
-
       setIsClient(true)
     }
   }, [])
@@ -628,6 +624,37 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           enabled: true,
           mode: 'xy' as const,
         },
+        // Synchronize zoom/pan with ratio chart, with debug logging
+        onZoom: ({chart}: {chart: any}) => {
+          console.log('[mainChartOptions] onZoom fired', chart, ratioChartRef.current);
+          if (ratioChartRef.current) {
+            const sourceXAxis = chart.scales.x
+            const targetXAxis = ratioChartRef.current.scales.x
+            console.log('[mainChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
+            console.log('[mainChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
+            if (sourceXAxis && targetXAxis) {
+              targetXAxis.options.min = sourceXAxis.min
+              targetXAxis.options.max = sourceXAxis.max
+              ratioChartRef.current.update('none')
+              console.log('[mainChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
+            }
+          }
+        },
+        onPan: ({chart}: {chart: any}) => {
+          console.log('[mainChartOptions] onPan fired', chart, ratioChartRef.current);
+          if (ratioChartRef.current) {
+            const sourceXAxis = chart.scales.x
+            const targetXAxis = ratioChartRef.current.scales.x
+            console.log('[mainChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
+            console.log('[mainChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
+            if (sourceXAxis && targetXAxis) {
+              targetXAxis.options.min = sourceXAxis.min
+              targetXAxis.options.max = sourceXAxis.max
+              ratioChartRef.current.update('none')
+              console.log('[mainChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
+            }
+          }
+        },
       },
     },
     scales: {
@@ -745,6 +772,37 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         pan: {
           enabled: true,
           mode: 'xy' as const,
+        },
+        // Synchronize zoom/pan with main chart, with debug logging
+        onZoom: ({chart}: {chart: any}) => {
+          console.log('[ratioChartOptions] onZoom fired', chart, chartRef.current);
+          if (chartRef.current) {
+            const sourceXAxis = chart.scales.x
+            const targetXAxis = chartRef.current.scales.x
+            console.log('[ratioChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
+            console.log('[ratioChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
+            if (sourceXAxis && targetXAxis) {
+              targetXAxis.options.min = sourceXAxis.min
+              targetXAxis.options.max = sourceXAxis.max
+              chartRef.current.update('none')
+              console.log('[ratioChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
+            }
+          }
+        },
+        onPan: ({chart}: {chart: any}) => {
+          console.log('[ratioChartOptions] onPan fired', chart, chartRef.current);
+          if (chartRef.current) {
+            const sourceXAxis = chart.scales.x
+            const targetXAxis = chartRef.current.scales.x
+            console.log('[ratioChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
+            console.log('[ratioChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
+            if (sourceXAxis && targetXAxis) {
+              targetXAxis.options.min = sourceXAxis.min
+              targetXAxis.options.max = sourceXAxis.max
+              chartRef.current.update('none')
+              console.log('[ratioChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
+            }
+          }
         },
       },
     },
