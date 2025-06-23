@@ -19,6 +19,8 @@ import {
   Filler,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
+import 'rc-slider/assets/index.css'
+import Slider from 'rc-slider'
 
 const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false,
@@ -46,6 +48,7 @@ export default function MiscPage() {
   const [marketValues, setMarketValues] = useState<number[]>([])
   const [realizedValues, setRealizedValues] = useState<number[]>([])
   const [mvrvRatios, setMvrvRatios] = useState<number[]>([])
+  const [brush, setBrush] = useState<[number, number]>([0, 0])
   const chartRef = useRef<any>(null)
 
   // Fetch Market Value, Realized Value, and compute MVRV Ratio
@@ -74,6 +77,10 @@ export default function MiscPage() {
       setMarketValues(marketCap)
       setRealizedValues(realizedCap)
       setMvrvRatios(mvrv)
+      // Default brush: last 3 years
+      const defaultEnd = marketCap.length - 1
+      const defaultStart = Math.max(0, defaultEnd - 1095)
+      setBrush([defaultStart, defaultEnd])
     }
     fetchData()
   }, [])
@@ -106,10 +113,15 @@ export default function MiscPage() {
     }
   }, [])
 
+  // Filtered data for main chart based on brush
+  const filteredDates = useMemo(() => dates.slice(brush[0], brush[1] + 1), [dates, brush])
+  const filteredMarketValues = useMemo(() => marketValues.slice(brush[0], brush[1] + 1), [marketValues, brush])
+  const filteredRealizedValues = useMemo(() => realizedValues.slice(brush[0], brush[1] + 1), [realizedValues, brush])
+
   // Chart options: log Y-axis, short-form USD ticks, custom tooltip, zoom/pan
   const chartOptions = useMemo(() => {
-    if (!marketValues.length) return {}
-    const values = marketValues.filter(v => v > 0)
+    if (!filteredMarketValues.length) return {}
+    const values = filteredMarketValues.filter(v => v > 0)
     if (!values.length) return {}
     // Calculate log ticks for Y-axis
     const minVal = Math.min(...values)
@@ -144,7 +156,6 @@ export default function MiscPage() {
               let color = '#ffffff'
               if (label === 'Market Value') color = '#3b82f6'
               if (label === 'Realized Value') color = '#fbbf24'
-              if (label === 'MVRV Ratio') color = '#ffffff'
               return (
                 `\u25A0 ` + label + ': $' + value.toLocaleString(undefined, { maximumFractionDigits: 6 })
               )
@@ -185,10 +196,46 @@ export default function MiscPage() {
         },
       },
     }
-  }, [marketValues])
+  }, [filteredMarketValues])
 
   // Chart data: MV (blue), RV (yellow)
   const chartData = useMemo(() => ({
+    labels: filteredDates,
+    datasets: [
+      {
+        label: 'Market Value',
+        data: filteredMarketValues,
+        borderColor: '#3b82f6',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+      },
+      {
+        label: 'Realized Value',
+        data: filteredRealizedValues,
+        borderColor: '#fbbf24',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+      },
+    ],
+  }), [filteredDates, filteredMarketValues, filteredRealizedValues])
+
+  // Legend: MV (blue), RV (yellow), with latest values
+  const latestMV = filteredMarketValues.length > 0 ? filteredMarketValues[filteredMarketValues.length - 1] : null
+  const latestRV = filteredRealizedValues.length > 0 ? filteredRealizedValues[filteredRealizedValues.length - 1] : null
+
+  // Mini-map chart options and data (no interactivity, always full range)
+  const miniMapOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: {
+      x: { type: 'time' as const, time: { unit: 'year' as const }, grid: { color: 'rgba(55, 65, 81, 0.2)' }, ticks: { color: '#6b7280' } },
+      y: { type: 'logarithmic' as const, position: 'right' as const, grid: { color: 'rgba(55, 65, 81, 0.2)' }, ticks: { color: '#6b7280', callback: (value: number | string) => formatGrafanaShort(typeof value === 'string' ? parseFloat(value) : value) } },
+    },
+  }), [])
+  const miniMapData = useMemo(() => ({
     labels: dates,
     datasets: [
       {
@@ -210,36 +257,25 @@ export default function MiscPage() {
     ],
   }), [dates, marketValues, realizedValues])
 
-  // Legend: MV (blue), RV (yellow), with latest values
-  const latestMV = marketValues.length > 0 ? marketValues[marketValues.length - 1] : null
-  const latestRV = realizedValues.length > 0 ? realizedValues[realizedValues.length - 1] : null
-
   return (
     <DashboardLayout title="MVRV">
       <Card>
         <CardHeader>
-          <CardTitle>MVRV</CardTitle>
+          <CardTitle>Market Value : Realized Value</CardTitle>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 624 }}>
-            {marketValues.length > 0 ? (
+          <div style={{ height: 592 }}>
+            {filteredMarketValues.length > 0 ? (
               <Line 
                 ref={chartRef}
                 options={chartOptions} 
                 data={chartData} 
-                onDoubleClick={() => {
-                  if (chartRef.current && chartRef.current.resetZoom) {
-                    chartRef.current.resetZoom()
-                  } else if (chartRef.current && chartRef.current.chart && chartRef.current.chart.resetZoom) {
-                    chartRef.current.chart.resetZoom()
-                  }
-                }}
               />
             ) : (
-              <div className="h-[520px] w-full bg-gray-900 animate-pulse rounded-md" />
+              <div className="h-[592px] w-full bg-gray-900 animate-pulse rounded-md" />
             )}
           </div>
-          {/* Custom Legend: lower right, solid dot, right-aligned */}
+          {/* Legend: lower right, solid dot, right-aligned */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
               {/* Market Value */}
@@ -277,6 +313,22 @@ export default function MiscPage() {
                 )}
               </div>
             </div>
+          </div>
+          {/* Single, minimal range slider below the legend */}
+          <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }}>
+            <Slider
+              range
+              min={0}
+              max={dates.length - 1}
+              value={brush}
+              onChange={(val: number | number[]) => setBrush(val as [number, number])}
+              trackStyle={[{ backgroundColor: '#9ca3af', height: 1.5 }]}
+              handleStyle={[
+                { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 },
+                { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 }
+              ]}
+              railStyle={{ backgroundColor: '#374151', height: 1.5 }}
+            />
           </div>
         </CardContent>
       </Card>
