@@ -19,27 +19,10 @@ import {
   Filler,
 } from 'chart.js'
 import 'chartjs-adapter-date-fns'
-import zoomPlugin from 'chartjs-plugin-zoom'
 
 const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false,
 })
-
-if (typeof window !== 'undefined') {
-  ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    LogarithmicScale,
-    TimeScale,
-    PointElement,
-    LineElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler,
-    zoomPlugin
-  )
-}
 
 function formatGrafanaShort(v: number): string {
   if (typeof v !== 'number' || !isFinite(v)) return '$0'
@@ -75,6 +58,26 @@ export default function MiscPage() {
       setSthRealizedPriceData(sthRealizedPrices)
     }
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('chartjs-plugin-zoom').then((zoomPlugin) => {
+        ChartJS.register(
+          CategoryScale,
+          LinearScale,
+          LogarithmicScale,
+          TimeScale,
+          PointElement,
+          LineElement,
+          Title,
+          Tooltip,
+          Legend,
+          Filler,
+          zoomPlugin.default
+        )
+      })
+    }
   }, [])
 
   const chartOptions = useMemo(() => {
