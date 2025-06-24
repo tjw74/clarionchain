@@ -60,6 +60,10 @@ ChartJS.register(
 )
 
 export default function MiscPage() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+  if (!mounted) return null
+
   const [dates, setDates] = useState<string[]>([])
   const [marketValues, setMarketValues] = useState<number[]>([])
   const [realizedValues, setRealizedValues] = useState<number[]>([])
