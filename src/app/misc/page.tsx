@@ -278,7 +278,6 @@ export default function MiscPage() {
           font: { family: 'monospace', size: 12 },
           callback: (value: number | string) => (typeof value === 'number' ? value.toFixed(2) : value),
         },
-        padding: { left: 60, right: 60 },
       },
     },
   }), [filteredDates])
@@ -325,76 +324,67 @@ export default function MiscPage() {
         <CardHeader>
           <CardTitle>Market Value : Realized Value</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div style={{ height: 400 }}>
-            {filteredMarketValues.length > 0 ? (
-              <Line 
-                ref={chartRef}
-                options={chartOptions} 
-                data={chartData} 
-              />
-            ) : (
-              <div className="h-[400px] w-full bg-gray-900 animate-pulse rounded-md" />
-            )}
-          </div>
-          {/* MVRV Ratio panel below main chart */}
-          <div style={{ height: 400 }}>
-            <Line options={mvrvRatioOptions} data={mvrvRatioData} height={400} />
-          </div>
-          {/* Legend: lower right, solid dot, right-aligned */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-              {/* Market Value */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#3b82f6',
-                  marginRight: 8,
-                }} />
-                <span style={{ color: '#fff', fontSize: 14 }}>MV</span>
-                {latestMV !== null && (
-                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
-                    {formatGrafanaShort(latestMV)}
-                  </span>
-                )}
-              </div>
-              {/* Realized Value */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: '#fbbf24',
-                  marginRight: 8,
-                }} />
-                <span style={{ color: '#fff', fontSize: 14 }}>RV</span>
-                {latestRV !== null && (
-                  <span style={{ color: '#fff', fontSize: 14, marginLeft: 8 }}>
-                    {formatGrafanaShort(latestRV)}
-                  </span>
-                )}
+        <CardContent className="!p-0">
+          <div className="border rounded-md bg-muted/20 min-w-0 flex flex-col">
+            {/* Legend area - centered vertically with uniform spacing */}
+            <div className="flex justify-center items-center h-12 px-4 pt-2">
+              <div className="flex items-center gap-6">
+                {/* Market Value */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
+                  <span className="text-white text-sm">MV</span>
+                  {latestMV !== null && (
+                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestMV)}</span>
+                  )}
+                </div>
+                {/* Realized Value */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fbbf24' }}></div>
+                  <span className="text-white text-sm">RV</span>
+                  {latestRV !== null && (
+                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestRV)}</span>
+                  )}
+                </div>
+                {/* MVRV Ratio */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fff' }}></div>
+                  <span className="text-white text-sm">MVRV Ratio</span>
+                </div>
               </div>
             </div>
-          </div>
-          {/* Slider below the legend */}
-          <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }}>
-            <Slider
-              range
-              min={0}
-              max={dates.length - 1}
-              value={brush}
-              onChange={(val: number | number[]) => setBrush(val as [number, number])}
-              trackStyle={[{ backgroundColor: '#9ca3af', height: 1.5 }]}
-              handleStyle={[
-                { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 },
-                { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 }
-              ]}
-              railStyle={{ backgroundColor: '#374151', height: 1.5 }}
-            />
+            {/* Main Chart area */}
+            <div className="px-4 pb-2" style={{ height: 360 }}>
+              {filteredMarketValues.length > 0 ? (
+                <Line 
+                  ref={chartRef}
+                  options={chartOptions} 
+                  data={chartData} 
+                  height={360}
+                />
+              ) : (
+                <div className="h-[360px] w-full bg-gray-900 animate-pulse rounded-md" />
+              )}
+            </div>
+            {/* Ratio Chart area */}
+            <div className="px-4 pb-4" style={{ height: 360 }}>
+              <Line options={mvrvRatioOptions} data={mvrvRatioData} height={360} />
+            </div>
+            {/* Time Slider below the charts */}
+            <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }}>
+              <Slider
+                range
+                min={0}
+                max={dates.length - 1}
+                value={brush}
+                onChange={(val: number | number[]) => setBrush(val as [number, number])}
+                trackStyle={[{ backgroundColor: '#9ca3af', height: 1.5 }]}
+                handleStyle={[
+                  { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 },
+                  { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 }
+                ]}
+                railStyle={{ backgroundColor: '#374151', height: 1.5 }}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
