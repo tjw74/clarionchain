@@ -44,24 +44,24 @@ function formatGrafanaShort(v: number): string {
   return `$${v.toFixed(2)}`
 }
 
-// Register Chart.js components and plugins at the top level
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  LogarithmicScale,
-  TimeScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  zoomPlugin
-)
-
 export default function MiscPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    ChartJS.register(
+      CategoryScale,
+      LinearScale,
+      LogarithmicScale,
+      TimeScale,
+      PointElement,
+      LineElement,
+      Title,
+      Tooltip,
+      Legend,
+      Filler,
+      zoomPlugin
+    )
+  }, [])
   if (!mounted) return null
 
   const [dates, setDates] = useState<string[]>([])
