@@ -122,10 +122,10 @@ export default function AIAnalysisPage() {
     <DashboardLayout 
       title="AI Workbench"
     >
-      <div className="space-y-6">
-        <PanelGroup direction="horizontal" className="w-full h-[700px] rounded-md overflow-hidden">
-          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col">
-            <Card className="border-border w-full h-full flex flex-col">
+      <div className="h-screen min-h-0 w-full">
+        <PanelGroup direction="horizontal" className="w-full h-full min-h-0 rounded-md overflow-hidden">
+          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+            <Card className="border-border w-full h-full flex flex-col min-h-0">
               <CardHeader>
                 <div className="flex items-center justify-between w-full">
                   <CardTitle className="flex items-center gap-2">
@@ -143,14 +143,14 @@ export default function AIAnalysisPage() {
                   </Select>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 min-w-0 flex-1">
+              <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
                 <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} />
               </CardContent>
             </Card>
           </Panel>
           <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 w-1 cursor-col-resize" />
-          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col">
-            <Card className="border-border flex flex-col w-full h-full">
+          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+            <Card className="border-border flex flex-col w-full h-full min-h-0">
               <CardHeader>
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export default function AIAnalysisPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
+              <CardContent className="flex-1 flex flex-col min-h-0">
                 <div className="flex flex-col h-full space-y-4">
                   {/* Chat Messages Area - Now expands to fill available space */}
                   <div className="border rounded-md p-4 flex-1 overflow-y-auto bg-muted/20">

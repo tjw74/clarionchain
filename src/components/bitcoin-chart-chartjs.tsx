@@ -957,12 +957,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   ]
 
   return (
-    // CRITICAL: min-w-0 overrides flexbox default min-width: auto behavior
-    // This allows the chart container to shrink when sidebar reopens
-    // Without this, flexbox prevents shrinking below content size
-    <div ref={containerRef} className="w-full min-w-0">
+    <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
       {/* Chart Container - styled to match AI component */}
-      <div className="border rounded-md bg-muted/20 min-w-0 h-[680px] flex flex-col">
+      <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
         {/* Legend area - centered vertically with uniform spacing */}
         <div className="flex justify-center items-center h-12 px-4 pt-2">
           <div className="flex items-center gap-6">
@@ -984,7 +981,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         </div>
         {/* Main Chart area */}
         <div 
-          className="flex-1 px-4 pb-2"
+          className="flex-1 min-h-0 px-4 pb-2"
           onMouseLeave={() => {
             // Clear both tooltips when mouse leaves main chart area
             if (chartRef.current && ratioChartRef.current) {
@@ -1014,7 +1011,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         </div>
         {/* Ratio Chart area */}
         <div 
-          className="h-48 px-4 pb-4"
+          className="flex-1 min-h-0 px-4 pb-4"
           onMouseLeave={() => {
             // Clear both tooltips when mouse leaves ratio chart area
             if (chartRef.current && ratioChartRef.current) {
