@@ -21,6 +21,7 @@ import { brkClient } from '@/lib/api/brkClient'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSidebar } from "@/components/ui/sidebar"
+import * as Slider from '@radix-ui/react-slider'
 
 export interface BitcoinChartRef {
   captureImage: () => Promise<string>
@@ -80,6 +81,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     priceTrueMean: false
   })
 
+  // Time range slider state
+  const [range, setRange] = useState<[number, number]>([0, (data?.dates.length ?? 1) - 1])
+
+  // Update range when data changes (reset to full range)
+  useEffect(() => {
+    if (data?.dates) {
+      setRange([0, data.dates.length - 1])
+    }
+  }, [data?.dates?.length])
+
+  // Slice data for visible range
+  const rangeStart = Math.min(range[0], range[1])
+  const rangeEnd = Math.max(range[0], range[1])
+  const visibleDates = data?.dates?.slice(rangeStart, rangeEnd + 1) ?? []
+
+  // Helper to slice arrays safely
+  const sliceArr = (arr?: number[]) => arr ? arr.slice(rangeStart, rangeEnd + 1) : []
+
   // Helper to toggle traces
   const handleLegendClick = (key: TraceKey) => {
     setVisibleTraces(prev => ({
@@ -103,14 +122,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         TimeScale,
         Filler
       )
-      import('chartjs-plugin-zoom').then((zoomModule) => {
-        ChartJS.register(zoomModule.default)
-        setChartReady(true)
-        console.log('[ChartJS] Registered Chart.js and zoomPlugin (client)')
-      }).catch((error) => {
-        console.error('Failed to load zoom plugin:', error)
-        setChartReady(true)
-      })
+      setChartReady(true)
       setIsClient(true)
     }
   }, [])
@@ -577,12 +589,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   const priceRealizedRatio = priceValues && realizedPrice ? priceValues.map((p, i) => (realizedPrice[i] ? p / realizedPrice[i] : 0)) : []
   const priceTrueMeanRatio = priceValues && trueMarketMean ? priceValues.map((p, i) => (trueMarketMean[i] ? p / trueMarketMean[i] : 0)) : []
 
-  // Main chart datasets with keys for toggling
+  // Sliced chart data
   const mainChartDatasets = [
     {
       key: 'price',
       label: 'BTC Price',
-      data: priceValues || [],
+      data: sliceArr(priceValues),
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
       visible: visibleTraces.price
@@ -590,7 +602,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     {
       key: 'ma200',
       label: '200DMA',
-      data: priceMA200 || [],
+      data: sliceArr(priceMA200),
       borderColor: '#fbbf24',
       backgroundColor: 'rgba(251, 191, 36, 0.1)',
       visible: visibleTraces.ma200
@@ -598,7 +610,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     {
       key: 'realizedPrice',
       label: 'Realized Price',
-      data: realizedPrice || [],
+      data: sliceArr(realizedPrice),
       borderColor: '#10b981',
       backgroundColor: 'rgba(16, 185, 129, 0.1)',
       visible: visibleTraces.realizedPrice
@@ -606,19 +618,22 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     {
       key: 'trueMarketMean',
       label: 'True Market Mean',
-      data: trueMarketMean || [],
+      data: sliceArr(trueMarketMean),
       borderColor: '#fb923c',
       backgroundColor: 'rgba(251, 146, 60, 0.1)',
       visible: visibleTraces.trueMarketMean
     }
   ].filter(ds => ds.visible)
 
-  // Ratio chart datasets with keys for toggling
+  const mayerRatioSliced = sliceArr(priceValues).map((p, i) => (sliceArr(priceMA200)[i] ? p / sliceArr(priceMA200)[i] : 0))
+  const priceRealizedRatioSliced = sliceArr(priceValues).map((p, i) => (sliceArr(realizedPrice)[i] ? p / sliceArr(realizedPrice)[i] : 0))
+  const priceTrueMeanRatioSliced = sliceArr(priceValues).map((p, i) => (sliceArr(trueMarketMean)[i] ? p / sliceArr(trueMarketMean)[i] : 0))
+
   const ratioChartDatasets = [
     {
       key: 'mayer',
       label: 'Mayer Ratio',
-      data: mayerRatio,
+      data: mayerRatioSliced,
       borderColor: '#ffffff',
       backgroundColor: 'rgba(255,255,255,0.1)',
       visible: visibleTraces.mayer
@@ -626,7 +641,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     {
       key: 'priceRealized',
       label: 'Price/Realized Price',
-      data: priceRealizedRatio,
+      data: priceRealizedRatioSliced,
       borderColor: '#10b981',
       backgroundColor: 'rgba(16,185,129,0.1)',
       visible: visibleTraces.priceRealized
@@ -634,16 +649,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     {
       key: 'priceTrueMean',
       label: 'Price/True Market Mean',
-      data: priceTrueMeanRatio,
+      data: priceTrueMeanRatioSliced,
       borderColor: '#fb923c',
       backgroundColor: 'rgba(251,146,60,0.1)',
       visible: visibleTraces.priceTrueMean
     }
   ].filter(ds => ds.visible)
 
-  // Main chart data (dynamic based on toggles)
   const mainChartData = {
-    labels: dates,
+    labels: visibleDates,
     datasets: mainChartDatasets.map(dataset => ({
       ...dataset,
       borderWidth: 1,
@@ -654,9 +668,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     })),
   }
 
-  // Ratio chart data (dynamic based on toggles)
   const ratioChartData = {
-    labels: dates,
+    labels: visibleDates,
     datasets: [
       ...ratioChartDatasets.map(dataset => ({
         ...dataset,
@@ -668,7 +681,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       })),
       {
         label: 'Center Line',
-        data: Array(dates.length).fill(1.0),
+        data: Array(visibleDates.length).fill(1.0),
         borderColor: '#ffffff',
         backgroundColor: 'transparent',
         borderWidth: 0.5,
@@ -725,7 +738,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         caretPadding: 10,
         callbacks: {
           title: function(context: any) {
-            return dates[context[0].dataIndex]
+            return visibleDates[context[0].dataIndex]
           },
           label: function(context: any) {
             const label = context.dataset.label || ''
@@ -733,43 +746,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             return `${label}: ${formatUSDValue(value)}`
           }
         }
-      },
-      zoom: {
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'xy' as const,
-        },
-        pan: {
-          enabled: true,
-          mode: 'xy' as const,
-        },
-        onZoom: ({chart}: {chart: any}) => {
-          if (ratioChartRef.current) {
-            const sourceXAxis = chart.scales.x
-            const targetXAxis = ratioChartRef.current.scales.x
-            if (sourceXAxis && targetXAxis) {
-              targetXAxis.options.min = sourceXAxis.min
-              targetXAxis.options.max = sourceXAxis.max
-              ratioChartRef.current.update('none')
-            }
-          }
-        },
-        onPan: ({chart}: {chart: any}) => {
-          if (ratioChartRef.current) {
-            const sourceXAxis = chart.scales.x
-            const targetXAxis = ratioChartRef.current.scales.x
-            if (sourceXAxis && targetXAxis) {
-              targetXAxis.options.min = sourceXAxis.min
-              targetXAxis.options.max = sourceXAxis.max
-              ratioChartRef.current.update('none')
-            }
-          }
-        },
       },
     },
     scales: {
@@ -856,7 +832,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         caretPadding: 10,
         callbacks: {
           title: function(context: any) {
-            return dates[context[0].dataIndex]
+            return visibleDates[context[0].dataIndex]
           },
           label: function(context: any) {
             const label = context.dataset.label || ''
@@ -864,43 +840,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             return `${label}: ${value.toFixed(2)}`
           }
         }
-      },
-      zoom: {
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: 'xy' as const,
-        },
-        pan: {
-          enabled: true,
-          mode: 'xy' as const,
-        },
-        onZoom: ({chart}: {chart: any}) => {
-          if (chartRef.current) {
-            const sourceXAxis = chart.scales.x
-            const targetXAxis = chartRef.current.scales.x
-            if (sourceXAxis && targetXAxis) {
-              targetXAxis.options.min = sourceXAxis.min
-              targetXAxis.options.max = sourceXAxis.max
-              chartRef.current.update('none')
-            }
-          }
-        },
-        onPan: ({chart}: {chart: any}) => {
-          if (chartRef.current) {
-            const sourceXAxis = chart.scales.x
-            const targetXAxis = chartRef.current.scales.x
-            if (sourceXAxis && targetXAxis) {
-              targetXAxis.options.min = sourceXAxis.min
-              targetXAxis.options.max = sourceXAxis.max
-              chartRef.current.update('none')
-            }
-          }
-        },
       },
     },
     scales: {
@@ -1038,6 +977,24 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             data={ratioChartData}
             options={ratioChartOptions}
           />
+        </div>
+        {/* Time Range Slider */}
+        <div className="w-full flex justify-center items-center pb-2 pt-1">
+          <Slider.Root
+            className="relative flex items-center w-[90%] h-4"
+            min={0}
+            max={(data?.dates.length ?? 1) - 1}
+            step={1}
+            value={range}
+            onValueChange={v => setRange([v[0], v[1]])}
+            minStepsBetweenThumbs={1}
+          >
+            <Slider.Track className="bg-[#333] relative flex-1 h-[2px] rounded-full">
+              <Slider.Range className="absolute bg-[#666] h-full rounded-full" />
+            </Slider.Track>
+            <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+            <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+          </Slider.Root>
         </div>
       </div>
     </div>
