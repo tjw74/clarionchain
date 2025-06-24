@@ -319,75 +319,84 @@ export default function MiscPage() {
   }), [dates, marketValues, realizedValues])
 
   return (
-    <DashboardLayout title="MVRV">
-      <Card>
-        <CardHeader>
-          <CardTitle>Market Value : Realized Value</CardTitle>
-        </CardHeader>
-        <CardContent className="!p-0">
-          <div className="border rounded-md bg-muted/20 min-w-0 flex flex-col">
-            {/* Main Chart area */}
-            <div className="px-4 pb-2" style={{ height: 360 }}>
-              {filteredMarketValues.length > 0 ? (
-                <Line 
-                  ref={chartRef}
-                  options={chartOptions} 
-                  data={chartData} 
-                  height={360}
+    <>
+      <style jsx global>{`
+        html, body, #__next, main, .bg-black, .bg-muted, .border, .rounded-md, .shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+          background: #000 !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+      `}</style>
+      <DashboardLayout title="MVRV">
+        <Card className="bg-black">
+          <CardHeader>
+            <CardTitle>Market Value : Realized Value</CardTitle>
+          </CardHeader>
+          <CardContent className="!p-0 bg-black">
+            <div className="bg-black min-w-0 flex flex-col">
+              {/* Main Chart area */}
+              <div className="px-4 pb-2 bg-black" style={{ height: 360 }}>
+                {filteredMarketValues.length > 0 ? (
+                  <Line 
+                    ref={chartRef}
+                    options={chartOptions} 
+                    data={chartData} 
+                    height={360}
+                  />
+                ) : (
+                  <div className="h-[360px] w-full bg-gray-900 animate-pulse rounded-md" />
+                )}
+              </div>
+              {/* Ratio Chart area */}
+              <div className="px-4 pb-4 bg-black" style={{ height: 360 }}>
+                <Line options={mvrvRatioOptions} data={mvrvRatioData} height={360} />
+              </div>
+              {/* Time Slider below the charts */}
+              <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }} className="bg-black">
+                <Slider
+                  range
+                  min={0}
+                  max={dates.length - 1}
+                  value={brush}
+                  onChange={(val: number | number[]) => setBrush(val as [number, number])}
+                  trackStyle={[{ backgroundColor: '#9ca3af', height: 1.5 }]}
+                  handleStyle={[
+                    { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 },
+                    { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 }
+                  ]}
+                  railStyle={{ backgroundColor: '#374151', height: 1.5 }}
                 />
-              ) : (
-                <div className="h-[360px] w-full bg-gray-900 animate-pulse rounded-md" />
-              )}
-            </div>
-            {/* Ratio Chart area */}
-            <div className="px-4 pb-4" style={{ height: 360 }}>
-              <Line options={mvrvRatioOptions} data={mvrvRatioData} height={360} />
-            </div>
-            {/* Time Slider below the charts */}
-            <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }}>
-              <Slider
-                range
-                min={0}
-                max={dates.length - 1}
-                value={brush}
-                onChange={(val: number | number[]) => setBrush(val as [number, number])}
-                trackStyle={[{ backgroundColor: '#9ca3af', height: 1.5 }]}
-                handleStyle={[
-                  { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 },
-                  { borderColor: '#fff', backgroundColor: '#9ca3af', height: 9, width: 9, marginTop: -4 }
-                ]}
-                railStyle={{ backgroundColor: '#374151', height: 1.5 }}
-              />
-            </div>
-            {/* Legend: lower right, solid dot, right-aligned */}
-            <div className="flex justify-end mt-4 pr-4">
-              <div className="flex items-center gap-6">
-                {/* Market Value */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
-                  <span className="text-white text-sm">MV</span>
-                  {latestMV !== null && (
-                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestMV)}</span>
-                  )}
-                </div>
-                {/* Realized Value */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fbbf24' }}></div>
-                  <span className="text-white text-sm">RV</span>
-                  {latestRV !== null && (
-                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestRV)}</span>
-                  )}
-                </div>
-                {/* MVRV Ratio */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fff' }}></div>
-                  <span className="text-white text-sm">MVRV Ratio</span>
+              </div>
+              {/* Legend: lower right, solid dot, right-aligned */}
+              <div className="flex justify-end mt-4 pr-4 bg-black">
+                <div className="flex items-center gap-6">
+                  {/* Market Value */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
+                    <span className="text-white text-sm">MV</span>
+                    {latestMV !== null && (
+                      <span className="text-white text-sm ml-1">{formatGrafanaShort(latestMV)}</span>
+                    )}
+                  </div>
+                  {/* Realized Value */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fbbf24' }}></div>
+                    <span className="text-white text-sm">RV</span>
+                    {latestRV !== null && (
+                      <span className="text-white text-sm ml-1">{formatGrafanaShort(latestRV)}</span>
+                    )}
+                  </div>
+                  {/* MVRV Ratio */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fff' }}></div>
+                    <span className="text-white text-sm">MVRV Ratio</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </DashboardLayout>
+          </CardContent>
+        </Card>
+      </DashboardLayout>
+    </>
   )
 } 
