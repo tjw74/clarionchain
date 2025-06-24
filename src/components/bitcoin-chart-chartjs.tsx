@@ -43,6 +43,7 @@ type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
 
 interface BitcoinChartProps {
   selectedMetric?: MetricType
+  chartSection?: 'main' | 'ratio' | 'full'
 }
 
 // Add type for visibleTraces keys
@@ -58,7 +59,7 @@ const TRACE_KEYS = [
 
 type TraceKey = typeof TRACE_KEYS[number]
 
-const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv' }, ref) => {
+const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv', chartSection = 'full' }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [chartReady, setChartReady] = useState(false)
@@ -895,17 +896,129 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     { key: 'priceTrueMean', color: '#fb923c', label: 'Price/True Market Mean' }
   ]
 
+  // Main render logic
+  if (chartSection === 'main') {
+    return (
+      <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
+        {/* Chart Container - styled to match AI component */}
+        <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
+          {/* Legend area - centered vertically with uniform spacing */}
+          <div className="flex justify-center items-center h-12 px-4 pt-2">
+            <div className="flex items-center gap-4">
+              {legendItems.map((item) => (
+                <button
+                  key={item.key}
+                  className={`flex items-center gap-1 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
+                  onClick={() => handleLegendClick(item.key)}
+                  type="button"
+                  tabIndex={0}
+                  aria-pressed={visibleTraces[item.key]}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-xs text-white">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Main Chart area */}
+          <div 
+            className="flex-1 min-h-0 px-4 pb-2"
+            onMouseLeave={() => {
+              if (chartRef.current && ratioChartRef.current) {
+                chartRef.current.setActiveElements([])
+                chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+                if (chartRef.current.tooltip) {
+                  chartRef.current.tooltip.opacity = 0
+                }
+                ratioChartRef.current.setActiveElements([])
+                ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+                if (ratioChartRef.current.tooltip) {
+                  ratioChartRef.current.tooltip.opacity = 0
+                }
+                chartRef.current.update('none')
+                ratioChartRef.current.update('none')
+              }
+            }}
+          >
+            <Line
+              key={chartKey}
+              ref={chartRef}
+              data={mainChartData}
+              options={mainChartOptions}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (chartSection === 'ratio') {
+    return (
+      <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
+        <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
+          {/* Ratio Chart area */}
+          <div 
+            className="flex-1 min-h-0 px-4 pb-4"
+            onMouseLeave={() => {
+              if (chartRef.current && ratioChartRef.current) {
+                chartRef.current.setActiveElements([])
+                chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+                if (chartRef.current.tooltip) {
+                  chartRef.current.tooltip.opacity = 0
+                }
+                ratioChartRef.current.setActiveElements([])
+                ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
+                if (ratioChartRef.current.tooltip) {
+                  ratioChartRef.current.tooltip.opacity = 0
+                }
+                chartRef.current.update('none')
+                ratioChartRef.current.update('none')
+              }
+            }}
+          >
+            <Line
+              key={`ratio-${chartKey}`}
+              ref={ratioChartRef}
+              data={ratioChartData}
+              options={ratioChartOptions}
+            />
+          </div>
+          {/* Time Range Slider */}
+          <div className="w-full flex justify-center items-center pb-2 pt-1">
+            <Slider.Root
+              className="relative flex items-center w-[90%] h-4"
+              min={0}
+              max={(data?.dates.length ?? 1) - 1}
+              step={1}
+              value={range}
+              onValueChange={v => setRange([v[0], v[1]])}
+              minStepsBetweenThumbs={1}
+            >
+              <Slider.Track className="bg-[#333] relative flex-1 h-[2px] rounded-full">
+                <Slider.Range className="absolute bg-[#666] h-full rounded-full" />
+              </Slider.Track>
+              <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+              <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+            </Slider.Root>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Default: render both (full)
   return (
     <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
       {/* Chart Container - styled to match AI component */}
       <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
         {/* Legend area - centered vertically with uniform spacing */}
         <div className="flex justify-center items-center h-12 px-4 pt-2">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             {legendItems.map((item) => (
               <button
                 key={item.key}
-                className={`flex items-center gap-2 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
+                className={`flex items-center gap-1 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
                 onClick={() => handleLegendClick(item.key)}
                 type="button"
                 tabIndex={0}
@@ -913,7 +1026,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
                 style={{ cursor: 'pointer' }}
               >
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                <span className="text-white text-sm">{item.label}</span>
+                <span className="text-xs text-white">{item.label}</span>
               </button>
             ))}
           </div>
@@ -922,20 +1035,17 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         <div 
           className="flex-1 min-h-0 px-4 pb-2"
           onMouseLeave={() => {
-            // Clear both tooltips when mouse leaves main chart area
             if (chartRef.current && ratioChartRef.current) {
               chartRef.current.setActiveElements([])
               chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
               if (chartRef.current.tooltip) {
                 chartRef.current.tooltip.opacity = 0
               }
-              
               ratioChartRef.current.setActiveElements([])
               ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
               if (ratioChartRef.current.tooltip) {
                 ratioChartRef.current.tooltip.opacity = 0
               }
-              
               chartRef.current.update('none')
               ratioChartRef.current.update('none')
             }
@@ -952,20 +1062,17 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         <div 
           className="flex-1 min-h-0 px-4 pb-4"
           onMouseLeave={() => {
-            // Clear both tooltips when mouse leaves ratio chart area
             if (chartRef.current && ratioChartRef.current) {
               chartRef.current.setActiveElements([])
               chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
               if (chartRef.current.tooltip) {
                 chartRef.current.tooltip.opacity = 0
               }
-              
               ratioChartRef.current.setActiveElements([])
               ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
               if (ratioChartRef.current.tooltip) {
                 ratioChartRef.current.tooltip.opacity = 0
               }
-              
               chartRef.current.update('none')
               ratioChartRef.current.update('none')
             }

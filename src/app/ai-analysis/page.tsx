@@ -144,7 +144,17 @@ export default function AIAnalysisPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
-                <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} />
+                <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
+                  <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
+                    {/* Main Chart and legend will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
+                    <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" />
+                  </Panel>
+                  <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
+                  <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
+                    {/* Ratio Chart will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
+                    <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" />
+                  </Panel>
+                </PanelGroup>
               </CardContent>
             </Card>
           </Panel>
