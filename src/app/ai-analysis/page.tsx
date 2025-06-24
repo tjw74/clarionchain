@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import * as Slider from '@radix-ui/react-slider'
 
 import { Brain, Settings, Send, Loader2 } from "lucide-react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-chartjs"
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels'
 
@@ -23,6 +24,19 @@ export default function AIAnalysisPage() {
   const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
   const [followUpInput, setFollowUpInput] = useState("")
   const chartRef = useRef<BitcoinChartRef>(null)
+  const [range, setRange] = useState<[number, number]>([0, 100])
+  const [dataLength, setDataLength] = useState(0)
+
+  // Reset range when dataLength changes
+  useEffect(() => {
+    if (dataLength > 0) {
+      setRange([0, dataLength - 1])
+    }
+  }, [dataLength])
+
+  const handleDataLengthChange = (len: number) => {
+    setDataLength(len)
+  }
 
   const analyzeChart = async () => {
     if (!apiKey || !chartRef.current) return
@@ -147,15 +161,30 @@ export default function AIAnalysisPage() {
                 <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
                   <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
                     <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
-                      {/* Main Chart and legend will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
-                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" />
+                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" range={range} onDataLengthChange={handleDataLengthChange} />
                     </Panel>
                     <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
                     <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
-                      {/* Ratio Chart will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
-                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" />
+                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" range={range} onDataLengthChange={handleDataLengthChange} />
                     </Panel>
                   </PanelGroup>
+                  <div className="w-full flex justify-center items-center pb-2 pt-1">
+                    <Slider.Root
+                      className="relative flex items-center w-[90%] h-4"
+                      min={0}
+                      max={Math.max(0, dataLength - 1)}
+                      step={1}
+                      value={range}
+                      onValueChange={(v: number[]) => setRange([v[0], v[1]])}
+                      minStepsBetweenThumbs={1}
+                    >
+                      <Slider.Track className="bg-[#333] relative flex-1 h-[2px] rounded-full">
+                        <Slider.Range className="absolute bg-[#666] h-full rounded-full" />
+                      </Slider.Track>
+                      <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+                      <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
+                    </Slider.Root>
+                  </div>
                 </CardContent>
               </Card>
             </Panel>

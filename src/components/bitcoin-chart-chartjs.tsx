@@ -44,6 +44,8 @@ type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
 interface BitcoinChartProps {
   selectedMetric?: MetricType
   chartSection?: 'main' | 'ratio' | 'full'
+  range?: [number, number]
+  onDataLengthChange?: (len: number) => void
 }
 
 // Add type for visibleTraces keys
@@ -59,7 +61,7 @@ const TRACE_KEYS = [
 
 type TraceKey = typeof TRACE_KEYS[number]
 
-const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv', chartSection = 'full' }, ref) => {
+const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv', chartSection = 'full', range: propRange, onDataLengthChange }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [chartReady, setChartReady] = useState(false)
@@ -82,22 +84,17 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     priceTrueMean: false
   })
 
-  // Time range slider state
+  // Use propRange if provided, otherwise use internal state
   const [range, setRange] = useState<[number, number]>([0, (data?.dates.length ?? 1) - 1])
-
-  // Update range when data changes (reset to full range)
   useEffect(() => {
-    if (data?.dates) {
+    if (data?.dates && !propRange) {
       setRange([0, data.dates.length - 1])
     }
   }, [data?.dates?.length])
-
-  // Slice data for visible range
-  const rangeStart = Math.min(range[0], range[1])
-  const rangeEnd = Math.max(range[0], range[1])
+  const effectiveRange = propRange || range
+  const rangeStart = Math.min(effectiveRange[0], effectiveRange[1])
+  const rangeEnd = Math.max(effectiveRange[0], effectiveRange[1])
   const visibleDates = data?.dates?.slice(rangeStart, rangeEnd + 1) ?? []
-
-  // Helper to slice arrays safely
   const sliceArr = (arr?: number[]) => arr ? arr.slice(rangeStart, rangeEnd + 1) : []
 
   // Helper to toggle traces
@@ -303,6 +300,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
     fetchData()
   }, [chartReady, selectedMetric])
+
+  useEffect(() => {
+    if (data?.dates && onDataLengthChange) {
+      onDataLengthChange(data.dates.length)
+    }
+  }, [data?.dates?.length])
 
   // Monitor sidebar state changes and force chart resize
   useEffect(() => {
@@ -984,24 +987,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               options={ratioChartOptions}
             />
           </div>
-          {/* Time Range Slider */}
-          <div className="w-full flex justify-center items-center pb-2 pt-1">
-            <Slider.Root
-              className="relative flex items-center w-[90%] h-4"
-              min={0}
-              max={(data?.dates.length ?? 1) - 1}
-              step={1}
-              value={range}
-              onValueChange={v => setRange([v[0], v[1]])}
-              minStepsBetweenThumbs={1}
-            >
-              <Slider.Track className="bg-[#333] relative flex-1 h-[2px] rounded-full">
-                <Slider.Range className="absolute bg-[#666] h-full rounded-full" />
-              </Slider.Track>
-              <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
-              <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
-            </Slider.Root>
-          </div>
         </div>
       </div>
     )
@@ -1084,24 +1069,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             data={ratioChartData}
             options={ratioChartOptions}
           />
-        </div>
-        {/* Time Range Slider */}
-        <div className="w-full flex justify-center items-center pb-2 pt-1">
-          <Slider.Root
-            className="relative flex items-center w-[90%] h-4"
-            min={0}
-            max={(data?.dates.length ?? 1) - 1}
-            step={1}
-            value={range}
-            onValueChange={v => setRange([v[0], v[1]])}
-            minStepsBetweenThumbs={1}
-          >
-            <Slider.Track className="bg-[#333] relative flex-1 h-[2px] rounded-full">
-              <Slider.Range className="absolute bg-[#666] h-full rounded-full" />
-            </Slider.Track>
-            <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
-            <Slider.Thumb className="block w-3 h-3 bg-white rounded-full shadow focus:outline-none" />
-          </Slider.Root>
         </div>
       </div>
     </div>
