@@ -59,17 +59,6 @@ ChartJS.register(
   zoomPlugin
 )
 
-// Register custom tooltip positioner only on the client
-useEffect(() => {
-  if (typeof window !== 'undefined' && Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
-    (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
-      if (!items.length) return false
-      // Always place tooltip at a fixed offset from the top of the chart area
-      return { x: eventPosition.x, y: 32 }
-    }
-  }
-}, [])
-
 export default function MiscPage() {
   const [dates, setDates] = useState<string[]>([])
   const [marketValues, setMarketValues] = useState<number[]>([])
@@ -339,6 +328,17 @@ export default function MiscPage() {
       },
     ],
   }), [dates, marketValues, realizedValues])
+
+  // Register custom tooltip positioner only on the client
+  useEffect(() => {
+    if (typeof window !== 'undefined' && Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
+      (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
+        if (!items.length) return false
+        // Always place tooltip at a fixed offset from the top of the chart area
+        return { x: eventPosition.x, y: 32 }
+      }
+    }
+  }, [])
 
   return (
     <>
