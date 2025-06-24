@@ -326,32 +326,6 @@ export default function MiscPage() {
         </CardHeader>
         <CardContent className="!p-0">
           <div className="border rounded-md bg-muted/20 min-w-0 flex flex-col">
-            {/* Legend area - centered vertically with uniform spacing */}
-            <div className="flex justify-center items-center h-12 px-4 pt-2">
-              <div className="flex items-center gap-6">
-                {/* Market Value */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
-                  <span className="text-white text-sm">MV</span>
-                  {latestMV !== null && (
-                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestMV)}</span>
-                  )}
-                </div>
-                {/* Realized Value */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fbbf24' }}></div>
-                  <span className="text-white text-sm">RV</span>
-                  {latestRV !== null && (
-                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestRV)}</span>
-                  )}
-                </div>
-                {/* MVRV Ratio */}
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fff' }}></div>
-                  <span className="text-white text-sm">MVRV Ratio</span>
-                </div>
-              </div>
-            </div>
             {/* Main Chart area */}
             <div className="px-4 pb-2" style={{ height: 360 }}>
               {filteredMarketValues.length > 0 ? (
@@ -384,6 +358,32 @@ export default function MiscPage() {
                 ]}
                 railStyle={{ backgroundColor: '#374151', height: 1.5 }}
               />
+            </div>
+            {/* Legend: lower right, solid dot, right-aligned */}
+            <div className="flex justify-end mt-4 pr-4">
+              <div className="flex items-center gap-6">
+                {/* Market Value */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
+                  <span className="text-white text-sm">MV</span>
+                  {latestMV !== null && (
+                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestMV)}</span>
+                  )}
+                </div>
+                {/* Realized Value */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fbbf24' }}></div>
+                  <span className="text-white text-sm">RV</span>
+                  {latestRV !== null && (
+                    <span className="text-white text-sm ml-1">{formatGrafanaShort(latestRV)}</span>
+                  )}
+                </div>
+                {/* MVRV Ratio */}
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#fff' }}></div>
+                  <span className="text-white text-sm">MVRV Ratio</span>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
