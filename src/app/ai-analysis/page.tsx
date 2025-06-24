@@ -139,7 +139,7 @@ export default function AIAnalysisPage() {
       <PanelGroup direction="vertical" className="h-screen min-h-0 w-full">
         <Panel defaultSize={90} minSize={20} maxSize={100} className="flex flex-col min-h-0">
           <PanelGroup direction="horizontal" className="w-full h-full min-h-0 rounded-md overflow-hidden">
-            <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+            <Panel defaultSize={66.66} minSize={20} maxSize={90} className="flex flex-col h-full min-h-0">
               <Card className="border-border w-full h-full flex flex-col min-h-0">
                 <CardHeader>
                   <div className="flex items-center justify-between w-full">
@@ -189,7 +189,7 @@ export default function AIAnalysisPage() {
               </Card>
             </Panel>
             <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 w-1 cursor-col-resize" />
-            <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+            <Panel defaultSize={33.34} minSize={10} maxSize={80} className="flex flex-col h-full min-h-0">
               <Card className="border-border flex flex-col w-full h-full min-h-0">
                 <CardHeader>
                   <div className="flex items-center justify-between w-full">
