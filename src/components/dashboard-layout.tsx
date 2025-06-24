@@ -185,15 +185,16 @@ export default function DashboardLayout({ children, title, description }: Dashbo
           <header className="flex h-16 items-center gap-4 border-b border-border px-6 justify-between">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
-              {title && (
+              {pathname === "/brk" ? (
+                <h1 className="text-2xl font-bold text-white">Bitcoin Research Kit</h1>
+              ) : title ? (
                 <div>
                   <h1 className="text-2xl font-bold">{title}</h1>
                   {description && (
                     <p className="text-sm text-muted-foreground">{description}</p>
                   )}
                 </div>
-              )}
-              {!title && <div />}
+              ) : <div />}
             </div>
             <div>
               {user ? (

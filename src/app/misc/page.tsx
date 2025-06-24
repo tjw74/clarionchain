@@ -183,9 +183,16 @@ export default function MiscPage() {
           type: 'time' as const,
           time: { unit: 'year' as const },
           grid: { color: 'rgba(55, 65, 81, 0.5)' },
-          ticks: { color: '#9ca3af' },
+          ticks: {
+            color: '#9ca3af',
+            align: 'center' as const,
+            maxTicksLimit: 10,
+          },
+          padding: { left: 0, right: 0 },
+          offset: false,
           min: filteredDates[0],
           max: filteredDates[filteredDates.length - 1],
+          position: 'bottom' as const,
         },
         y: {
           type: 'logarithmic' as const,
@@ -195,14 +202,17 @@ export default function MiscPage() {
             color: '#9ca3af',
             font: { family: 'monospace', size: 12 },
             callback: (value: number | string) => formatGrafanaShort(typeof value === 'string' ? parseFloat(value) : value),
+            align: 'end' as const,
           },
           afterBuildTicks: (axis: any) => {
             axis.ticks = calculatedTicks.map(v => ({ value: v }))
           },
           min: Math.pow(2, startPow),
           max: Math.pow(2, endPow),
+          padding: { left: 60, right: 0 },
         },
       },
+      layout: { padding: 0 },
     }
   }, [filteredMarketValues, filteredDates])
 
@@ -265,21 +275,31 @@ export default function MiscPage() {
         type: 'time' as const,
         time: { unit: 'year' as const },
         grid: { color: 'rgba(55, 65, 81, 0.5)' },
-        ticks: { color: '#9ca3af' },
+        ticks: {
+          color: '#9ca3af',
+          align: 'center' as const,
+          maxTicksLimit: 10,
+        },
+        padding: { left: 0, right: 0 },
+        offset: false,
         min: filteredDates[0],
         max: filteredDates[filteredDates.length - 1],
+        position: 'bottom' as const,
       },
       y: {
-        type: 'linear' as const,
+        type: 'logarithmic' as const,
         position: 'right' as const,
         grid: { color: 'rgba(55, 65, 81, 0.5)' },
         ticks: {
           color: '#9ca3af',
           font: { family: 'monospace', size: 12 },
           callback: (value: number | string) => (typeof value === 'number' ? value.toFixed(2) : value),
+          align: 'end' as const,
         },
+        padding: { left: 60, right: 0 },
       },
     },
+    layout: { padding: 0 },
   }), [filteredDates])
 
   // Legend: MV (blue), RV (yellow), with latest values
@@ -335,7 +355,7 @@ export default function MiscPage() {
           <CardContent className="!p-0 bg-black">
             <div className="bg-black min-w-0 flex flex-col">
               {/* Main Chart area */}
-              <div className="px-4 pb-2 bg-black" style={{ height: 360 }}>
+              <div className="w-full" style={{ height: 360 }}>
                 {filteredMarketValues.length > 0 ? (
                   <Line 
                     ref={chartRef}
@@ -348,7 +368,7 @@ export default function MiscPage() {
                 )}
               </div>
               {/* Ratio Chart area */}
-              <div className="px-4 pb-4 bg-black" style={{ height: 360 }}>
+              <div className="w-full" style={{ height: 360 }}>
                 <Line options={mvrvRatioOptions} data={mvrvRatioData} height={360} />
               </div>
               {/* Time Slider below the charts */}

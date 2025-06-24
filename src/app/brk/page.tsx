@@ -35,12 +35,8 @@ export default function BRKPage() {
       <div className="flex flex-col h-full">
         {/* Custom header with title and BRK info */}
         <div className="flex items-start justify-between mb-6">
-          <div>
-            {/* Removed redundant main content title */}
-            {/* <h1 className="text-2xl font-bold mb-2">BRK Dataset</h1> */}
-            <p className="text-muted-foreground">Advanced Bitcoin on-chain analytics and metrics</p>
-          </div>
-          <div className="text-right space-y-2">
+          {/* Removed duplicate title and subtitle, now handled in header bar */}
+          <div className="text-right space-y-2 ml-auto">
             <p className="text-sm text-muted-foreground">
               Powered by Bitcoin Research Kit
             </p>
