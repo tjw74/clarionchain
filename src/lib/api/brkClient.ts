@@ -193,6 +193,13 @@ class BRKClient {
     if (!response.ok) throw new Error('Failed to fetch supply in loss history');
     return await response.json();
   }
+
+  // Fetch true market mean history from the working endpoint
+  async fetchTrueMarketMeanHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=true-market-mean&from=-${days}`);
+    if (!response.ok) throw new Error('Failed to fetch true market mean history');
+    return await response.json();
+  }
 }
 
 export const brkClient = new BRKClient();

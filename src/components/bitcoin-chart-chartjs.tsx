@@ -34,6 +34,8 @@ interface ChartData {
   priceValues?: number[]
   priceMA200?: number[]
   priceRatios?: number[]
+  realizedPrice?: number[]
+  trueMarketMean?: number[]
 }
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
@@ -194,7 +196,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           }
         } else if (selectedMetric === 'price') {
           // Fetch Price Analysis data
-          const priceHistory = await brkClient.fetchDailyCloseHistory(2920)
+          const [priceHistory, realizedPriceHistory, trueMarketMeanHistory] = await Promise.all([
+            brkClient.fetchDailyCloseHistory(2920),
+            brkClient.fetchRealizedPriceHistory(2920),
+            brkClient.fetchTrueMarketMeanHistory(2920)
+          ])
 
           if (priceHistory.length > 0) {
             // Generate dates for the last 8 years
@@ -219,6 +225,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               return ma && ma !== 0 ? price / ma : 0
             })
 
+            // Align realized price and true market mean to MA200 window
+            const realizedPrice = realizedPriceHistory.slice(199)
+            const trueMarketMean = trueMarketMeanHistory.slice(199)
+
             setData({
               dates: dates.slice(199), // Align with MA200 data
               marketValues: [], // Not used for price analysis
@@ -226,7 +236,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               mvrvRatios: [], // Not used for price analysis
               priceValues: priceHistory.slice(199),
               priceMA200,
-              priceRatios
+              priceRatios,
+              realizedPrice,
+              trueMarketMean
             })
           }
         }
@@ -326,7 +338,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     )
   }
 
-  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios } = data
+  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean } = data
 
   // Metric configuration
   const metricConfigs = {
@@ -377,8 +389,20 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           {
             label: '200-Day MA',
             data: priceMA200 || [],
-            borderColor: '#eab308',
-            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+            borderColor: '#fbbf24',
+            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+          },
+          {
+            label: 'Realized Price',
+            data: realizedPrice || [],
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          },
+          {
+            label: 'True Market Mean',
+            data: trueMarketMean || [],
+            borderColor: '#fb923c',
+            backgroundColor: 'rgba(251, 146, 60, 0.1)',
           }
         ]
       },
@@ -396,7 +420,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       },
       legend: [
         { color: '#3b82f6', label: 'Price' },
-        { color: '#eab308', label: '200DMA' },
+        { color: '#fbbf24', label: '200DMA' },
+        { color: '#10b981', label: 'Realized Price' },
+        { color: '#fb923c', label: 'True Market Mean' },
         { color: '#ffffff', label: 'Mayer Ratio' }
       ]
     }
