@@ -122,159 +122,163 @@ export default function AIAnalysisPage() {
     <DashboardLayout 
       title="AI Workbench"
     >
-      <div className="h-screen min-h-0 w-full">
-        <PanelGroup direction="horizontal" className="w-full h-full min-h-0 rounded-md overflow-hidden">
-          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
-            <Card className="border-border w-full h-full flex flex-col min-h-0">
-              <CardHeader>
-                <div className="flex items-center justify-between w-full">
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Workbench
-                  </CardTitle>
-                  <Select value={selectedMetric} onValueChange={(value: string) => setSelectedMetric(value as MetricType)}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="price">Price</SelectItem>
-                      <SelectItem value="mvrv">MVRV</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
-                <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
-                  <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
-                    {/* Main Chart and legend will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
-                    <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" />
-                  </Panel>
-                  <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
-                  <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
-                    {/* Ratio Chart will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
-                    <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" />
-                  </Panel>
-                </PanelGroup>
-              </CardContent>
-            </Card>
-          </Panel>
-          <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 w-1 cursor-col-resize" />
-          <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
-            <Card className="border-border flex flex-col w-full h-full min-h-0">
-              <CardHeader>
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-2">
-                    <Brain className="h-5 w-5" />
-                    <CardTitle>AI</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>
-                                        <Select value={provider} onValueChange={setProvider}>
-                        <SelectTrigger className="w-52">
-                          <SelectValue value={provider} placeholder="Select" />
-                        </SelectTrigger>
+      <PanelGroup direction="vertical" className="h-screen min-h-0 w-full">
+        <Panel defaultSize={90} minSize={20} maxSize={100} className="flex flex-col min-h-0">
+          <PanelGroup direction="horizontal" className="w-full h-full min-h-0 rounded-md overflow-hidden">
+            <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+              <Card className="border-border w-full h-full flex flex-col min-h-0">
+                <CardHeader>
+                  <div className="flex items-center justify-between w-full">
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Workbench
+                    </CardTitle>
+                    <Select value={selectedMetric} onValueChange={(value: string) => setSelectedMetric(value as MetricType)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="openai">OpenAI - GPT-4.1</SelectItem>
-                        <SelectItem value="anthropic">Anthropic</SelectItem>
+                        <SelectItem value="price">Price</SelectItem>
+                        <SelectItem value="mvrv">MVRV</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="apiKey" className="text-sm font-medium">API Key:</Label>
-                    <Input
-                      id="apiKey"
-                      type="password"
-                      placeholder="Enter key"
-                      className="w-40"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                    />
+                </CardHeader>
+                <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
+                  <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
+                    <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
+                      {/* Main Chart and legend will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
+                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" />
+                    </Panel>
+                    <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
+                    <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
+                      {/* Ratio Chart will be rendered here by BitcoinChartJS, so pass a prop to control which chart to render if needed */}
+                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" />
+                    </Panel>
+                  </PanelGroup>
+                </CardContent>
+              </Card>
+            </Panel>
+            <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 w-1 cursor-col-resize" />
+            <Panel defaultSize={50} minSize={20} maxSize={80} className="flex flex-col h-full min-h-0">
+              <Card className="border-border flex flex-col w-full h-full min-h-0">
+                <CardHeader>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      <CardTitle>AI</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>
+                      <Select value={provider} onValueChange={setProvider}>
+                        <SelectTrigger className="w-52">
+                          <SelectValue value={provider} placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="openai">OpenAI - GPT-4.1</SelectItem>
+                          <SelectItem value="anthropic">Anthropic</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="apiKey" className="text-sm font-medium">API Key:</Label>
+                      <Input
+                        id="apiKey"
+                        type="password"
+                        placeholder="Enter key"
+                        className="w-40"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                      />
+                    </div>
+                    <Button 
+                      disabled={!apiKey || isAnalyzing}
+                      onClick={analyzeChart}
+                    >
+                      {isAnalyzing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      {isAnalyzing ? "Analyzing..." : "Analyze"}
+                    </Button>
                   </div>
-                  <Button 
-                    disabled={!apiKey || isAnalyzing}
-                    onClick={analyzeChart}
-                  >
-                    {isAnalyzing ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="mr-2 h-4 w-4" />
-                    )}
-                    {isAnalyzing ? "Analyzing..." : "Analyze"}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 flex flex-col min-h-0">
-                <div className="flex flex-col h-full space-y-4">
-                  {/* Chat Messages Area - Now expands to fill available space */}
-                  <div className="border rounded-md p-4 flex-1 overflow-y-auto bg-muted/20">
-                    {messages.length > 0 ? (
-                      <div className="space-y-4">
-                        {messages.map((message, index) => (
-                          <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`rounded-lg px-3 py-2 max-w-[80%] ${
-                              message.role === 'user' 
-                                ? 'bg-primary text-primary-foreground' 
-                                : 'bg-muted'
-                            }`}>
-                              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col min-h-0">
+                  <div className="flex flex-col h-full space-y-4">
+                    {/* Chat Messages Area - Now expands to fill available space */}
+                    <div className="border rounded-md p-4 flex-1 overflow-y-auto bg-muted/20">
+                      {messages.length > 0 ? (
+                        <div className="space-y-4">
+                          {messages.map((message, index) => (
+                            <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`rounded-lg px-3 py-2 max-w-[80%] ${
+                                message.role === 'user' 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'bg-muted'
+                              }`}>
+                                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                        {isAnalyzing && (
-                          <div className="flex justify-start">
-                            <div className="bg-muted rounded-lg px-3 py-2">
-                              <div className="flex items-center gap-1">
-                                <Brain className="h-4 w-4 text-muted-foreground" />
-                                <div className="flex gap-1">
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                          ))}
+                          {isAnalyzing && (
+                            <div className="flex justify-start">
+                              <div className="bg-muted rounded-lg px-3 py-2">
+                                <div className="flex items-center gap-1">
+                                  <Brain className="h-4 w-4 text-muted-foreground" />
+                                  <div className="flex gap-1">
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-muted-foreground">
-                        <p className="text-sm">AI conversation will appear here...</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Chat Input Area - Fixed at bottom */}
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ask a follow-up question about the analysis..."
-                      className="flex-1"
-                      value={followUpInput}
-                      onChange={(e) => setFollowUpInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          sendFollowUp()
-                        }
-                      }}
-                      disabled={messages.length === 0 || isAnalyzing}
-                    />
-                    <Button 
-                      size="sm" 
-                      onClick={sendFollowUp}
-                      disabled={messages.length === 0 || isAnalyzing || !followUpInput.trim()}
-                    >
-                      {isAnalyzing ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                        </div>
                       ) : (
-                        <Send className="h-4 w-4" />
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <p className="text-sm">AI conversation will appear here...</p>
+                        </div>
                       )}
-                    </Button>
+                    </div>
+
+                    {/* Chat Input Area - Fixed at bottom */}
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ask a follow-up question about the analysis..."
+                        className="flex-1"
+                        value={followUpInput}
+                        onChange={(e) => setFollowUpInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            sendFollowUp()
+                          }
+                        }}
+                        disabled={messages.length === 0 || isAnalyzing}
+                      />
+                      <Button 
+                        size="sm" 
+                        onClick={sendFollowUp}
+                        disabled={messages.length === 0 || isAnalyzing || !followUpInput.trim()}
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
                 </CardContent>
               </Card>
-          </Panel>
-        </PanelGroup>
-      </div>
+            </Panel>
+          </PanelGroup>
+        </Panel>
+        <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
+        <Panel defaultSize={10} minSize={0} maxSize={80} className="min-h-0" />
+      </PanelGroup>
     </DashboardLayout>
   )
 } 
