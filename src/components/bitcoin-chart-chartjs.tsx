@@ -44,6 +44,19 @@ interface BitcoinChartProps {
   selectedMetric?: MetricType
 }
 
+// Add type for visibleTraces keys
+const TRACE_KEYS = [
+  'price',
+  'ma200',
+  'realizedPrice',
+  'trueMarketMean',
+  'mayer',
+  'priceRealized',
+  'priceTrueMean'
+] as const
+
+type TraceKey = typeof TRACE_KEYS[number]
+
 const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv' }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -55,6 +68,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   
   // Get sidebar state
   const { state: sidebarState } = useSidebar()
+
+  // Add state for trace visibility
+  const [visibleTraces, setVisibleTraces] = useState<Record<TraceKey, boolean>>({
+    price: true,
+    ma200: true,
+    realizedPrice: true,
+    trueMarketMean: true,
+    mayer: true,
+    priceRealized: false,
+    priceTrueMean: false
+  })
+
+  // Helper to toggle traces
+  const handleLegendClick = (key: TraceKey) => {
+    setVisibleTraces(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
+  }
 
   // Register Chart.js components and plugins in useEffect (client-only)
   useEffect(() => {
@@ -123,7 +155,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         const legendCenterX = totalWidth / 2
         
         // Draw legend items
-        const legendItems = currentConfig.legend
+        const legendItems: { key: TraceKey, color: string, label: string }[] = [
+          { key: 'price', color: '#3b82f6', label: 'Price' },
+          { key: 'ma200', color: '#fbbf24', label: '200DMA' },
+          { key: 'realizedPrice', color: '#10b981', label: 'Realized Price' },
+          { key: 'trueMarketMean', color: '#fb923c', label: 'True Market Mean' },
+          { key: 'mayer', color: '#ffffff', label: 'Mayer Ratio' },
+          { key: 'priceRealized', color: '#10b981', label: 'Price/Realized Price' },
+          { key: 'priceTrueMean', color: '#fb923c', label: 'Price/True Market Mean' }
+        ]
         
         const itemSpacing = 120
         const startX = legendCenterX - (legendItems.length - 1) * itemSpacing / 2
@@ -532,10 +572,79 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     usdLogTicks = [1000, 10000, 100000, 1000000]
   }
 
-  // Main chart data (dynamic based on metric)
+  // Compute all ratios for the ratio chart
+  const mayerRatio = priceValues && priceMA200 ? priceValues.map((p, i) => (priceMA200[i] ? p / priceMA200[i] : 0)) : []
+  const priceRealizedRatio = priceValues && realizedPrice ? priceValues.map((p, i) => (realizedPrice[i] ? p / realizedPrice[i] : 0)) : []
+  const priceTrueMeanRatio = priceValues && trueMarketMean ? priceValues.map((p, i) => (trueMarketMean[i] ? p / trueMarketMean[i] : 0)) : []
+
+  // Main chart datasets with keys for toggling
+  const mainChartDatasets = [
+    {
+      key: 'price',
+      label: 'BTC Price',
+      data: priceValues || [],
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      visible: visibleTraces.price
+    },
+    {
+      key: 'ma200',
+      label: '200DMA',
+      data: priceMA200 || [],
+      borderColor: '#fbbf24',
+      backgroundColor: 'rgba(251, 191, 36, 0.1)',
+      visible: visibleTraces.ma200
+    },
+    {
+      key: 'realizedPrice',
+      label: 'Realized Price',
+      data: realizedPrice || [],
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      visible: visibleTraces.realizedPrice
+    },
+    {
+      key: 'trueMarketMean',
+      label: 'True Market Mean',
+      data: trueMarketMean || [],
+      borderColor: '#fb923c',
+      backgroundColor: 'rgba(251, 146, 60, 0.1)',
+      visible: visibleTraces.trueMarketMean
+    }
+  ].filter(ds => ds.visible)
+
+  // Ratio chart datasets with keys for toggling
+  const ratioChartDatasets = [
+    {
+      key: 'mayer',
+      label: 'Mayer Ratio',
+      data: mayerRatio,
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      visible: visibleTraces.mayer
+    },
+    {
+      key: 'priceRealized',
+      label: 'Price/Realized Price',
+      data: priceRealizedRatio,
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16,185,129,0.1)',
+      visible: visibleTraces.priceRealized
+    },
+    {
+      key: 'priceTrueMean',
+      label: 'Price/True Market Mean',
+      data: priceTrueMeanRatio,
+      borderColor: '#fb923c',
+      backgroundColor: 'rgba(251,146,60,0.1)',
+      visible: visibleTraces.priceTrueMean
+    }
+  ].filter(ds => ds.visible)
+
+  // Main chart data (dynamic based on toggles)
   const mainChartData = {
     labels: dates,
-    datasets: currentConfig.mainChart.datasets.map(dataset => ({
+    datasets: mainChartDatasets.map(dataset => ({
       ...dataset,
       borderWidth: 1,
       fill: false,
@@ -545,11 +654,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     })),
   }
 
-  // Ratio chart data (dynamic based on metric)
+  // Ratio chart data (dynamic based on toggles)
   const ratioChartData = {
     labels: dates,
     datasets: [
-      ...currentConfig.ratioChart.datasets.map(dataset => ({
+      ...ratioChartDatasets.map(dataset => ({
         ...dataset,
         borderWidth: 0.5,
         fill: false,
@@ -559,7 +668,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       })),
       {
         label: 'Center Line',
-        data: Array(dates.length).fill(currentConfig.ratioChart.centerLine),
+        data: Array(dates.length).fill(1.0),
         borderColor: '#ffffff',
         backgroundColor: 'transparent',
         borderWidth: 0.5,
@@ -586,25 +695,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       if (ratioChartRef.current) {
         if (elements.length > 0) {
           const activeIndex = elements[0].index
-          // Set active elements for main chart (both datasets)
-          chart.setActiveElements([
-            { datasetIndex: 0, index: activeIndex }, // Market Value
-            { datasetIndex: 1, index: activeIndex }  // Realized Value
-          ])
+          // Set active elements for main chart (all visible datasets)
+          chart.setActiveElements(mainChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })))
           // Sync with ratio chart
-          ratioChartRef.current.setActiveElements([{
-            datasetIndex: 0,
-            index: activeIndex
-          }])
-          ratioChartRef.current.tooltip?.setActiveElements([{
-            datasetIndex: 0,
-            index: activeIndex
-          }], { x: event.x, y: event.y })
+          ratioChartRef.current.setActiveElements(ratioChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })))
+          ratioChartRef.current.tooltip?.setActiveElements(ratioChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })), { x: event.x, y: event.y })
         } else {
           // Clear ratio chart tooltip when cursor leaves main chart
           ratioChartRef.current.setActiveElements([])
           ratioChartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
-          // Force tooltip to hide
           if (ratioChartRef.current.tooltip) {
             ratioChartRef.current.tooltip.opacity = 0
           }
@@ -612,7 +711,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         ratioChartRef.current.update('none')
       }
     },
-
     plugins: {
       legend: {
         display: false,
@@ -650,34 +748,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           enabled: true,
           mode: 'xy' as const,
         },
-        // Synchronize zoom/pan with ratio chart, with debug logging
         onZoom: ({chart}: {chart: any}) => {
-          console.log('[mainChartOptions] onZoom fired', chart, ratioChartRef.current);
           if (ratioChartRef.current) {
             const sourceXAxis = chart.scales.x
             const targetXAxis = ratioChartRef.current.scales.x
-            console.log('[mainChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
-            console.log('[mainChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
             if (sourceXAxis && targetXAxis) {
               targetXAxis.options.min = sourceXAxis.min
               targetXAxis.options.max = sourceXAxis.max
               ratioChartRef.current.update('none')
-              console.log('[mainChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
             }
           }
         },
         onPan: ({chart}: {chart: any}) => {
-          console.log('[mainChartOptions] onPan fired', chart, ratioChartRef.current);
           if (ratioChartRef.current) {
             const sourceXAxis = chart.scales.x
             const targetXAxis = ratioChartRef.current.scales.x
-            console.log('[mainChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
-            console.log('[mainChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
             if (sourceXAxis && targetXAxis) {
               targetXAxis.options.min = sourceXAxis.min
               targetXAxis.options.max = sourceXAxis.max
               ratioChartRef.current.update('none')
-              console.log('[mainChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
             }
           }
         },
@@ -741,19 +830,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       if (chartRef.current) {
         if (elements.length > 0) {
           const activeIndex = elements[0].index
-          chartRef.current.setActiveElements([
-            { datasetIndex: 0, index: activeIndex }, // Market Value
-            { datasetIndex: 1, index: activeIndex }  // Realized Value
-          ])
-          chartRef.current.tooltip?.setActiveElements([
-            { datasetIndex: 0, index: activeIndex },
-            { datasetIndex: 1, index: activeIndex }
-          ], { x: event.x, y: event.y })
+          chartRef.current.setActiveElements(mainChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })))
+          chartRef.current.tooltip?.setActiveElements(mainChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })), { x: event.x, y: event.y })
         } else {
-          // Clear main chart tooltip when cursor leaves ratio chart
           chartRef.current.setActiveElements([])
           chartRef.current.tooltip?.setActiveElements([], { x: 0, y: 0 })
-          // Force tooltip to hide
           if (chartRef.current.tooltip) {
             chartRef.current.tooltip.opacity = 0
           }
@@ -761,7 +842,6 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         chartRef.current.update('none')
       }
     },
-
     plugins: {
       legend: {
         display: false,
@@ -799,34 +879,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           enabled: true,
           mode: 'xy' as const,
         },
-        // Synchronize zoom/pan with main chart, with debug logging
         onZoom: ({chart}: {chart: any}) => {
-          console.log('[ratioChartOptions] onZoom fired', chart, chartRef.current);
           if (chartRef.current) {
             const sourceXAxis = chart.scales.x
             const targetXAxis = chartRef.current.scales.x
-            console.log('[ratioChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
-            console.log('[ratioChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
             if (sourceXAxis && targetXAxis) {
               targetXAxis.options.min = sourceXAxis.min
               targetXAxis.options.max = sourceXAxis.max
               chartRef.current.update('none')
-              console.log('[ratioChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
             }
           }
         },
         onPan: ({chart}: {chart: any}) => {
-          console.log('[ratioChartOptions] onPan fired', chart, chartRef.current);
           if (chartRef.current) {
             const sourceXAxis = chart.scales.x
             const targetXAxis = chartRef.current.scales.x
-            console.log('[ratioChartOptions] sourceXAxis', sourceXAxis?.min, sourceXAxis?.max)
-            console.log('[ratioChartOptions] targetXAxis before', targetXAxis?.min, targetXAxis?.max)
             if (sourceXAxis && targetXAxis) {
               targetXAxis.options.min = sourceXAxis.min
               targetXAxis.options.max = sourceXAxis.max
               chartRef.current.update('none')
-              console.log('[ratioChartOptions] targetXAxis after', targetXAxis?.min, targetXAxis?.max)
             }
           }
         },
@@ -874,6 +945,17 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     },
   }
 
+  // Custom legend items for main and ratio traces
+  const legendItems: { key: TraceKey, color: string, label: string }[] = [
+    { key: 'price', color: '#3b82f6', label: 'Price' },
+    { key: 'ma200', color: '#fbbf24', label: '200DMA' },
+    { key: 'realizedPrice', color: '#10b981', label: 'Realized Price' },
+    { key: 'trueMarketMean', color: '#fb923c', label: 'True Market Mean' },
+    { key: 'mayer', color: '#ffffff', label: 'Mayer Ratio' },
+    { key: 'priceRealized', color: '#10b981', label: 'Price/Realized Price' },
+    { key: 'priceTrueMean', color: '#fb923c', label: 'Price/True Market Mean' }
+  ]
+
   return (
     // CRITICAL: min-w-0 overrides flexbox default min-width: auto behavior
     // This allows the chart container to shrink when sidebar reopens
@@ -884,11 +966,19 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         {/* Legend area - centered vertically with uniform spacing */}
         <div className="flex justify-center items-center h-12 px-4 pt-2">
           <div className="flex items-center gap-6">
-            {currentConfig.legend.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
+            {legendItems.map((item) => (
+              <button
+                key={item.key}
+                className={`flex items-center gap-2 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
+                onClick={() => handleLegendClick(item.key)}
+                type="button"
+                tabIndex={0}
+                aria-pressed={visibleTraces[item.key]}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
                 <span className="text-white text-sm">{item.label}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
