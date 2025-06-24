@@ -138,13 +138,14 @@ export default function Dashboard() {
         // Prepare chart data for 8-year rolling window with both price and realized price
         if (priceHistory.length > 0 && realizedPriceHistory.length > 0) {
           const minLength = Math.min(priceHistory.length, realizedPriceHistory.length)
+          const startIdx = priceHistory.length - minLength
           const chartData = Array.from({ length: minLength }, (_, index) => {
             const date = new Date()
             date.setDate(date.getDate() - (minLength - 1 - index))
             return {
               date: date.toISOString().split('T')[0],
-              price: priceHistory[index],
-              realizedPrice: realizedPriceHistory[index]
+              price: priceHistory[startIdx + index],
+              realizedPrice: realizedPriceHistory[startIdx + index]
             }
           })
           setPriceChartData(chartData)
@@ -155,7 +156,6 @@ export default function Dashboard() {
           // Use the STH data length (730 days) and align with the most recent Bitcoin price data
           const sthLength = sthRealizedPriceHistory.length
           const priceStartIndex = Math.max(0, priceHistory.length - sthLength)
-          
           const sthChartData = Array.from({ length: sthLength }, (_, index) => {
             const date = new Date()
             date.setDate(date.getDate() - (sthLength - 1 - index))
