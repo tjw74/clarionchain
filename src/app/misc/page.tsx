@@ -5,23 +5,8 @@ import dynamic from "next/dynamic"
 import DashboardLayout from "@/components/dashboard-layout"
 import { brkClient } from "@/lib/api/brkClient"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  LogarithmicScale,
-  TimeScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js'
-import 'chartjs-adapter-date-fns'
-import 'rc-slider/assets/index.css'
 import Slider from 'rc-slider'
-import zoomPlugin from 'chartjs-plugin-zoom'
+import 'rc-slider/assets/index.css'
 
 const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false,
@@ -48,19 +33,35 @@ export default function MiscPage() {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
   useEffect(() => {
-    ChartJS.register(
-      CategoryScale,
-      LinearScale,
-      LogarithmicScale,
-      TimeScale,
-      PointElement,
-      LineElement,
-      Title,
-      Tooltip,
-      Legend,
-      Filler,
-      zoomPlugin
-    )
+    // Dynamically import Chart.js and plugins only on client
+    Promise.all([
+      import('chart.js'),
+      import('chartjs-adapter-date-fns'),
+      import('chartjs-plugin-zoom'),
+    ]).then(([chartjs, _dateFns, zoomPlugin]) => {
+      const ChartJS = chartjs.Chart;
+      ChartJS.register(
+        chartjs.CategoryScale,
+        chartjs.LinearScale,
+        chartjs.LogarithmicScale,
+        chartjs.TimeScale,
+        chartjs.PointElement,
+        chartjs.LineElement,
+        chartjs.Title,
+        chartjs.Tooltip,
+        chartjs.Legend,
+        chartjs.Filler,
+        zoomPlugin.default
+      );
+      // Register custom tooltip positioner only on the client
+      if (typeof window !== 'undefined' && chartjs.Tooltip && typeof (chartjs.Tooltip.positioners as any)['customAbove'] === 'undefined') {
+        (chartjs.Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
+          if (!items.length) return false
+          // Always place tooltip at a fixed offset from the top of the chart area
+          return { x: eventPosition.x, y: 32 }
+        }
+      }
+    });
   }, [])
   if (!mounted) return null
 
@@ -332,17 +333,6 @@ export default function MiscPage() {
       },
     ],
   }), [dates, marketValues, realizedValues])
-
-  // Register custom tooltip positioner only on the client
-  useEffect(() => {
-    if (typeof window !== 'undefined' && Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
-      (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
-        if (!items.length) return false
-        // Always place tooltip at a fixed offset from the top of the chart area
-        return { x: eventPosition.x, y: 32 }
-      }
-    }
-  }, [])
 
   return (
     <>
