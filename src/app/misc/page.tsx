@@ -21,6 +21,7 @@ import {
 import 'chartjs-adapter-date-fns'
 import 'rc-slider/assets/index.css'
 import Slider from 'rc-slider'
+import zoomPlugin from 'chartjs-plugin-zoom'
 
 const Line = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), {
   ssr: false,
@@ -41,6 +42,30 @@ function formatGrafanaShort(v: number): string {
   if (v >= 1e3) return `$${(v / 1e3).toFixed(1)}K`
   if (v >= 1) return `$${Math.round(v)}`
   return `$${v.toFixed(2)}`
+}
+
+// Register Chart.js components and plugins at the top level
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  LogarithmicScale,
+  TimeScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  zoomPlugin
+)
+
+// Register custom tooltip positioner at the top level
+if (Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
+  (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
+    if (!items.length) return false
+    // Always place tooltip at a fixed offset from the top of the chart area
+    return { x: eventPosition.x, y: 32 }
+  }
 }
 
 export default function MiscPage() {
@@ -77,46 +102,27 @@ export default function MiscPage() {
       setMarketValues(marketCap)
       setRealizedValues(realizedCap)
       setMvrvRatios(mvrv)
-      // Default brush: last 3 years
+      // Default brush: start at Jan 1, 2016
       const defaultEnd = marketCap.length - 1
-      const defaultStart = Math.max(0, defaultEnd - 1095)
+      // Find the index for Jan 1, 2016
+      const jan2016 = new Date('2016-01-01')
+      let defaultStart = 0
+      for (let i = 0; i < dateArr.length; i++) {
+        if (new Date(dateArr[i]) >= jan2016) {
+          defaultStart = i
+          break
+        }
+      }
       setBrush([defaultStart, defaultEnd])
     }
     fetchData()
-  }, [])
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      import('chartjs-plugin-zoom').then((zoomPlugin) => {
-        ChartJS.register(
-          CategoryScale,
-          LinearScale,
-          LogarithmicScale,
-          TimeScale,
-          PointElement,
-          LineElement,
-          Title,
-          Tooltip,
-          Legend,
-          Filler,
-          zoomPlugin.default
-        )
-        // Register custom tooltip positioner
-        if (Tooltip && typeof (Tooltip.positioners as any)['customAbove'] === 'undefined') {
-          (Tooltip.positioners as any)['customAbove'] = function(items: any[], eventPosition: any) {
-            if (!items.length) return false
-            // Always place tooltip at a fixed offset from the top of the chart area
-            return { x: eventPosition.x, y: 32 }
-          }
-        }
-      })
-    }
   }, [])
 
   // Filtered data for main chart based on brush
   const filteredDates = useMemo(() => dates.slice(brush[0], brush[1] + 1), [dates, brush])
   const filteredMarketValues = useMemo(() => marketValues.slice(brush[0], brush[1] + 1), [marketValues, brush])
   const filteredRealizedValues = useMemo(() => realizedValues.slice(brush[0], brush[1] + 1), [realizedValues, brush])
+  const filteredMvrvRatios = useMemo(() => mvrvRatios.slice(brush[0], brush[1] + 1), [mvrvRatios, brush])
 
   // Chart options: log Y-axis, short-form USD ticks, custom tooltip, zoom/pan
   const chartOptions = useMemo(() => {
@@ -178,6 +184,8 @@ export default function MiscPage() {
           time: { unit: 'year' as const },
           grid: { color: 'rgba(55, 65, 81, 0.5)' },
           ticks: { color: '#9ca3af' },
+          min: filteredDates[0],
+          max: filteredDates[filteredDates.length - 1],
         },
         y: {
           type: 'logarithmic' as const,
@@ -196,7 +204,7 @@ export default function MiscPage() {
         },
       },
     }
-  }, [filteredMarketValues])
+  }, [filteredMarketValues, filteredDates])
 
   // Chart data: MV (blue), RV (yellow)
   const chartData = useMemo(() => ({
@@ -220,6 +228,60 @@ export default function MiscPage() {
       },
     ],
   }), [filteredDates, filteredMarketValues, filteredRealizedValues])
+
+  // Chart data: MVRV Ratio (white)
+  const mvrvRatioData = useMemo(() => ({
+    labels: filteredDates,
+    datasets: [
+      {
+        label: 'MVRV Ratio',
+        data: filteredMvrvRatios,
+        borderColor: '#fff',
+        borderWidth: 1,
+        pointRadius: 0,
+        tension: 0.1,
+      },
+    ],
+  }), [filteredDates, filteredMvrvRatios])
+
+  // Chart options for MVRV Ratio panel
+  const mvrvRatioOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderWidth: 0,
+        callbacks: {
+          label: (context: any) => `MVRV Ratio: ${context.parsed.y.toFixed(2)}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: 'time' as const,
+        time: { unit: 'year' as const },
+        grid: { color: 'rgba(55, 65, 81, 0.5)' },
+        ticks: { color: '#9ca3af' },
+        min: filteredDates[0],
+        max: filteredDates[filteredDates.length - 1],
+      },
+      y: {
+        type: 'linear' as const,
+        position: 'right' as const,
+        grid: { color: 'rgba(55, 65, 81, 0.5)' },
+        ticks: {
+          color: '#9ca3af',
+          font: { family: 'monospace', size: 12 },
+          callback: (value: number | string) => (typeof value === 'number' ? value.toFixed(2) : value),
+        },
+        padding: { left: 60, right: 60 },
+      },
+    },
+  }), [filteredDates])
 
   // Legend: MV (blue), RV (yellow), with latest values
   const latestMV = filteredMarketValues.length > 0 ? filteredMarketValues[filteredMarketValues.length - 1] : null
@@ -264,7 +326,7 @@ export default function MiscPage() {
           <CardTitle>Market Value : Realized Value</CardTitle>
         </CardHeader>
         <CardContent>
-          <div style={{ height: 592 }}>
+          <div style={{ height: 400 }}>
             {filteredMarketValues.length > 0 ? (
               <Line 
                 ref={chartRef}
@@ -272,8 +334,12 @@ export default function MiscPage() {
                 data={chartData} 
               />
             ) : (
-              <div className="h-[592px] w-full bg-gray-900 animate-pulse rounded-md" />
+              <div className="h-[400px] w-full bg-gray-900 animate-pulse rounded-md" />
             )}
+          </div>
+          {/* MVRV Ratio panel below main chart */}
+          <div style={{ height: 400 }}>
+            <Line options={mvrvRatioOptions} data={mvrvRatioData} height={400} />
           </div>
           {/* Legend: lower right, solid dot, right-aligned */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
@@ -314,7 +380,7 @@ export default function MiscPage() {
               </div>
             </div>
           </div>
-          {/* Single, minimal range slider below the legend */}
+          {/* Slider below the legend */}
           <div style={{ marginTop: 12, marginBottom: 0, width: '100%' }}>
             <Slider
               range

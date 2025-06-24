@@ -664,8 +664,8 @@ export default function DynamicsPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-stretch">
+          <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
                 4-Year Cycle
@@ -679,7 +679,7 @@ export default function DynamicsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
                 2-Year Trend
@@ -693,7 +693,7 @@ export default function DynamicsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
                 Full History
@@ -707,7 +707,7 @@ export default function DynamicsPage() {
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="h-full">
             <CardHeader>
               <CardTitle className="text-sm font-medium flex items-center justify-between">
                 Last Update
@@ -725,7 +725,7 @@ export default function DynamicsPage() {
 
         {/* Anomalies List */}
         {filteredAnalyses.length === 0 ? (
-          <Card className="border-border">
+          <Card className="border-border h-full">
             <CardContent className="p-12 text-center">
               <Target className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <h3 className="text-lg font-semibold mb-2">No Anomalies Found</h3>
@@ -735,13 +735,14 @@ export default function DynamicsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-stretch">
             {filteredAnalyses.map((analysis) => {
               const windowResult = analysis.windows[windowMap[activeWindow]]
               if (!analysis) return null
               return (
                 <Card
                   key={analysis.id}
+                  className="h-full"
                   ref={(el: HTMLDivElement | null) => {
                     if (metricCardRefs.current) {
                       metricCardRefs.current[analysis.id] = el
@@ -776,8 +777,8 @@ export default function DynamicsPage() {
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start">
+                  <CardContent className="h-full flex flex-col justify-between">
+                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-start h-full">
                       {/* Window Analysis - Left Side */}
                       <div className="lg:col-span-2">
                         <div className="rounded-lg bg-card">
