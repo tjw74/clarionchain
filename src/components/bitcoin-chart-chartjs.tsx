@@ -904,7 +904,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     return (
       <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
         {/* Chart Container - styled to match AI component */}
-        <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
+        <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
           {/* Legend area - centered vertically with uniform spacing */}
           <div className="flex justify-center items-center h-12 px-4 pt-2">
             <div className="flex items-center gap-4">
@@ -959,7 +959,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   if (chartSection === 'ratio') {
     return (
       <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
-        <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
+        <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
           {/* Ratio Chart area */}
           <div 
             className="flex-1 min-h-0 px-4 pb-4"
@@ -996,7 +996,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   return (
     <div ref={containerRef} className="w-full min-w-0 flex-1 min-h-0 flex flex-col">
       {/* Chart Container - styled to match AI component */}
-      <div className="border rounded-md bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
+      <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
         {/* Legend area - centered vertically with uniform spacing */}
         <div className="flex justify-center items-center h-12 px-4 pt-2">
           <div className="flex items-center gap-4">
