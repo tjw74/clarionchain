@@ -752,6 +752,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         }
       },
     },
+    layout: {
+      padding: 0
+    },
+    // Set chart area background to match panel
+    backgroundColor: 'rgba(17,24,39,1)',
     scales: {
       x: {
         type: 'time' as const,
@@ -846,6 +851,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         }
       },
     },
+    layout: {
+      padding: 0
+    },
+    // Set chart area background to match panel
+    backgroundColor: 'rgba(17,24,39,1)',
     scales: {
       x: {
         type: 'time' as const,
