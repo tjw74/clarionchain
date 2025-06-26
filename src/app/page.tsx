@@ -1209,7 +1209,6 @@ export default function Dashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Price Models</CardTitle>
-                <CardDescription>Bitcoin price trend over the last 8 years</CardDescription>
               </div>
               <ShareButton chartId="price-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
@@ -1261,7 +1260,6 @@ export default function Dashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>STH Cost Basis : Realized Price</CardTitle>
-                <CardDescription>STH realized price over the last 2 years</CardDescription>
               </div>
               <ShareButton chartId="sth-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
