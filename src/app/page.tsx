@@ -1232,28 +1232,6 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2"><span style={{background:'#a3e635',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span><span className="text-white text-sm">200 DMA</span></div>
               </div>
             </CardContent>
-            <CardFooter>
-              <div className="flex w-full items-start justify-between gap-2 text-sm">
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 leading-none font-medium">
-                    {priceTrend.isPositive ? 'Trending up' : 'Trending down'} by {priceTrend.percentage.toFixed(1)}% {priceTrend.period} <TrendingUp className="h-4 w-4" />
-                  </div>
-                  <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                    8-year rolling window
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-sm">Bitcoin Price</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm">Realized Price</span>
-                  </div>
-                </div>
-              </div>
-            </CardFooter>
           </Card>
           
           <Card id="sth-chart-card">
@@ -1356,28 +1334,6 @@ export default function Dashboard() {
               </ChartContainer>
               </div>
             </CardContent>
-            <CardFooter>
-              <div className="flex w-full items-start justify-between gap-2 text-sm">
-                <div className="grid gap-2">
-                  <div className="flex items-center gap-2 leading-none font-medium">
-                    {sthTrend.isPositive ? 'Trending up' : 'Trending down'} by {sthTrend.percentage.toFixed(1)}% {sthTrend.period} <TrendingUp className="h-4 w-4" />
-                  </div>
-                  <div className="text-muted-foreground flex items-center gap-2 leading-none">
-                    2-year rolling window
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    <span className="text-sm">STH Realized Price</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
-                    <span className="text-sm">Bitcoin Price</span>
-                  </div>
-                </div>
-              </div>
-            </CardFooter>
           </Card>
         </div>
 
@@ -1441,10 +1397,6 @@ function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, 
         <Slider.Thumb className="block w-3 h-3 bg-[#3b82f6] rounded-full cursor-pointer z-10" />
         <Slider.Thumb className="block w-3 h-3 bg-[#3b82f6] rounded-full cursor-pointer z-10" />
       </Slider.Root>
-      <div className="flex w-full justify-between text-xs text-gray-400 mt-1">
-        <span>{min.toISOString().slice(0,10)}</span>
-        <span>{max.toISOString().slice(0,10)}</span>
-      </div>
     </div>
   );
 }
