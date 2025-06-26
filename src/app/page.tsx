@@ -157,9 +157,68 @@ function useRealizedPriceCard() {
   return card;
 }
 
+function useMA200Card() {
+  const [card, setCard] = useState({
+    title: 'MA200',
+    value: 'N/A',
+    change: 'N/A',
+    changeType: 'neutral',
+    description: '200-day moving average (close)',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    let interval: NodeJS.Timeout;
+    async function fetchMA200() {
+      try {
+        const res = await fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-ohlc?from=-210');
+        const arr = await res.json();
+        // arr is an array of [open, high, low, close], get the close prices
+        const closes = arr.map((v: any) => Array.isArray(v) && typeof v[3] === 'number' ? v[3] : null).filter((v: any) => v !== null);
+        // Calculate MA200 for latest and 7d ago
+        if (closes.length >= 200) {
+          const latestMA = closes.slice(-200).reduce((a: number, b: number) => a + b, 0) / 200;
+          const prev7dMA = closes.length >= 207 ? closes.slice(-207, -7).reduce((a: number, b: number) => a + b, 0) / 200 : null;
+          const formatNumber = (num: number) => {
+            if (isNaN(num)) return 'N/A';
+            if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+            if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+            if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+            if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+            return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          };
+          let change = 'N/A';
+          let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+          if (latestMA && prev7dMA && prev7dMA !== 0) {
+            const pct = ((latestMA - prev7dMA) / prev7dMA) * 100;
+            change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+            changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+          }
+          if (isMounted) {
+            setCard({
+              title: 'MA200',
+              value: formatNumber(latestMA),
+              change,
+              changeType,
+              description: '200-day moving average (close)',
+            });
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchMA200();
+    interval = setInterval(fetchMA200, 60000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  return card;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
+  const ma200Card = useMA200Card();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -703,7 +762,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[multiSourceBTCMetric, realizedPriceCard, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price')].map((metric, index) => {
+          {[multiSourceBTCMetric, realizedPriceCard, ma200Card, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200')].map((metric, index) => {
             const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
             return (
