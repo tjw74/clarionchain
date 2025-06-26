@@ -568,14 +568,31 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     logMax = Math.log10(maxUSD)
     logRange = logMax - logMin
     paddedLogMin = logMin - (logRange * 0.1) // 10% padding
-    paddedLogMax = logMax + (logRange * 0.1) // 10% padding
-    
+
+    // Find the next "nice" tick above maxUSD (next power of 10 or next major step)
+    const getNextNiceTick = (value: number) => {
+      const logV = Math.log10(value)
+      const base = Math.floor(logV)
+      const pow10 = Math.pow(10, base)
+      if (value <= pow10) return pow10
+      if (value <= 2 * pow10) return 2 * pow10
+      if (value <= 5 * pow10) return 5 * pow10
+      return 10 * pow10
+    }
+    const nextTick = getNextNiceTick(maxUSD)
+    paddedLogMax = Math.log10(nextTick)
+
     // Generate evenly spaced logarithmic ticks
     const generateLogTicks = () => {
       const ticks = []
       for (let i = 0; i <= 8; i++) {
         const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 8)
         ticks.push(Math.pow(10, logValue))
+      }
+      // Guarantee the last tick is strictly greater than maxUSD
+      if (ticks[ticks.length - 1] <= maxUSD) {
+        const nextMajor = getNextNiceTick(maxUSD * 1.01)
+        ticks[ticks.length - 1] = nextMajor
       }
       return ticks
     }
