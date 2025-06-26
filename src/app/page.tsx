@@ -1,7 +1,7 @@
 "use client"
 
 // Force Vercel deployment update
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, BarChart3 } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
@@ -17,6 +17,42 @@ import {
 import { useUser } from "@/context/UserContext"
 import ShareButton from "@/components/ShareButton"
 import { useMultiSourceBTCPrice } from '@/hooks/useMultiSourceBTCPrice'
+import dynamic from 'next/dynamic';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  LogarithmicScale,
+  TimeScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import 'chartjs-adapter-date-fns';
+import type { ChartData } from 'chart.js';
+import { useCallback } from 'react';
+import * as Slider from '@radix-ui/react-slider';
+
+// Chart.js registration: only on client
+if (typeof window !== 'undefined') {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    LogarithmicScale,
+    TimeScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+  );
+}
+
+const ChartJSLine = dynamic(() => import('react-chartjs-2').then(mod => mod.Line), { ssr: false });
 
 // Mock data for initial display
 const mockMetrics: MetricCard[] = [
@@ -389,7 +425,7 @@ function useSOPRCard() {
             title: 'SOPR',
             value: latest ? latest.toFixed(2) : 'N/A',
             change,
-            changeType: changeType === 'positive' ? 'positive' : changeType === 'negative' ? 'negative' : 'neutral',
+            changeType: (['positive', 'negative', 'neutral'] as const).includes(changeType as any) ? changeType as 'positive' | 'negative' | 'neutral' : 'neutral',
             description: 'Spent Output Profit Ratio (SOPR)',
           });
         }
@@ -403,6 +439,135 @@ function useSOPRCard() {
   }, []);
   return card;
 }
+
+function usePriceModelsChartData(range: [Date, Date]) {
+  const [data, setData] = useState<ChartData<'line'>>({
+    labels: [],
+    datasets: [],
+  });
+  const allData = useRef<{ labels: Date[]; datasets: any[] } | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    let interval: NodeJS.Timeout;
+    async function fetchData() {
+      const [ohlcRes, realizedRes, tmmRes] = await Promise.all([
+        fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-ohlc?from=-10000'),
+        fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-realized-price?from=-10000'),
+        fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-true-market-mean?from=-10000'),
+      ]);
+      const ohlcArr = await ohlcRes.json();
+      const realizedArr = await realizedRes.json();
+      const tmmArr = await tmmRes.json();
+      const startDate = new Date('2012-01-01');
+      const closes = ohlcArr.map((v: any) => Array.isArray(v) && typeof v[3] === 'number' ? v[3] : null);
+      const labels = closes.map((_: any, i: number) => {
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        return d;
+      });
+      const ma200 = closes.map((_: any, i: number, arr: any[]) => {
+        if (i < 199) return null;
+        const window = arr.slice(i - 199, i + 1);
+        if (window.some((x: any) => x === null)) return null;
+        return window.reduce((a: number, b: number) => a! + (b as number), 0) / 200;
+      });
+      const minLen = Math.min(closes.length, realizedArr.length, tmmArr.length, ma200.length);
+      const filteredLabels = labels.slice(0, minLen).filter((_: any, i: number) => closes[i] && realizedArr[i] && tmmArr[i] && ma200[i]);
+      const priceData = closes.slice(0, minLen).filter((_: any, i: number) => closes[i] && realizedArr[i] && tmmArr[i] && ma200[i]);
+      const realizedData = realizedArr.slice(0, minLen).filter((_: any, i: number) => closes[i] && realizedArr[i] && tmmArr[i] && ma200[i]);
+      const tmmData = tmmArr.slice(0, minLen).filter((_: any, i: number) => closes[i] && realizedArr[i] && tmmArr[i] && ma200[i]);
+      const ma200Data = ma200.slice(0, minLen).filter((_: any, i: number) => closes[i] && realizedArr[i] && tmmArr[i] && ma200[i]);
+      if (isMounted) {
+        allData.current = {
+          labels: filteredLabels,
+          datasets: [
+            { label: 'Price', data: priceData, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.15)', borderWidth: 2, pointRadius: 0, tension: 0.1, yAxisID: 'y' },
+            { label: 'Realized Price', data: realizedData, borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.15)', borderWidth: 2, pointRadius: 0, tension: 0.1, yAxisID: 'y' },
+            { label: 'True Market Mean', data: tmmData, borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 2, pointRadius: 0, tension: 0.1, yAxisID: 'y' },
+            { label: '200 DMA', data: ma200Data, borderColor: '#a3e635', backgroundColor: 'rgba(163,230,53,0.15)', borderWidth: 2, pointRadius: 0, tension: 0.1, yAxisID: 'y' },
+          ],
+        };
+        // Filter for range
+        const [from, to] = range;
+        const idxFrom = filteredLabels.findIndex((d: Date) => d >= from);
+        const idxTo = filteredLabels.findIndex((d: Date) => d > to);
+        const end = idxTo === -1 ? filteredLabels.length : idxTo;
+        setData({
+          labels: filteredLabels.slice(idxFrom, end),
+          datasets: allData.current.datasets.map(ds => ({ ...ds, data: ds.data.slice(idxFrom, end) })),
+        });
+      }
+    }
+    fetchData();
+    interval = setInterval(fetchData, 60000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, [range]);
+
+  // When range changes, filter the data
+  useEffect(() => {
+    if (!allData.current) return;
+    const filteredLabels = allData.current.labels;
+    const [from, to] = range;
+    const idxFrom = filteredLabels.findIndex((d: Date) => d >= from);
+    const idxTo = filteredLabels.findIndex((d: Date) => d > to);
+    const end = idxTo === -1 ? filteredLabels.length : idxTo;
+    setData({
+      labels: filteredLabels.slice(idxFrom, end),
+      datasets: allData.current.datasets.map(ds => ({ ...ds, data: ds.data.slice(idxFrom, end) })),
+    });
+  }, [range]);
+
+  return data;
+}
+
+const priceModelsChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+  },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: 'rgba(59, 130, 246, 0.15)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderWidth: 0,
+      callbacks: {
+        label: function(context: any) {
+          return `${context.dataset.label}: $${Number(context.parsed.y).toLocaleString()}`;
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      type: 'time' as const,
+      time: { unit: 'year' as const },
+      grid: { color: '#374151' },
+      ticks: { color: '#9ca3af', maxTicksLimit: 10 },
+    },
+    y: {
+      type: 'logarithmic' as const,
+      position: 'left' as const,
+      grid: { color: '#374151' },
+      ticks: {
+        color: '#9ca3af',
+        callback: function(tickValue: string | number) {
+          const value = typeof tickValue === 'number' ? tickValue : parseFloat(tickValue);
+          if (value >= 1e12) return `$${(value / 1e12).toFixed(1)}T`;
+          if (value >= 1e9) return `$${(value / 1e9).toFixed(1)}B`;
+          if (value >= 1e6) return `$${(value / 1e6).toFixed(0)}M`;
+          if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+          return `$${Math.round(value)}`;
+        },
+        maxTicksLimit: 8,
+      },
+    },
+  },
+};
 
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
@@ -429,6 +594,13 @@ export default function Dashboard() {
   // Pan state for charts
   const [pricePanState, setPricePanState] = useState<{isDragging: boolean, startX: number, startY: number, startXDomain?: {left: number, right: number}, startYDomain?: {min: number, max: number}}>({isDragging: false, startX: 0, startY: 0})
   const [sthPanState, setSthPanState] = useState<{isDragging: boolean, startX: number, startY: number, startXDomain?: {left: number, right: number}, startYDomain?: {min: number, max: number}}>({isDragging: false, startX: 0, startY: 0})
+
+  // Price Models panel state for time slider
+  const [priceRange, setPriceRange] = useState<[Date, Date]>(() => [
+    new Date('2014-01-01'),
+    new Date(),
+  ]);
+  const priceModelsData = usePriceModelsChartData(priceRange);
 
   useEffect(() => {
     async function fetchData() {
@@ -613,7 +785,7 @@ export default function Dashboard() {
             title: 'SOPR',
             value: soprCard.value,
             change: soprCard.change,
-            changeType: soprCard.changeType,
+            changeType: (['positive', 'negative', 'neutral'] as const).includes(soprCard.changeType as any) ? soprCard.changeType as 'positive' | 'negative' | 'neutral' : 'neutral',
             description: 'Spent Output Profit Ratio (SOPR)',
           },
         ];
@@ -1042,96 +1214,22 @@ export default function Dashboard() {
               <ShareButton chartId="price-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div 
-                onWheel={handlePriceChartWheel}
-                onMouseDown={handlePriceMouseDown}
-                onMouseMove={handlePriceMouseMove}
-                onMouseUp={handlePriceMouseUp}
-                onMouseLeave={handlePriceMouseUp}
-                style={{ cursor: pricePanState.isDragging ? 'grabbing' : 'grab' }}
-              >
-                <ChartContainer config={priceChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 ease-out">
-                  <ComposedChart
-                    accessibilityLayer
-                    data={priceZoomDomain.left !== undefined 
-                      ? priceChartData.slice(priceZoomDomain.left, priceZoomDomain.right! + 1)
-                      : priceChartData
-                    }
-                    margin={{
-                      left: 12,
-                      right: 12,
-                    }}
-                    syncId="priceCharts"
-                  >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value: any) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis 
-                    scale="log" 
-                    domain={priceYZoomDomain.min !== undefined && priceYZoomDomain.max !== undefined
-                      ? [priceYZoomDomain.min, priceYZoomDomain.max] 
-                      : ['dataMin', 'dataMax']
-                    }
-                    tickFormatter={(value: any) => formatShortUSD(Number(value))}
-                    axisLine={false}
-                    tickLine={false}
-                    orientation="right"
-                  />
-                  <ChartTooltip 
-                    cursor={false} 
-                    content={<ChartTooltipContent 
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any, name: any) => {
-                        const label = name === "price" ? "Bitcoin Price" : "Realized Price"
-                        return [`$${Number(value).toLocaleString()}`, label]
-                      }}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
-                      }}
-                    />} 
-                  />
-                  <defs>
-                    <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="price"
-                    type="natural"
-                    fill="url(#fillPrice)"
-                    fillOpacity={0.4}
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    dataKey="realizedPrice"
-                    type="natural"
-                    stroke="#eab308"
-                    strokeWidth={1}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </ComposedChart>
-              </ChartContainer>
+              <div style={{ height: 400 }}>
+                <ChartJSLine data={priceModelsData} options={priceModelsChartOptions} />
+              </div>
+              {/* Time Range Slider */}
+              <TimeRangeSlider
+                min={new Date('2012-01-01')}
+                max={new Date()}
+                value={priceRange}
+                onChange={setPriceRange}
+              />
+              {/* Custom Legend */}
+              <div className="flex justify-end gap-6 mt-2">
+                <div className="flex items-center gap-2"><span style={{background:'#3b82f6',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span><span className="text-white text-sm">Price</span></div>
+                <div className="flex items-center gap-2"><span style={{background:'#fbbf24',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span><span className="text-white text-sm">Realized Price</span></div>
+                <div className="flex items-center gap-2"><span style={{background:'#ffffff',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span><span className="text-white text-sm">True Market Mean</span></div>
+                <div className="flex items-center gap-2"><span style={{background:'#a3e635',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span><span className="text-white text-sm">200 DMA</span></div>
               </div>
             </CardContent>
             <CardFooter>
@@ -1312,4 +1410,42 @@ export default function Dashboard() {
       </div>
     </DashboardLayout>
   )
+}
+
+// Add the TimeRangeSlider component at the bottom of the file
+function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, value: [Date, Date], onChange: (v: [Date, Date]) => void }) {
+  const minTs = min.getTime();
+  const maxTs = max.getTime();
+  const [left, right] = value.map(d => d.getTime());
+  // Convert slider value to date range
+  const handleValueChange = useCallback((v: number[]) => {
+    if (v.length === 2) {
+      const newLeft = Math.max(minTs, Math.min(v[0], v[1] - 24*3600*1000));
+      const newRight = Math.min(maxTs, Math.max(v[1], v[0] + 24*3600*1000));
+      onChange([new Date(newLeft), new Date(newRight)]);
+    }
+  }, [minTs, maxTs, onChange]);
+  return (
+    <div className="w-full flex flex-col items-center mt-2">
+      <Slider.Root
+        className="relative flex items-center w-full h-8"
+        min={minTs}
+        max={maxTs}
+        step={24*3600*1000}
+        value={[left, right]}
+        onValueChange={handleValueChange}
+        minStepsBetweenThumbs={1}
+      >
+        <Slider.Track className="absolute top-1/2 left-0 right-0 h-1 bg-gray-700 rounded-full" style={{ transform: 'translateY(-50%)' }}>
+          <Slider.Range className="absolute h-2 bg-blue-500 rounded-full" />
+        </Slider.Track>
+        <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
+        <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
+      </Slider.Root>
+      <div className="flex w-full justify-between text-xs text-gray-400 mt-1">
+        <span>{min.toISOString().slice(0,10)}</span>
+        <span>{max.toISOString().slice(0,10)}</span>
+      </div>
+    </div>
+  );
 }
