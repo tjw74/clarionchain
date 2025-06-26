@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/chart"
 import { useUser } from "@/context/UserContext"
 import ShareButton from "@/components/ShareButton"
+import { useMultiSourceBTCPrice } from '@/hooks/useMultiSourceBTCPrice'
 
 // Mock data for initial display
 const mockMetrics: MetricCard[] = [
@@ -102,6 +103,7 @@ const sthChartConfig = {
 } satisfies ChartConfig
 
 export default function Dashboard() {
+  const multiSourceBTCMetric = useMultiSourceBTCPrice();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -608,7 +610,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric, index) => {
+          {[multiSourceBTCMetric, ...metrics.filter(m => m.title !== 'Bitcoin Price')].map((metric, index) => {
             const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
             return (
@@ -635,7 +637,7 @@ export default function Dashboard() {
                       >
                       {metric.change}
                       </span>
-                      <span className="ml-1">from last hour</span>
+                      <span className="ml-1">from last 7 days</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {metric.description}
