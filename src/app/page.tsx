@@ -135,14 +135,16 @@ function useRealizedPriceCard() {
         if (latest && prev7d && prev7d !== 0) {
           const pct = ((latest - prev7d) / prev7d) * 100;
           change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
-          changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+          if (pct > 0) changeType = 'positive';
+          else if (pct < 0) changeType = 'negative';
+          else changeType = 'neutral';
         }
         if (isMounted) {
           setCard({
             title: 'Realized Price',
             value: formatNumber(latest),
             change,
-            changeType,
+            changeType: changeType === 'positive' ? 'positive' : changeType === 'negative' ? 'negative' : 'neutral',
             description: 'Realized price per BTC',
           });
         }
@@ -353,12 +355,62 @@ function useMVRVRatioCard(marketCap: number | null, realizedCap: number | null, 
   return card;
 }
 
+function useSOPRCard() {
+  const [card, setCard] = useState({
+    title: 'SOPR',
+    value: 'N/A',
+    change: 'N/A',
+    changeType: 'neutral',
+    description: 'Spent Output Profit Ratio (SOPR)',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    let interval: NodeJS.Timeout;
+    async function fetchSOPR() {
+      try {
+        const res = await fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-spent-output-profit-ratio?from=-10');
+        const arr = await res.json();
+        // arr is an array, get the last and 7th-from-last non-null values
+        const values = arr.filter((v: any) => typeof v === 'number' && !isNaN(v));
+        const latest = values[values.length - 1];
+        const prev7d = values.length > 7 ? values[values.length - 8] : null;
+        let change = 'N/A';
+        let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+        if (latest && prev7d && prev7d !== 0) {
+          const pct = ((latest - prev7d) / prev7d) * 100;
+          change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+          if (pct > 0) changeType = 'positive';
+          else if (pct < 0) changeType = 'negative';
+          else changeType = 'neutral';
+        }
+        if (isMounted) {
+          setCard({
+            title: 'SOPR',
+            value: latest ? latest.toFixed(2) : 'N/A',
+            change,
+            changeType: changeType === 'positive' ? 'positive' : changeType === 'negative' ? 'negative' : 'neutral',
+            description: 'Spent Output Profit Ratio (SOPR)',
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchSOPR();
+    interval = setInterval(fetchSOPR, 60000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  return card;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
   const ma200Card = useMA200Card();
   const mayerMultipleCard = useMayerMultipleCard();
   const realizedCapCard = useRealizedCapCard();
+  const soprCard = useSOPRCard();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -556,7 +608,14 @@ export default function Dashboard() {
             value: sthMvrvRatioArr.length > 0 && !isNaN(sthMvrvRatioArr[sthMvrvRatioArr.length - 1]) ? sthMvrvRatioArr[sthMvrvRatioArr.length - 1].toFixed(2) : 'N/A',
             ...calcChange(sthMvrvRatioArr, false),
             description: 'Short-term holder MVRV ratio'
-          }
+          },
+          {
+            title: 'SOPR',
+            value: soprCard.value,
+            change: soprCard.change,
+            changeType: soprCard.changeType,
+            description: 'Spent Output Profit Ratio (SOPR)',
+          },
         ];
         setMetrics(realMetrics);
       } catch {
@@ -933,7 +992,8 @@ export default function Dashboard() {
             getMarketCapMetric(),
             realizedCapCard,
             mvrvRatioCard,
-            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap' && m.title !== 'MVRV Ratio' && m.title !== '24h Volume')
+            soprCard,
+            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap' && m.title !== 'MVRV Ratio' && m.title !== '24h Volume' && m.title !== 'Active Addresses' && m.title !== 'SOPR')
           ].map((metric, index) => {
               const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
               const Icon = icons[index] || DollarSign
