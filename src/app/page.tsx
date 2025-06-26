@@ -1436,8 +1436,8 @@ function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, 
         onValueChange={handleValueChange}
         minStepsBetweenThumbs={1}
       >
-        <Slider.Track className="absolute top-1/2 left-0 right-0 h-1 bg-gray-700 rounded-full" style={{ transform: 'translateY(-50%)' }}>
-          <Slider.Range className="absolute h-2 bg-blue-500 rounded-full" />
+        <Slider.Track className="absolute top-1/2 left-0 right-0 h-0.25 bg-gray-700 rounded-full" style={{ transform: 'translateY(-50%)' }}>
+          <Slider.Range className="absolute h-0.5 bg-blue-500 rounded-full" />
         </Slider.Track>
         <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
         <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
