@@ -102,8 +102,64 @@ const sthChartConfig = {
   },
 } satisfies ChartConfig
 
+function useRealizedPriceCard() {
+  const [card, setCard] = useState({
+    title: 'Realized Price',
+    value: 'N/A',
+    change: 'N/A',
+    changeType: 'neutral',
+    description: 'Realized price per BTC',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    let interval: NodeJS.Timeout;
+    async function fetchRealizedPrice() {
+      try {
+        const res = await fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-realized-price?from=-10');
+        const arr = await res.json();
+        // arr is an array, get the last and 7th-from-last non-null values
+        const values = arr.filter((v: any) => typeof v === 'number' && !isNaN(v));
+        const latest = values[values.length - 1];
+        const prev7d = values.length > 7 ? values[values.length - 8] : null;
+        const formatNumber = (num: number) => {
+          if (isNaN(num)) return 'N/A';
+          if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+          if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+          if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+          if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+          return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+        let change = 'N/A';
+        let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+        if (latest && prev7d && prev7d !== 0) {
+          const pct = ((latest - prev7d) / prev7d) * 100;
+          change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+          changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+        }
+        if (isMounted) {
+          setCard({
+            title: 'Realized Price',
+            value: formatNumber(latest),
+            change,
+            changeType,
+            description: 'Realized price per BTC',
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchRealizedPrice();
+    interval = setInterval(fetchRealizedPrice, 60000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  return card;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
+  const realizedPriceCard = useRealizedPriceCard();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -647,7 +703,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[multiSourceBTCMetric, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap')].map((metric, index) => {
+          {[multiSourceBTCMetric, realizedPriceCard, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price')].map((metric, index) => {
             const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
             return (
