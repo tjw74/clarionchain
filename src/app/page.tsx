@@ -159,7 +159,7 @@ function useRealizedPriceCard() {
 
 function useMA200Card() {
   const [card, setCard] = useState({
-    title: 'MA200',
+    title: 'Price 200 DMA',
     value: 'N/A',
     change: 'N/A',
     changeType: 'neutral',
@@ -196,7 +196,7 @@ function useMA200Card() {
           }
           if (isMounted) {
             setCard({
-              title: 'MA200',
+              title: 'Price 200 DMA',
               value: formatNumber(latestMA),
               change,
               changeType,
@@ -215,10 +215,64 @@ function useMA200Card() {
   return card;
 }
 
+function useMayerMultipleCard() {
+  const [card, setCard] = useState({
+    title: 'Mayer Multiple',
+    value: 'N/A',
+    change: 'N/A',
+    changeType: 'neutral',
+    description: 'Mayer Multiple (Price / 200DMA)',
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    let interval: NodeJS.Timeout;
+    async function fetchMayerMultiple() {
+      try {
+        const res = await fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-ohlc?from=-210');
+        const arr = await res.json();
+        // arr is an array of [open, high, low, close], get the close prices
+        const closes = arr.map((v: any) => Array.isArray(v) && typeof v[3] === 'number' ? v[3] : null).filter((v: any) => v !== null);
+        if (closes.length >= 200) {
+          const latestPrice = closes[closes.length - 1];
+          const latestMA = closes.slice(-200).reduce((a: number, b: number) => a + b, 0) / 200;
+          const prev7dPrice = closes.length > 7 ? closes[closes.length - 8] : null;
+          const prev7dMA = closes.length >= 207 ? closes.slice(-207, -7).reduce((a: number, b: number) => a + b, 0) / 200 : null;
+          const latestRatio = latestMA && latestMA !== 0 ? latestPrice / latestMA : null;
+          const prev7dRatio = prev7dMA && prev7dMA !== 0 && prev7dPrice ? prev7dPrice / prev7dMA : null;
+          let change = 'N/A';
+          let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+          if (latestRatio && prev7dRatio && prev7dRatio !== 0) {
+            const pct = ((latestRatio - prev7dRatio) / prev7dRatio) * 100;
+            change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+            changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+          }
+          if (isMounted) {
+            setCard({
+              title: 'Mayer Multiple',
+              value: latestRatio ? latestRatio.toFixed(2) : 'N/A',
+              change,
+              changeType,
+              description: 'Mayer Multiple (Price / 200DMA)',
+            });
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    fetchMayerMultiple();
+    interval = setInterval(fetchMayerMultiple, 60000);
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  return card;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
   const ma200Card = useMA200Card();
+  const mayerMultipleCard = useMayerMultipleCard();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -762,42 +816,42 @@ export default function Dashboard() {
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[multiSourceBTCMetric, realizedPriceCard, ma200Card, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200')].map((metric, index) => {
-            const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
-            const Icon = icons[index] || DollarSign
-            return (
-              <Card key={metric.title} id={`metric-card-${index}`} className="border-border">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    {metric.title}
-                  </CardTitle>
-                  <div className="flex items-center">
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <ShareButton chartId={`metric-card-${index}`} userNpub={user?.pubkey || null} />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{formatValue(metric.value, metric.title)}</div>
-                    <div className="flex items-center text-xs text-muted-foreground">
-                      {metric.changeType === 'positive' ? (
-                        <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-                      ) : (
-                        <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-                      )}
-                      <span 
-                        className={metric.changeType === 'positive' ? 'text-green-500' : 'text-red-500'}
-                      >
-                      {metric.change}
-                      </span>
-                      <span className="ml-1">from last 7 days</span>
+          {[multiSourceBTCMetric, realizedPriceCard, ma200Card, mayerMultipleCard, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple')].map((metric, index) => {
+              const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
+              const Icon = icons[index] || DollarSign
+              return (
+                <Card key={metric.title} id={`metric-card-${index}`} className="border-border">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {metric.title}
+                    </CardTitle>
+                    <div className="flex items-center">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <ShareButton chartId={`metric-card-${index}`} userNpub={user?.pubkey || null} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {metric.description}
-                    </p>
-                </CardContent>
-              </Card>
-            )
-          })}
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">{formatValue(metric.value, metric.title)}</div>
+                      <div className="flex items-center text-xs text-muted-foreground">
+                        {metric.changeType === 'positive' ? (
+                          <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                        ) : (
+                          <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
+                        )}
+                        <span 
+                          className={metric.changeType === 'positive' ? 'text-green-500' : 'text-red-500'}
+                        >
+                        {metric.change}
+                        </span>
+                        <span className="ml-1">from last 7 days</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {metric.description}
+                      </p>
+                  </CardContent>
+                </Card>
+              )
+            })}
         </div>
 
         {/* Chart Section */}
