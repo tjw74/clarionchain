@@ -1214,7 +1214,8 @@ export default function Dashboard() {
               <ShareButton chartId="price-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div style={{ height: 400 }}>
+              <div style={{ height: 400 }}
+                   onDoubleClick={() => setPriceRange([new Date('2014-01-01'), new Date()])}>
                 <ChartJSLine data={priceModelsData} options={priceModelsChartOptions} />
               </div>
               {/* Time Range Slider */}
@@ -1439,8 +1440,8 @@ function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, 
         <Slider.Track className="absolute top-1/2 left-0 right-0 h-0.25 bg-gray-700 rounded-full" style={{ transform: 'translateY(-50%)' }}>
           <Slider.Range className="absolute h-0.5 bg-blue-500 rounded-full" />
         </Slider.Track>
-        <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
-        <Slider.Thumb className="block w-4 h-4 bg-white border-2 border-blue-500 rounded-full cursor-pointer z-10" />
+        <Slider.Thumb className="block w-3 h-3 bg-[#3b82f6] rounded-full cursor-pointer z-10" />
+        <Slider.Thumb className="block w-3 h-3 bg-[#3b82f6] rounded-full cursor-pointer z-10" />
       </Slider.Root>
       <div className="flex w-full justify-between text-xs text-gray-400 mt-1">
         <span>{min.toISOString().slice(0,10)}</span>
