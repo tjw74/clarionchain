@@ -103,7 +103,7 @@ const sthChartConfig = {
 } satisfies ChartConfig
 
 export default function Dashboard() {
-  const multiSourceBTCMetric = useMultiSourceBTCPrice();
+  const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const [metrics, setMetrics] = useState<MetricCard[]>(mockMetrics)
   const [, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -602,6 +602,43 @@ export default function Dashboard() {
   const priceTrend = calculatePriceTrend()
   const sthTrend = calculateSTHTrend()
 
+  // Calculate Market Cap using the average price from the BTC price card
+  function getMarketCapMetric() {
+    const parsePrice = (val: string): number | null => {
+      if (!val || val === 'N/A') return null;
+      if (val.endsWith('T')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e12;
+      if (val.endsWith('B')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e9;
+      if (val.endsWith('M')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e6;
+      if (val.endsWith('K')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e3;
+      return parseFloat(val.replace(/[^\d.]/g, ''));
+    };
+    const price = parsePrice(multiSourceBTCMetric.value);
+    const marketCap = price ? price * 21000000 : null;
+    const formatMarketCap = (num: number | null) => {
+      if (num === null || isNaN(num)) return 'N/A';
+      if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
+      if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+      if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+      if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+    let change = 'N/A';
+    let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+    if (btcPrice7dAgo && price && !isNaN(btcPrice7dAgo) && btcPrice7dAgo !== 0) {
+      const marketCap7d = btcPrice7dAgo * 21000000;
+      const pct = ((marketCap! - marketCap7d) / marketCap7d) * 100;
+      change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+      changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+    }
+    return {
+      title: 'Market Cap',
+      value: formatMarketCap(marketCap),
+      change,
+      changeType,
+      description: 'Total market capitalization',
+    };
+  }
+
   return (
     <DashboardLayout 
       title="Dashboard"
@@ -610,7 +647,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         {/* Metrics Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[multiSourceBTCMetric, ...metrics.filter(m => m.title !== 'Bitcoin Price')].map((metric, index) => {
+          {[multiSourceBTCMetric, getMarketCapMetric(), ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap')].map((metric, index) => {
             const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
             const Icon = icons[index] || DollarSign
             return (

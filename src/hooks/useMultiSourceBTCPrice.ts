@@ -61,6 +61,7 @@ export function useMultiSourceBTCPrice() {
     description: 'Current BTC/USD price',
   });
   const last7dPrice = useRef<number | null>(null);
+  const [last7d, setLast7d] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -88,6 +89,7 @@ export function useMultiSourceBTCPrice() {
         price7d = await fetchCoinbasePrice(sevenDaysAgoStr);
         last7dPrice.current = price7d;
       }
+      if (isMounted) setLast7d(price7d ?? null);
 
       // Calculate percent change
       let change = 'N/A';
@@ -117,5 +119,5 @@ export function useMultiSourceBTCPrice() {
     };
   }, []);
 
-  return metric;
+  return { metric, last7dPrice: last7d };
 } 
