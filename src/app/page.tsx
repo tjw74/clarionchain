@@ -993,7 +993,7 @@ export default function Dashboard() {
             realizedCapCard,
             mvrvRatioCard,
             soprCard,
-            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap' && m.title !== 'MVRV Ratio' && m.title !== '24h Volume' && m.title !== 'Active Addresses' && m.title !== 'SOPR')
+            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap' && m.title !== 'MVRV Ratio' && m.title !== '24h Volume' && m.title !== 'Active Addresses' && m.title !== 'SOPR' && m.title !== 'Hash Rate' && m.title !== 'Difficulty')
           ].map((metric, index) => {
               const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
               const Icon = icons[index] || DollarSign
