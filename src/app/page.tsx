@@ -551,7 +551,7 @@ const priceModelsChartOptions = {
     },
     y: {
       type: 'logarithmic' as const,
-      position: 'left' as const,
+      position: 'right' as const,
       grid: { color: '#374151' },
       afterBuildTicks: function(axis: any) {
         // Get all visible data values from datasets
