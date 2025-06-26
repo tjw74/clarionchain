@@ -323,6 +323,36 @@ function useRealizedCapCard() {
   return card;
 }
 
+function useMVRVRatioCard(marketCap: number | null, realizedCap: number | null, marketCap7d: number | null, realizedCap7d: number | null) {
+  const [card, setCard] = useState({
+    title: 'MVRV Ratio',
+    value: 'N/A',
+    change: 'N/A',
+    changeType: 'neutral',
+    description: 'Market Value to Realized Value',
+  });
+
+  useEffect(() => {
+    let latest = marketCap && realizedCap && realizedCap !== 0 ? marketCap / realizedCap : null;
+    let prev7d = marketCap7d && realizedCap7d && realizedCap7d !== 0 ? marketCap7d / realizedCap7d : null;
+    let change = 'N/A';
+    let changeType: 'positive' | 'negative' | 'neutral' = 'neutral';
+    if (latest && prev7d && prev7d !== 0) {
+      const pct = ((latest - prev7d) / prev7d) * 100;
+      change = `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
+      changeType = pct > 0 ? 'positive' : pct < 0 ? 'negative' : 'neutral';
+    }
+    setCard({
+      title: 'MVRV Ratio',
+      value: latest ? latest.toFixed(2) : 'N/A',
+      change,
+      changeType,
+      description: 'Market Value to Realized Value',
+    });
+  }, [marketCap, realizedCap, marketCap7d, realizedCap7d]);
+  return card;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
@@ -864,6 +894,29 @@ export default function Dashboard() {
     };
   }
 
+  // Extract numeric values for market cap and realized cap (and 7d ago) from the respective cards
+  const parseNumber = (val: string): number | null => {
+    if (!val || val === 'N/A') return null;
+    if (val.endsWith('T')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e12;
+    if (val.endsWith('B')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e9;
+    if (val.endsWith('M')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e6;
+    if (val.endsWith('K')) return parseFloat(val.replace(/[^\d.]/g, '')) * 1e3;
+    return parseFloat(val.replace(/[^\d.]/g, ''));
+  };
+  // Market Cap and Realized Cap latest and 7d ago
+  const marketCap = parseNumber(getMarketCapMetric().value);
+  const realizedCap = parseNumber(realizedCapCard.value);
+  // For 7d ago, estimate using percent change
+  const get7dAgo = (val: string, change: string): number | null => {
+    const n = parseNumber(val);
+    if (!n || !change || change === 'N/A') return null;
+    const pct = parseFloat(change.replace(/[^-\d.]/g, ''));
+    return n / (1 + pct / 100);
+  };
+  const marketCap7d = get7dAgo(getMarketCapMetric().value, getMarketCapMetric().change);
+  const realizedCap7d = get7dAgo(realizedCapCard.value, realizedCapCard.change);
+  const mvrvRatioCard = useMVRVRatioCard(marketCap, realizedCap, marketCap7d, realizedCap7d);
+
   return (
     <DashboardLayout 
       title="Dashboard"
@@ -879,7 +932,8 @@ export default function Dashboard() {
             mayerMultipleCard,
             getMarketCapMetric(),
             realizedCapCard,
-            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap')
+            mvrvRatioCard,
+            ...metrics.filter(m => m.title !== 'Bitcoin Price' && m.title !== 'Market Cap' && m.title !== 'Realized Price' && m.title !== 'MA200' && m.title !== 'Mayer Multiple' && m.title !== 'Realized Cap' && m.title !== 'MVRV Ratio' && m.title !== '24h Volume')
           ].map((metric, index) => {
               const icons = [DollarSign, BarChart3, Activity, PieChart, TrendingUp, Activity, TrendingDown, BarChart3]
               const Icon = icons[index] || DollarSign
