@@ -559,30 +559,35 @@ const priceModelsChartOptions = {
         if (!allValues.length) return;
         const maxVal = Math.max(...allValues)
         const minVal = Math.min(...allValues)
-        // Define a set of evenly spaced log10 ticks (Grafana style)
-        const logTicks = [128, 256, 512, 1024, 2050, 4100, 8190, 16400, 32800, 65500, 131000, 262000, 524000, 1048000, 2096000, 4194000, 8388000, 16777000, 33554000, 67109000, 134218000, 268435000, 536870000, 1073740000]
-        // Filter ticks to those within the data range, but always include one above maxVal
-        let ticks = logTicks.filter(t => t >= minVal && t <= maxVal)
-        // Always include the next tick above maxVal for headroom
-        const nextTick = logTicks.find(t => t > maxVal)
-        if (nextTick) ticks.push(nextTick)
-        // If too many ticks, reduce to ~6-8 by skipping
-        while (ticks.length > 8) {
+        // Find the next lower and next higher powers of 2 for min and max
+        const log2 = (x: number) => Math.log(x) / Math.log(2)
+        const minPow = Math.floor(log2(minVal))
+        const maxPow = Math.ceil(log2(maxVal))
+        // Add one extra tick below and above for margin
+        const startPow = Math.max(0, minPow - 1)
+        const endPow = maxPow + 1
+        // Generate ticks at powers of 2
+        let ticks: number[] = []
+        for (let p = startPow; p <= endPow; p++) {
+          ticks.push(Math.pow(2, p))
+        }
+        // If too many ticks, reduce to 6-10 by skipping
+        while (ticks.length > 10) {
           ticks = ticks.filter((_, i) => i % 2 === 0)
         }
         axis.ticks = ticks.map((value: number) => ({ value }))
-        axis.min = ticks[0]
-        axis.max = ticks[ticks.length - 1]
+        axis.min = ticks[0] * 0.9
+        axis.max = ticks[ticks.length - 1] * 1.1
       },
       ticks: {
         color: '#9ca3af',
         callback: function(tickValue: string | number) {
-          const value = typeof tickValue === 'number' ? tickValue : parseFloat(tickValue);
+          const value: number = typeof tickValue === 'number' ? tickValue : parseFloat(tickValue as string);
           if (value >= 1e6) return `$${(value / 1e3).toFixed(0)}K`;
           if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
           return `$${Math.round(value)}`;
         },
-        maxTicksLimit: 8,
+        maxTicksLimit: 10,
       },
     },
   },
@@ -616,7 +621,7 @@ export default function Dashboard() {
 
   // Price Models panel state for time slider
   const [priceRange, setPriceRange] = useState<[Date, Date]>(() => [
-    new Date('2014-01-01'),
+    new Date('2012-01-01'),
     new Date(),
   ]);
   const priceModelsData = usePriceModelsChartData(priceRange);
@@ -1233,7 +1238,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div style={{ height: 400 }}
-                   onDoubleClick={() => setPriceRange([new Date('2014-01-01'), new Date()])}>
+                   onDoubleClick={() => setPriceRange([new Date('2012-01-01'), new Date()])}>
                 <ChartJSLine data={priceModelsData} options={priceModelsChartOptions} />
               </div>
               {/* Time Range Slider */}

@@ -60,6 +60,11 @@ const navigation = [
     icon: Brain,
   },
   {
+    name: "Templates",
+    href: "/templates",
+    icon: Layers,
+  },
+  {
     name: "BRK Dataset",
     href: "/brk",
     icon: Database,
