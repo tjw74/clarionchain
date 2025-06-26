@@ -1005,7 +1005,6 @@ export default function Dashboard() {
                     </CardTitle>
                     <div className="flex items-center">
                       <Icon className="h-4 w-4 text-muted-foreground" />
-                      <ShareButton chartId={`metric-card-${index}`} userNpub={user?.pubkey || null} />
                     </div>
                   </CardHeader>
                   <CardContent>
