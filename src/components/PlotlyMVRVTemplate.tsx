@@ -235,6 +235,17 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
         useResizeHandler={true}
         style={{ width: '100%', height: '100%' }}
       />
+      <style jsx global>{`
+        .js-plotly-plot .modebar {
+          opacity: 0.05;
+          pointer-events: auto;
+          transition: opacity 0.2s;
+        }
+        .js-plotly-plot .modebar:hover {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      `}</style>
     </div>
   );
 };
