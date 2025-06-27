@@ -235,7 +235,7 @@ function TimeSliderWrapper({ range, setRange, min, max, dates }: { range: [numbe
               {...props}
               style={{
                 ...props.style,
-                height: '6px',
+                height: '1.44px',
                 width: '100%',
                 background: getTrackBackground({
                   values: range,

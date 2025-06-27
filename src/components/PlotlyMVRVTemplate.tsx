@@ -131,6 +131,32 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
           font: { color: '#fff', family: 'Inter, sans-serif', size: 14 },
           margin: { l: 40, r: 80, t: 40, b: 40 },
           grid: { rows: 2, columns: 1, pattern: 'independent' },
+          shapes: [
+            // Border for top subplot
+            {
+              type: 'rect',
+              xref: 'paper',
+              yref: 'paper',
+              x0: 0,
+              x1: 1,
+              y0: 0.57,
+              y1: 0.96,
+              line: { color: '#222', width: 1 },
+              layer: 'above',
+            },
+            // Border for bottom subplot
+            {
+              type: 'rect',
+              xref: 'paper',
+              yref: 'paper',
+              x0: 0,
+              x1: 1,
+              y0: 0.04,
+              y1: 0.45,
+              line: { color: '#222', width: 1 },
+              layer: 'above',
+            },
+          ],
           xaxis: {
             type: 'date',
             showgrid: true,
