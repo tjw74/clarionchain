@@ -6,6 +6,7 @@ import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { Chart as ChartJS, CategoryScale, LinearScale, LogarithmicScale, TimeScale, PointElement, LineElement, Title, Tooltip, Filler, Legend } from "chart.js"
 import 'chartjs-adapter-date-fns'
+import { Range, getTrackBackground } from 'react-range'
 
 const ChartJSLine = dynamic(() => import("react-chartjs-2").then(mod => mod.Line), { ssr: false })
 const PlotlyMVRVTemplate = dynamic(() => import('@/components/PlotlyMVRVTemplate'), { ssr: false })
@@ -16,13 +17,16 @@ if (typeof window !== "undefined") {
 
 export default function TemplatesPage() {
   const [btcData, setBtcData] = useState<{ labels: string[]; prices: number[] }>({ labels: [], prices: [] })
+  const [plotlyData, setPlotlyData] = useState<any[]>([])
+  const [plotlyDates, setPlotlyDates] = useState<string[]>([])
+  const [plotlyLoading, setPlotlyLoading] = useState(true)
+  const [plotlyError, setPlotlyError] = useState<string | null>(null)
+  const [range, setRange] = useState<[number, number] | null>(null)
 
   useEffect(() => {
     async function fetchBTC() {
       const res = await fetch("https://brk.openonchain.dev/api/vecs/dateindex-to-ohlc?from=-10000")
       const raw = await res.json()
-      // The endpoint returns an array of [open, high, low, close] arrays
-      // We'll use the close price and generate a date label for each
       const prices = raw.map((arr: number[]) => arr[3])
       const startDate = new Date('2012-01-01')
       const labels = prices.map((_: any, i: number) => {
@@ -32,7 +36,42 @@ export default function TemplatesPage() {
       })
       setBtcData({ labels, prices })
     }
+    async function fetchPlotly() {
+      setPlotlyLoading(true)
+      setPlotlyError(null)
+      try {
+        const [marketArr, realizedArr] = await Promise.all([
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-marketcap?from=-10000').then(r => r.json()),
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-realized-cap?from=-10000').then(r => r.json()),
+        ])
+        const n = Math.min(marketArr.length, realizedArr.length)
+        const genesisDate = new Date('2009-01-03')
+        const dateLabels = Array.from({ length: n }, (_, i) => {
+          const d = new Date(genesisDate)
+          d.setDate(d.getDate() + i)
+          return d.toISOString().slice(0, 10)
+        })
+        const jan2012Idx = dateLabels.findIndex(d => d >= '2012-01-01')
+        const mvrvArr = Array.from({ length: n }, (_, i) => {
+          const mv = marketArr[i]
+          const rv = realizedArr[i]
+          return (typeof mv === 'number' && typeof rv === 'number' && rv !== 0) ? mv / rv : null
+        })
+        setPlotlyDates(dateLabels)
+        setPlotlyData([
+          { y: marketArr, name: 'Market Value', color: '#3b82f6' },
+          { y: realizedArr, name: 'Realized Value', color: '#fbbf24' },
+          { y: mvrvArr, name: 'MVRV Ratio', color: '#ffffff' },
+        ])
+        setRange([jan2012Idx !== -1 ? jan2012Idx : 0, n - 1])
+        setPlotlyLoading(false)
+      } catch (e) {
+        setPlotlyError('Failed to load data')
+        setPlotlyLoading(false)
+      }
+    }
     fetchBTC()
+    fetchPlotly()
   }, [])
 
   // Prepare data for time scale: generate date labels from Jan 1, 2012
@@ -41,18 +80,40 @@ export default function TemplatesPage() {
 
   return (
     <DashboardLayout title="Templates" description="Central repository for Chart.js panel templates.">
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full" style={{ marginTop: '64px' }}>
         {/* Plotly MVRV Template Panel */}
-        <Card className="w-full max-w-5xl mb-8 h-[700px] shadow-lg border border-border flex flex-col justify-center items-center" style={{ background: '#000' }}>
-          <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative" style={{ background: '#000' }}>
+        <Card className="w-full max-w-7xl mb-8 h-[900px] shadow-lg border border-border flex flex-col justify-center items-center" style={{ background: '#000' }}>
+          <CardContent className="flex flex-col w-full h-full relative bg-black">
             {/* Title, upper left */}
-            <div className="absolute left-8 top-2 z-20">
-              <span className="text-white text-xl font-semibold">Plotly : MVRV Ratio</span>
+            <div className="w-full flex flex-row">
+              <span className="text-white text-xl font-semibold mt-4 ml-8">Plotly : MVRV Ratio</span>
             </div>
-            {/* Legend, bottom right */}
-            <LegendMVRVPanel />
-            <PlotlyMVRVTemplate height={600} width={"100%"} />
+            {/* Chart takes all available space above */}
+            <div className="w-full h-[800px] flex flex-col mt-4" style={{ minHeight: 0 }}>
+              {!plotlyLoading && !plotlyError && range && plotlyDates.length > 0 && plotlyData.length > 0 && (
+                <PlotlyMVRVTemplate
+                  height={800}
+                  width="100%"
+                  range={range}
+                  dates={plotlyDates}
+                />
+              )}
+              {plotlyLoading && <div className="w-full h-[400px] flex items-center justify-center text-white">Loading chart…</div>}
+              {plotlyError && <div className="w-full h-[400px] flex items-center justify-center text-red-400">{plotlyError}</div>}
+            </div>
           </CardContent>
+          {/* Slider at the bottom center of the parent panel */}
+          <div className="w-full flex flex-row justify-center pb-8">
+            {range && plotlyDates.length > 0 && (
+              <TimeSliderWrapper
+                range={range}
+                setRange={setRange}
+                min={0}
+                max={plotlyDates.length - 1}
+                dates={plotlyDates}
+              />
+            )}
+          </div>
         </Card>
         <Card className="w-full max-w-5xl h-[600px] shadow-lg border border-border bg-muted/10 flex flex-col justify-center items-center">
           <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative">
@@ -158,27 +219,60 @@ export default function TemplatesPage() {
   )
 }
 
-// Legend component for the MVRV panel
-function LegendMVRVPanel() {
-  // You may want to fetch or receive the latest values as props or context
-  // For now, just show the legend layout with placeholder values
+// TimeSliderWrapper now renders the slider UI
+function TimeSliderWrapper({ range, setRange, min, max, dates }: { range: [number, number], setRange: (r: [number, number]) => void, min: number, max: number, dates: string[] }) {
   return (
-    <div className="absolute bottom-16 right-10 flex flex-row gap-8 items-center justify-end z-10">
-      <div className="flex items-center gap-2">
-        <span style={{ background: '#3b82f6', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-        <span className="text-white text-sm">Market Value</span>
-        <span className="text-white text-xs ml-1 font-mono opacity-80">$2.13T</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span style={{ background: '#fbbf24', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-        <span className="text-white text-sm">Realized Value</span>
-        <span className="text-white text-xs ml-1 font-mono opacity-80">$953.73B</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span style={{ background: '#ffffff', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-        <span className="text-white text-sm">MVRV Ratio</span>
-        <span className="text-white text-xs ml-1 font-mono opacity-80">2.24</span>
+    <div className="w-full flex flex-col items-center justify-center mt-2 mb-2">
+      <div style={{ width: '90%' }}>
+        <Range
+          values={range}
+          step={1}
+          min={min}
+          max={max}
+          onChange={(vals: number[]) => setRange([vals[0], vals[1]])}
+          renderTrack={({ props, children }: { props: React.HTMLAttributes<HTMLDivElement>; children: React.ReactNode }) => (
+            <div
+              {...props}
+              style={{
+                ...props.style,
+                height: '6px',
+                width: '100%',
+                background: getTrackBackground({
+                  values: range,
+                  colors: ['#222', '#3b82f6', '#222'],
+                  min,
+                  max,
+                }),
+                borderRadius: '4px',
+              }}
+            >
+              {children}
+            </div>
+          )}
+          renderThumb={({ props }: { props: any }) => {
+            const { key, ...rest } = props;
+            return (
+              <div
+                key={key}
+                {...rest}
+                style={{
+                  ...rest.style,
+                  height: '22px',
+                  width: '22px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  border: '2px solid #3b82f6',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 3,
+                }}
+              />
+            );
+          }}
+        />
       </div>
     </div>
-  );
+  )
 } 
