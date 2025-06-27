@@ -200,6 +200,37 @@ class BRKClient {
     if (!response.ok) throw new Error('Failed to fetch true market mean history');
     return await response.json();
   }
+
+  /**
+   * Generic chart data fetcher for multi-metric charts.
+   * @param configs Array of { key, endpoint, transform? } objects
+   * @param days Number of days to fetch
+   * @returns { labels: string[], [key]: number[] }
+   */
+  async fetchChartData(configs: Array<{ key: string, endpoint: string, transform?: (v: number) => number }>, days: number = 1000) {
+    // Fetch all data in parallel
+    const results = await Promise.all(
+      configs.map(cfg => fetch(`${this.baseUrl}${cfg.endpoint.replace('{days}', days.toString())}`)
+        .then(r => r.ok ? r.json() : Promise.reject('API error'))
+        .then(arr => cfg.transform ? arr.map(cfg.transform) : arr)
+      )
+    );
+    // Align by minimum length
+    const minLength = Math.min(...results.map(arr => arr.length));
+    // Generate date labels (most recent = today)
+    const labels: string[] = [];
+    for (let i = 0; i < minLength; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (minLength - 1 - i));
+      labels.push(date.toISOString().split('T')[0]);
+    }
+    // Build result object
+    const out: Record<string, any> = { labels };
+    configs.forEach((cfg, idx) => {
+      out[cfg.key] = results[idx].slice(-minLength);
+    });
+    return out;
+  }
 }
 
 export const brkClient = new BRKClient();

@@ -1,79 +1,95 @@
 # this is a chang eto see if it makes it to github
 
-# brk.openonchain.dev API Instructions
+# brk.openonchain.dev API Instructions (Updated)
 
 ## Overview
 The brk.openonchain.dev API provides comprehensive Bitcoin on-chain data and metrics. No authentication required. All endpoints return JSON data.
 
 **Base URL:** `https://brk.openonchain.dev`
 
-## Key Endpoints
+## Key Endpoints (Recommended)
 
-### 1. Discovery Endpoints
-```javascript
-// Get all available metrics
-fetch('https://brk.openonchain.dev/api/metrics')
-  .then(response => response.json())
-  .then(data => console.log(data)); // Returns string array of metric names
+### 1. Vector Time Series Endpoints (Preferred)
+Use these endpoints for all time series data:
 
-// Get all vector indexes  
-fetch('https://brk.openonchain.dev/api/vecs/indexes')
-  .then(response => response.json())
-  .then(data => console.log(data)); // Returns string array of index names
+```
+GET /api/vecs/date-to-{ID}?from=-N
+```
+- `{ID}` is the metric or vector you want (e.g. `close`, `sth-supply`, `sth-realized-cap`, `ohlc`, etc.)
+- `from=-N` gets the last N values (e.g. `from=-100` for the latest 100 values)
+
+#### Examples:
+
+**Get the latest 100 close prices:**
+```sh
+curl 'https://brk.openonchain.dev/api/vecs/date-to-close?from=-100'
 ```
 
-### 2. Single Metric Data
-```javascript
-// Get specific metric data
-fetch('https://brk.openonchain.dev/api/metrics/price_btc_usd')
-  .then(response => response.json())
-  .then(data => console.log(data)); // Returns array of metric values
-
-// Available metrics include:
-// - price_btc_usd, market_cap, volume_24h, mvrv_ratio, realized_cap
-// - sth-realized-price, sth-supply, lth-supply, spent-output-profit-ratio
-// - supply-in-profit, supply-in-loss, and many more
+**Get the latest 100 STH supply values:**
+```sh
+curl 'https://brk.openonchain.dev/api/vecs/date-to-sth-supply?from=-100'
 ```
 
-### 3. Query Endpoint (Primary Data Access)
-The most powerful endpoint for historical data:
-```javascript
-// Basic query structure
-const url = 'https://brk.openonchain.dev/api/query?index={INDEX}&values={VALUE}&from={FROM}'
-
-// Examples:
-// Last 2920 days of Bitcoin price
-fetch('https://brk.openonchain.dev/api/query?index=dateindex&values=close&from=-2920')
-
-// Last 100 blocks of market cap
-fetch('https://brk.openonchain.dev/api/query?index=height&values=marketcap&from=-100')
-
-// Single latest value (most recent)
-fetch('https://brk.openonchain.dev/api/query?index=height&values=close&from=-1')
+**Get the latest 100 STH realized cap values:**
+```sh
+curl 'https://brk.openonchain.dev/api/vecs/date-to-sth-realized-cap?from=-100'
 ```
 
-## Query Parameters Explained
+**Get the latest 100 OHLC values:**
+```sh
+curl 'https://brk.openonchain.dev/api/vecs/date-to-ohlc?from=-100'
+```
 
-### Index Types
-- `dateindex` - Query by date/time (daily data points)
-- `height` - Query by block height
+- All endpoints return a JSON array of values (or arrays for OHLC).
+- No timestamps are included; generate dates based on the number of values and the current date.
 
-### Common Values
-- `close` - Bitcoin closing price
-- `marketcap` - Market capitalization  
-- `realized-cap` - Realized capitalization
-- `realized-price` - Realized price
-- `sth-realized-price` - Short-term holder realized price
-- `sth-supply` - Short-term holder supply
-- `lth-supply` - Long-term holder supply
-- `spent-output-profit-ratio` - SOPR metric
-- `supply-in-profit` - Supply in profit
-- `supply-in-loss` - Supply in loss
+#### List all available vector IDs:
+```sh
+curl 'https://brk.openonchain.dev/api/vecs/indexes'
+```
 
-### From Parameter
-- Negative numbers: `-2920` = last 2920 data points
-- Use `-1` for most recent single value
-- Larger numbers for more historical data
+---
+
+### 2. Legacy Endpoints (Not Recommended)
+
+The following endpoints are legacy and may not be supported in the future. Prefer the `/api/vecs/date-to-{ID}` endpoints above.
+
+#### Query Endpoint (Legacy)
+```sh
+curl 'https://brk.openonchain.dev/api/query?index=dateindex&values=close&from=-100'
+```
+
+#### Metrics Endpoint (Legacy)
+```sh
+curl 'https://brk.openonchain.dev/api/metrics/price_btc_usd'
+```
+
+---
+
+## Date Handling
+The API does not return timestamps. To generate date labels for charting:
+```js
+function generateDates(dataLength) {
+  const dates = [];
+  const today = new Date();
+  for (let i = 0; i < dataLength; i++) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - (dataLength - 1 - i));
+    dates.push(date.toISOString().split('T')[0]);
+  }
+  return dates;
+}
+```
+
+---
+
+## Summary
+- **Always use `/api/vecs/date-to-{ID}?from=-N` for time series data.**
+- Legacy `/api/query` and `/api/metrics` endpoints are not recommended.
+- All endpoints return JSON arrays.
+- Use `/api/vecs/indexes` to discover available metrics.
+
+This documentation is up to date as of June 2025 and reflects the current best practices for the BRK API.
 
 ## Complete Working Examples
 
@@ -171,28 +187,5 @@ async function fetchWithErrorHandling(url) {
 - Use Promise.all() for parallel requests
 - Cache data when possible to reduce API calls
 
-## Date Handling
-The API doesn't return timestamps, so generate them:
-```javascript
-function generateDates(dataLength, fromDaysAgo) {
-  const dates = [];
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - fromDaysAgo);
-  
-  for (let i = 0; i < dataLength; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    dates.push(date.toISOString().split('T')[0]);
-  }
-  return dates;
-}
-```
-
 ## Common Use Cases
-1. **Dashboard Metrics**: Use `from=-1` for latest values
-2. **Price Charts**: Use `dateindex` with `close` values  
-3. **Historical Analysis**: Use larger `from` values (e.g., `-10000`)
-4. **Real-time Updates**: Fetch latest block data with `height` index
-5. **Ratio Calculations**: Fetch multiple metrics and calculate client-side
-
-This API provides comprehensive Bitcoin on-chain data without authentication. Use the query endpoint with appropriate index, values, and from parameters for most use cases. 
+1. **Dashboard Metrics**: Use `

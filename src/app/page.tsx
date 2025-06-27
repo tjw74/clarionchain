@@ -593,6 +593,18 @@ const priceModelsChartOptions = {
   },
 };
 
+// --- DATA PREPARATION: STH MVRV RATIO PANEL (Chart.js) ---
+// Moved inside Dashboard component to fix invalid hook call
+
+// Add a helper function above the Dashboard component
+function getLatestNumberFromDataset(dataset: any): number | null {
+  if (!dataset?.data?.length) return null;
+  const val = dataset.data.at(-1);
+  if (typeof val === 'number' && isFinite(val)) return val;
+  if (val && typeof val.y === 'number' && isFinite(val.y)) return val.y;
+  return null;
+}
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
@@ -625,6 +637,110 @@ export default function Dashboard() {
     new Date(),
   ]);
   const priceModelsData = usePriceModelsChartData(priceRange);
+
+  // STH MVRV Ratio panel state and effect
+  const [sthMvrvChartData, setSthMvrvChartData] = useState<ChartData<'line'>>({ labels: [], datasets: [] });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch all required data from the correct endpoints
+        const [sthSupplyArr, sthRealizedCapArr, closeArr] = await Promise.all([
+          fetch('https://brk.openonchain.dev/api/vecs/date-to-sth-supply?from=-1000').then(r => r.json()),
+          fetch('https://brk.openonchain.dev/api/vecs/date-to-sth-realized-cap?from=-1000').then(r => r.json()),
+          fetch('https://brk.openonchain.dev/api/vecs/date-to-close?from=-1000').then(r => r.json()),
+        ]);
+        // Align arrays by minimum length
+        const minLength = Math.min(sthSupplyArr.length, sthRealizedCapArr.length, closeArr.length);
+        const labels: string[] = [];
+        const sthMarketValue: number[] = [];
+        const sthRealizedValue: number[] = [];
+        const sthMvrvRatio: number[] = [];
+        for (let i = 0; i < minLength; i++) {
+          const supplyBTC = typeof sthSupplyArr[i] === 'number' ? sthSupplyArr[i] / 1e8 : NaN;
+          const price = closeArr[i];
+          const realizedCap = sthRealizedCapArr[i];
+          if (
+            typeof supplyBTC === 'number' && supplyBTC > 0 &&
+            typeof price === 'number' && price > 0 &&
+            typeof realizedCap === 'number' && realizedCap > 0
+          ) {
+            sthMarketValue.push(supplyBTC * price);
+            sthRealizedValue.push(realizedCap);
+            sthMvrvRatio.push(realizedCap > 0 ? (supplyBTC * price) / realizedCap : NaN);
+          } else {
+            sthMarketValue.push(NaN);
+            sthRealizedValue.push(NaN);
+            sthMvrvRatio.push(NaN);
+          }
+          // Generate date label (most recent = today)
+          const date = new Date();
+          date.setDate(date.getDate() - (minLength - 1 - i));
+          labels.push(date.toISOString().split('T')[0]);
+        }
+        setSthMvrvChartData({
+          labels,
+          datasets: [
+            {
+              label: 'STH Market Value',
+              data: sthMarketValue,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.15)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.1,
+              yAxisID: 'y',
+            },
+            {
+              label: 'STH Realized Value',
+              data: sthRealizedValue,
+              borderColor: '#fbbf24',
+              backgroundColor: 'rgba(251, 191, 36, 0.15)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.1,
+              yAxisID: 'y',
+            },
+            {
+              label: 'STH MVRV Ratio',
+              data: sthMvrvRatio,
+              borderColor: '#ffffff',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              borderWidth: 2,
+              pointRadius: 0,
+              tension: 0.1,
+              yAxisID: 'y2',
+            },
+          ],
+        });
+        // Temporary debug output
+        setSthDebug({
+          sthMarketValue: [
+            ...sthMarketValue.slice(0, 5),
+            '...',
+            ...sthMarketValue.slice(-5)
+          ],
+          sthRealizedValue: [
+            ...sthRealizedValue.slice(0, 5),
+            '...',
+            ...sthRealizedValue.slice(-5)
+          ],
+          sthMvrvRatio: [
+            ...sthMvrvRatio.slice(0, 5),
+            '...',
+            ...sthMvrvRatio.slice(-5)
+          ],
+        });
+      } catch {
+        setSthMvrvChartData({ labels: [], datasets: [] });
+        setSthDebug(null);
+      }
+    }
+    fetchData();
+  }, []);
+
+  // Temporary debug state
+  const [sthDebug, setSthDebug] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -859,14 +975,91 @@ export default function Dashboard() {
 
   // Format USD values in short form for Y-axis
   const formatShortUSD = (value: number) => {
-    if (value >= 1e6) {
-      return `$${(value / 1e6).toFixed(0)}M`
+    if (value >= 1e12) {
+      return `$${(value / 1e12).toFixed(1)}T`;
+    } else if (value >= 1e9) {
+      return `$${(value / 1e9).toFixed(1)}B`;
+    } else if (value >= 1e6) {
+      return `$${(value / 1e6).toFixed(0)}M`;
     } else if (value >= 1e3) {
-      return `$${(value / 1e3).toFixed(0)}K`
+      return `$${(value / 1e3).toFixed(0)}K`;
     } else {
-      return `$${value.toFixed(0)}`
+      return `$${Math.round(value)}`;
     }
-  }
+  };
+
+  const sthMvrvChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index' as const, intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderWidth: 0,
+        callbacks: {
+          label: function(context: any) {
+            if (context.dataset.label === 'STH MVRV Ratio') {
+              return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}`;
+            }
+            return `${context.dataset.label}: $${formatShortUSD(context.parsed.y)}`;
+          },
+        },
+      },
+      zoom: {
+        zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'xy' as const },
+        pan: { enabled: true, mode: 'xy' as const },
+      },
+    },
+    scales: {
+      x: {
+        type: 'time' as const,
+        time: { unit: 'year' as const },
+        grid: { color: '#374151' },
+        ticks: { color: '#9ca3af', maxTicksLimit: 10 },
+      },
+      y: {
+        type: 'logarithmic' as const,
+        position: 'left' as const,
+        grid: { color: '#374151' },
+        afterBuildTicks: function(axis: any) {
+          const allValues = axis.chart.data.datasets.filter((ds: any) => ds.yAxisID !== 'y2').flatMap((ds: any) => ds.data).filter((v: any) => typeof v === 'number' && v > 0);
+          if (!allValues.length) return;
+          const minVal = Math.min(...allValues);
+          const maxVal = Math.max(...allValues);
+          const logMin = Math.log10(minVal);
+          const logMax = Math.log10(maxVal);
+          const paddedLogMin = logMin - (logMax - logMin) * 0.1;
+          const paddedLogMax = logMax + (logMax - logMin) * 0.1;
+          const ticks = [];
+          for (let i = 0; i <= 7; i++) {
+            const logValue = paddedLogMin + (i * (paddedLogMax - paddedLogMin) / 7);
+            ticks.push(Math.pow(10, logValue));
+          }
+          axis.ticks = ticks.map((value: number) => ({ value }));
+          axis.min = Math.pow(10, paddedLogMin);
+          axis.max = Math.pow(10, paddedLogMax);
+        },
+        ticks: {
+          color: '#9ca3af',
+          callback: function(value: any) { return formatShortUSD(value); },
+          maxTicksLimit: 8,
+        },
+      },
+      y2: {
+        type: 'linear' as const,
+        position: 'right' as const,
+        grid: { drawOnChartArea: false },
+        ticks: {
+          color: '#ffffff',
+          callback: function(value: any) { return value.toFixed(2); },
+          maxTicksLimit: 8,
+        },
+      },
+    },
+  };
 
   // Wheel zoom handlers for Recharts
   const handlePriceChartWheel = (e: React.WheelEvent) => {
@@ -1261,101 +1454,37 @@ export default function Dashboard() {
           <Card id="sth-chart-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>STH Cost Basis : Realized Price</CardTitle>
+                <CardTitle>STH MVRV Ratio</CardTitle>
               </div>
               <ShareButton chartId="sth-chart-card" userNpub={user?.pubkey || null} />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div 
-                onWheel={handleSTHChartWheel}
-                onMouseDown={handleSTHMouseDown}
-                onMouseMove={handleSTHMouseMove}
-                onMouseUp={handleSTHMouseUp}
-                onMouseLeave={handleSTHMouseUp}
-                style={{ cursor: sthPanState.isDragging ? 'grabbing' : 'grab' }}
-              >
-                <ChartContainer config={sthChartConfig} className="h-48 w-full animate-in slide-in-from-bottom-4 duration-1000 delay-150 ease-out">
-                  <ComposedChart
-                    accessibilityLayer
-                    data={sthZoomDomain.left !== undefined 
-                      ? sthChartData.slice(sthZoomDomain.left, sthZoomDomain.right! + 1)
-                      : sthChartData
-                    }
-                    margin={{
-                      left: 12,
-                      right: 12,
-                    }}
-                    syncId="sthCharts"
-                  >
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value: any) => {
-                      const date = new Date(value)
-                      return date.getFullYear().toString()
-                    }}
-                  />
-                  <YAxis 
-                    scale="log" 
-                    domain={sthYZoomDomain.min !== undefined && sthYZoomDomain.max !== undefined
-                      ? [sthYZoomDomain.min, sthYZoomDomain.max] 
-                      : ['dataMin', 'dataMax']
-                    }
-                    tickFormatter={(value: any) => formatShortUSD(Number(value))}
-                    axisLine={false}
-                    tickLine={false}
-                    orientation="right"
-                  />
-                  <ChartTooltip 
-                    cursor={false} 
-                    content={<ChartTooltipContent 
-                      className="bg-blue-600/15 border-0 text-white"
-                      formatter={(value: any, name: any) => {
-                        const label = name === "price" ? "STH Cost Basis" : "Bitcoin Price"
-                        return [`$${Number(value).toLocaleString()}`, label]
-                      }}
-                      labelFormatter={(label: any) => {
-                        const date = new Date(label)
-                        return date.toLocaleDateString()
-                      }}
-                    />} 
-                  />
-                  <defs>
-                    <linearGradient id="fillBitcoinPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="#3b82f6"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <Area
-                    dataKey="bitcoinPrice"
-                    type="natural"
-                    fill="url(#fillBitcoinPrice)"
-                    fillOpacity={0.4}
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    dataKey="price"
-                    type="natural"
-                    stroke="#eab308"
-                    strokeWidth={1}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </ComposedChart>
-              </ChartContainer>
+              <div style={{ height: 400 }}>
+                <ChartJSLine data={sthMvrvChartData} options={sthMvrvChartOptions} />
+              </div>
+              {/* Custom HTML Legend - lower right */}
+              <div className="flex justify-end gap-6 mt-2">
+                <div className="flex items-center gap-2">
+                  <span style={{background:'#3b82f6',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
+                  <span className="text-white text-sm">STH Market Value</span>
+                  <span className="text-white text-xs ml-1 font-mono opacity-80">
+                    {(() => { const v = getLatestNumberFromDataset(sthMvrvChartData.datasets[0]); return v != null ? `$${(v / 1e9).toFixed(2)}B` : 'N/A'; })()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{background:'#fbbf24',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
+                  <span className="text-white text-sm">STH Realized Value</span>
+                  <span className="text-white text-xs ml-1 font-mono opacity-80">
+                    {sthMvrvChartData.datasets[1]?.data?.length ? `$${(sthMvrvChartData.datasets[1].data.at(-1) / 1e9).toFixed(2)}B` : 'N/A'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span style={{background:'#ffffff',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
+                  <span className="text-white text-sm">STH MVRV Ratio</span>
+                  <span className="text-white text-xs ml-1 font-mono opacity-80">
+                    {sthMvrvChartData.datasets[2]?.data?.length ? sthMvrvChartData.datasets[2].data.at(-1).toFixed(2) : 'N/A'}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1393,10 +1522,11 @@ export default function Dashboard() {
 
 // Add the TimeRangeSlider component at the bottom of the file
 function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, value: [Date, Date], onChange: (v: [Date, Date]) => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const minTs = min.getTime();
   const maxTs = max.getTime();
   const [left, right] = value.map(d => d.getTime());
-  // Convert slider value to date range
   const handleValueChange = useCallback((v: number[]) => {
     if (v.length === 2) {
       const newLeft = Math.max(minTs, Math.min(v[0], v[1] - 24*3600*1000));
@@ -1404,6 +1534,7 @@ function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, 
       onChange([new Date(newLeft), new Date(newRight)]);
     }
   }, [minTs, maxTs, onChange]);
+  if (!mounted) return null;
   return (
     <div className="w-full flex flex-col items-center mt-2">
       <Slider.Root
