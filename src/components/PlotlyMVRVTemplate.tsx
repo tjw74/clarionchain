@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 import { Layout } from 'plotly.js';
+import { Range, getTrackBackground } from 'react-range';
 
 // Types for props (for future reusability)
 interface PlotlyMVRVTemplateProps {
@@ -35,6 +36,9 @@ const defaultLabels = {
   mvrv: 'MVRV Ratio',
 };
 
+const SLIDER_STEP = 1;
+const SLIDER_MIN = 0;
+
 const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
   marketValueEndpoint = 'https://brk.openonchain.dev/api/vecs/dateindex-to-marketcap?from=-10000',
   realizedValueEndpoint = 'https://brk.openonchain.dev/api/vecs/dateindex-to-realized-cap?from=-10000',
@@ -57,13 +61,15 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
     ]).then(([marketArr, realizedArr]) => {
       // Both endpoints return arrays, align by index
       const n = Math.min(marketArr.length, realizedArr.length);
-      // Generate date labels from 2012-01-01
-      const startDate = new Date('2012-01-01');
+      // Generate date labels from genesis block (2009-01-03)
+      const genesisDate = new Date('2009-01-03');
       const dateLabels = Array.from({ length: n }, (_, i) => {
-        const d = new Date(startDate);
+        const d = new Date(genesisDate);
         d.setDate(d.getDate() + i);
         return d.toISOString().slice(0, 10);
       });
+      // Find index for Jan 1, 2012
+      const jan2012Idx = dateLabels.findIndex(d => d >= '2012-01-01');
       // Calculate MVRV ratio
       const mvrvArr = Array.from({ length: n }, (_, i) => {
         const mv = marketArr[i];
@@ -76,24 +82,14 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
         { y: realizedArr, name: defaultLabels.realized, color: defaultColors.realized },
         { y: mvrvArr, name: defaultLabels.mvrv, color: defaultColors.mvrv },
       ]);
-      setRange([0, n - 1]);
+      // Default range: Jan 1, 2012 to latest
+      setRange([jan2012Idx !== -1 ? jan2012Idx : 0, n - 1]);
       setLoading(false);
     }).catch(e => {
       setError('Failed to load data');
       setLoading(false);
     });
   }, [marketValueEndpoint, realizedValueEndpoint]);
-
-  // Handle slider change
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>, which: 'min' | 'max') => {
-    if (!range) return;
-    const value = parseInt(e.target.value, 10);
-    if (which === 'min') {
-      setRange([Math.min(value, range[1] - 1), range[1]]);
-    } else {
-      setRange([range[0], Math.max(value, range[0] + 1)]);
-    }
-  };
 
   if (loading) return <div className="w-full h-[400px] flex items-center justify-center text-white">Loading chart…</div>;
   if (error) return <div className="w-full h-[400px] flex items-center justify-center text-red-400">{error}</div>;
@@ -139,9 +135,9 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
 
   return (
     <div className="w-full relative" style={{ maxWidth: 1440, margin: '0 auto', background: '#000' }}>
-      {/* Title, left justified */}
+      {/* Title, upper left */}
       <div className="absolute left-8 top-6 z-20">
-        <span className="text-white text-xl font-semibold">Plotly Template MVRV Ratio</span>
+        <span className="text-white text-xl font-semibold">Plotly : MVRV Ratio</span>
       </div>
       <Plot
         data={[
@@ -255,32 +251,60 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
           <span className="text-white text-xs ml-1 font-mono opacity-80">{latestMvrv ? formatRatio(latestMvrv) : 'N/A'}</span>
         </div>
       </div>
-      {/* Range Slider - bottom of panel */}
+      {/* Unified Range Slider - bottom of panel */}
       {range && (
         <div className="absolute bottom-2 left-10 right-10 flex flex-col items-center z-20">
-          <div className="w-full flex flex-row items-center gap-2">
-            <input
-              type="range"
-              min={0}
-              max={dates.length - 2}
-              value={minIdx}
-              onChange={e => handleSliderChange(e, 'min')}
-              className="w-1/2 accent-blue-500 bg-gray-800 rounded-lg h-2 appearance-none"
-              style={{ zIndex: 2 }}
-            />
-            <input
-              type="range"
-              min={1}
-              max={dates.length - 1}
-              value={maxIdx}
-              onChange={e => handleSliderChange(e, 'max')}
-              className="w-1/2 accent-yellow-400 bg-gray-800 rounded-lg h-2 appearance-none"
-              style={{ zIndex: 2 }}
-            />
-          </div>
+          <Range
+            values={range}
+            step={SLIDER_STEP}
+            min={SLIDER_MIN}
+            max={dates.length - 1}
+            onChange={(vals: number[]) => setRange([vals[0], vals[1]])}
+            renderTrack={({ props, children }: { props: React.HTMLAttributes<HTMLDivElement>; children: React.ReactNode }) => (
+              <div
+                {...props}
+                style={{
+                  ...props.style,
+                  height: '6px',
+                  width: '100%',
+                  background: getTrackBackground({
+                    values: range,
+                    colors: ['#222', '#3b82f6', '#222'],
+                    min: SLIDER_MIN,
+                    max: dates.length - 1,
+                  }),
+                  borderRadius: '4px',
+                }}
+              >
+                {children}
+              </div>
+            )}
+            renderThumb={({ props }: { props: any }) => {
+              const { key, ...rest } = props;
+              return (
+                <div
+                  key={key}
+                  {...rest}
+                  style={{
+                    ...rest.style,
+                    height: '22px',
+                    width: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: '#fff',
+                    border: '2px solid #3b82f6',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 3,
+                  }}
+                />
+              );
+            }}
+          />
           <div className="flex flex-row justify-between w-full text-xs text-gray-400 mt-1 font-mono">
-            <span>{dates[minIdx]}</span>
-            <span>{dates[maxIdx]}</span>
+            <span>{dates[range[0]]}</span>
+            <span>{dates[range[1]]}</span>
           </div>
         </div>
       )}

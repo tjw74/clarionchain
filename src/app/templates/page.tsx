@@ -44,9 +44,6 @@ export default function TemplatesPage() {
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full">
         {/* Plotly MVRV Template Panel */}
         <Card className="w-full max-w-5xl mb-8 h-[700px] shadow-lg border border-border bg-muted/10 flex flex-col justify-center items-center">
-          <CardHeader>
-            <CardTitle>Plotly MVRV Template (Reusable)</CardTitle>
-          </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative">
             <PlotlyMVRVTemplate height={600} width={"100%"} />
           </CardContent>
