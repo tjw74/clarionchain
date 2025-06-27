@@ -116,6 +116,26 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
     connectgaps: false,
   };
 
+  // Calculate evenly spaced log ticks for MVRV Y axis
+  const mvrvY = marketTrace.y?.filter(v => typeof v === 'number' && v > 0) || [];
+  let yTicks = undefined, yTickText = undefined;
+  if (mvrvY.length > 0) {
+    let min = Math.min(...mvrvY), max = Math.max(...mvrvY);
+    if (min === max) { min = min * 0.9; max = max * 1.1; }
+    const logMin = Math.log10(min) - 0.1;
+    const logMax = Math.log10(max) + 0.1;
+    const nTicks = 7;
+    const step = (logMax - logMin) / (nTicks - 1);
+    yTicks = Array.from({ length: nTicks }, (_, i) => Math.pow(10, logMin + i * step));
+    yTickText = yTicks.map(v => {
+      if (v >= 1e12) return (v / 1e12).toFixed(2).replace(/\.00$/, '') + 'T';
+      if (v >= 1e9) return (v / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
+      if (v >= 1e6) return (v / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
+      if (v >= 1e3) return (v / 1e3).toFixed(2).replace(/\.00$/, '') + 'K';
+      return v.toFixed(0);
+    });
+  }
+
   return (
     <div className="w-full relative" style={{ maxWidth: 1440, margin: '0 auto', background: '#000' }}>
       <Plot
@@ -181,7 +201,8 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
             showline: true,
             linecolor: '#222',
             zeroline: false,
-            tickformat: '$.2s',
+            tickvals: yTicks,
+            ticktext: yTickText,
             side: 'right',
             anchor: 'x',
             domain: [0.57, 0.96],
