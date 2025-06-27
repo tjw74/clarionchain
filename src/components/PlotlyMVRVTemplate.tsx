@@ -135,10 +135,6 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
 
   return (
     <div className="w-full relative" style={{ maxWidth: 1440, margin: '0 auto', background: '#000' }}>
-      {/* Title, upper left */}
-      <div className="absolute left-8 top-6 z-20">
-        <span className="text-white text-xl font-semibold">Plotly : MVRV Ratio</span>
-      </div>
       <Plot
         data={[
           { ...marketTrace, yaxis: 'y', xaxis: 'x' },
@@ -233,24 +229,6 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
         useResizeHandler={true}
         style={{ width: '100%', height: typeof height === 'number' ? `${height}px` : height }}
       />
-      {/* Custom HTML Legend - bottom right */}
-      <div className="absolute bottom-16 right-10 flex flex-row gap-8 items-center justify-end z-10">
-        <div className="flex items-center gap-2">
-          <span style={{ background: defaultColors.market, borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-          <span className="text-white text-sm">{defaultLabels.market}</span>
-          <span className="text-white text-xs ml-1 font-mono opacity-80">{latestMarket ? formatUSD(latestMarket) : 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span style={{ background: defaultColors.realized, borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-          <span className="text-white text-sm">{defaultLabels.realized}</span>
-          <span className="text-white text-xs ml-1 font-mono opacity-80">{latestRealized ? formatUSD(latestRealized) : 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span style={{ background: defaultColors.mvrv, borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
-          <span className="text-white text-sm">{defaultLabels.mvrv}</span>
-          <span className="text-white text-xs ml-1 font-mono opacity-80">{latestMvrv ? formatRatio(latestMvrv) : 'N/A'}</span>
-        </div>
-      </div>
       {/* Unified Range Slider - bottom of panel */}
       {range && (
         <div className="absolute bottom-2 left-10 right-10 flex flex-col items-center z-20">

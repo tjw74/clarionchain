@@ -43,8 +43,14 @@ export default function TemplatesPage() {
     <DashboardLayout title="Templates" description="Central repository for Chart.js panel templates.">
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full">
         {/* Plotly MVRV Template Panel */}
-        <Card className="w-full max-w-5xl mb-8 h-[700px] shadow-lg border border-border bg-muted/10 flex flex-col justify-center items-center">
-          <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative">
+        <Card className="w-full max-w-5xl mb-8 h-[700px] shadow-lg border border-border flex flex-col justify-center items-center" style={{ background: '#000' }}>
+          <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative" style={{ background: '#000' }}>
+            {/* Title, upper left */}
+            <div className="absolute left-8 top-2 z-20">
+              <span className="text-white text-xl font-semibold">Plotly : MVRV Ratio</span>
+            </div>
+            {/* Legend, bottom right */}
+            <LegendMVRVPanel />
             <PlotlyMVRVTemplate height={600} width={"100%"} />
           </CardContent>
         </Card>
@@ -150,4 +156,29 @@ export default function TemplatesPage() {
       </div>
     </DashboardLayout>
   )
+}
+
+// Legend component for the MVRV panel
+function LegendMVRVPanel() {
+  // You may want to fetch or receive the latest values as props or context
+  // For now, just show the legend layout with placeholder values
+  return (
+    <div className="absolute bottom-16 right-10 flex flex-row gap-8 items-center justify-end z-10">
+      <div className="flex items-center gap-2">
+        <span style={{ background: '#3b82f6', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
+        <span className="text-white text-sm">Market Value</span>
+        <span className="text-white text-xs ml-1 font-mono opacity-80">$2.13T</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span style={{ background: '#fbbf24', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
+        <span className="text-white text-sm">Realized Value</span>
+        <span className="text-white text-xs ml-1 font-mono opacity-80">$953.73B</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span style={{ background: '#ffffff', borderRadius: '50%', width: 12, height: 12, display: 'inline-block' }}></span>
+        <span className="text-white text-sm">MVRV Ratio</span>
+        <span className="text-white text-xs ml-1 font-mono opacity-80">2.24</span>
+      </div>
+    </div>
+  );
 } 
