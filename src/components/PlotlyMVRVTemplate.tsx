@@ -127,7 +127,7 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
     const nTicks = 7;
     const step = (logMax - logMin) / (nTicks - 1);
     yTicks = Array.from({ length: nTicks }, (_, i) => Math.pow(10, logMin + i * step));
-    yTickText = yTicks.map(v => {
+    yTickText = yTicks.map((v: number) => {
       if (v >= 1e12) return (v / 1e12).toFixed(2).replace(/\.00$/, '') + 'T';
       if (v >= 1e9) return (v / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
       if (v >= 1e6) return (v / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
@@ -157,7 +157,7 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
             gridcolor: '#222',
             tickcolor: '#222',
             ticks: 'outside',
-            showline: true,
+            showline: false,
             linecolor: '#222',
             linewidth: 1,
             zeroline: false,
