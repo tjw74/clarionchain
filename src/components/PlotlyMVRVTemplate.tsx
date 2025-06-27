@@ -117,8 +117,9 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
   };
 
   // Calculate evenly spaced log ticks for MVRV Y axis
-  const mvrvY = marketTrace.y?.filter(v => typeof v === 'number' && v > 0) || [];
-  let yTicks = undefined, yTickText = undefined;
+  const mvrvY = marketTrace.y?.filter((v: number) => typeof v === 'number' && v > 0) || [];
+  let yTicks: number[] = [];
+  let yTickText: string[] = [];
   if (mvrvY.length > 0) {
     let min = Math.min(...mvrvY), max = Math.max(...mvrvY);
     if (min === max) { min = min * 0.9; max = max * 1.1; }
@@ -143,7 +144,7 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
           { ...marketTrace, yaxis: 'y', xaxis: 'x' },
           { ...realizedTrace, yaxis: 'y', xaxis: 'x' },
           { ...mvrvTrace, yaxis: 'y2', xaxis: 'x2' },
-        ]}
+        ] as any[]}
         layout={{
           height: typeof height === 'number' ? height : parseInt(height, 10),
           paper_bgcolor: '#000',
@@ -217,7 +218,7 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
           },
           showlegend: false,
           dragmode: 'pan',
-        }}
+        } as Partial<Layout>}
         config={{
           responsive: true,
           displayModeBar: true,
