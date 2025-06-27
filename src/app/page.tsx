@@ -601,7 +601,7 @@ function getLatestNumberFromDataset(dataset: any): number | null {
   if (!dataset?.data?.length) return null;
   const val = dataset.data.at(-1);
   if (typeof val === 'number' && isFinite(val)) return val;
-  if (val && typeof val.y === 'number' && isFinite(val.y)) return val.y;
+  if (val && typeof val === 'object' && typeof val.y === 'number' && isFinite(val.y)) return val.y;
   return null;
 }
 
@@ -1468,21 +1468,30 @@ export default function Dashboard() {
                   <span style={{background:'#3b82f6',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
                   <span className="text-white text-sm">STH Market Value</span>
                   <span className="text-white text-xs ml-1 font-mono opacity-80">
-                    {(() => { const v = getLatestNumberFromDataset(sthMvrvChartData.datasets[0]); return v != null ? `$${(v / 1e9).toFixed(2)}B` : 'N/A'; })()}
+                    {(() => {
+                      const v = getLatestNumberFromDataset(sthMvrvChartData.datasets[0]);
+                      return typeof v === 'number' ? `$${(v / 1e9).toFixed(2)}B` : 'N/A';
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span style={{background:'#fbbf24',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
                   <span className="text-white text-sm">STH Realized Value</span>
                   <span className="text-white text-xs ml-1 font-mono opacity-80">
-                    {sthMvrvChartData.datasets[1]?.data?.length ? `$${(sthMvrvChartData.datasets[1].data.at(-1) / 1e9).toFixed(2)}B` : 'N/A'}
+                    {(() => {
+                      const v = getLatestNumberFromDataset(sthMvrvChartData.datasets[1]);
+                      return typeof v === 'number' ? `$${(v / 1e9).toFixed(2)}B` : 'N/A';
+                    })()}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span style={{background:'#ffffff',borderRadius:'50%',width:12,height:12,display:'inline-block'}}></span>
                   <span className="text-white text-sm">STH MVRV Ratio</span>
                   <span className="text-white text-xs ml-1 font-mono opacity-80">
-                    {sthMvrvChartData.datasets[2]?.data?.length ? sthMvrvChartData.datasets[2].data.at(-1).toFixed(2) : 'N/A'}
+                    {(() => {
+                      const v = getLatestNumberFromDataset(sthMvrvChartData.datasets[2]);
+                      return typeof v === 'number' ? v.toFixed(2) : 'N/A';
+                    })()}
                   </span>
                 </div>
               </div>

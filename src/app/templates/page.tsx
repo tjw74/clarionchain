@@ -8,6 +8,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, LogarithmicScale, TimeSca
 import 'chartjs-adapter-date-fns'
 
 const ChartJSLine = dynamic(() => import("react-chartjs-2").then(mod => mod.Line), { ssr: false })
+const PlotlyMVRVTemplate = dynamic(() => import('@/components/PlotlyMVRVTemplate'), { ssr: false })
 
 if (typeof window !== "undefined") {
   ChartJS.register(CategoryScale, LinearScale, LogarithmicScale, TimeScale, PointElement, LineElement, Title, Tooltip, Filler, Legend)
@@ -41,6 +42,15 @@ export default function TemplatesPage() {
   return (
     <DashboardLayout title="Templates" description="Central repository for Chart.js panel templates.">
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] w-full">
+        {/* Plotly MVRV Template Panel */}
+        <Card className="w-full max-w-5xl mb-8 h-[700px] shadow-lg border border-border bg-muted/10 flex flex-col justify-center items-center">
+          <CardHeader>
+            <CardTitle>Plotly MVRV Template (Reusable)</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative">
+            <PlotlyMVRVTemplate height={600} width={"100%"} />
+          </CardContent>
+        </Card>
         <Card className="w-full max-w-5xl h-[600px] shadow-lg border border-border bg-muted/10 flex flex-col justify-center items-center">
           <CardContent className="flex-1 flex flex-col justify-center items-center w-full h-full relative">
             <div className="w-full h-[480px]">
