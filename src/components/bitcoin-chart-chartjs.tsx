@@ -139,6 +139,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   useImperativeHandle(ref, () => ({
     captureImage: async () => {
+      // For AI Analysis page with separate chart sections, capture individual chart
+      if (chartSection === 'main' || chartSection === 'ratio') {
+        if (!chartRef.current) {
+          throw new Error('Chart component not initialized')
+        }
+        
+        try {
+          const canvas = chartRef.current.canvas
+          if (!canvas) {
+            throw new Error('Chart canvas not available')
+          }
+          return canvas.toDataURL('image/png', 0.95)
+        } catch (error) {
+          console.error('Failed to capture chart image:', error)
+          throw new Error(`Failed to capture chart image: ${(error as Error).message}`)
+        }
+      }
+      
+      // For other pages with both charts in one component (legacy behavior)
       if (!chartRef.current || !ratioChartRef.current) {
         throw new Error('Charts not ready')
       }

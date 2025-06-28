@@ -38,8 +38,10 @@ export default function AIAnalysisPage() {
   const [messages, setMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([])
   const [followUpInput, setFollowUpInput] = useState("")
   const chartRef = useRef<BitcoinChartRef>(null)
+  const ratioChartRef = useRef<BitcoinChartRef>(null)
   const [range, setRange] = useState<[number, number]>([0, 100])
   const [dataLength, setDataLength] = useState(0)
+  const [chartsReady, setChartsReady] = useState(false)
   
   // Shared trace visibility state for both chart instances
   const [visibleTraces, setVisibleTraces] = useState<Record<TraceKey, boolean>>({
@@ -89,6 +91,12 @@ export default function AIAnalysisPage() {
 
   const handleDataLengthChange = (len: number) => {
     setDataLength(len)
+    // Check if charts are ready after data loads
+    setTimeout(() => {
+      if (chartRef.current && ratioChartRef.current) {
+        setChartsReady(true)
+      }
+    }, 1000)
   }
   
   const handleTraceToggle = (key: TraceKey) => {
@@ -98,14 +106,149 @@ export default function AIAnalysisPage() {
     }))
   }
 
+  // Function to combine both chart images into a single high-resolution image
+  const combineChartImages = async (mainImageData: string, ratioImageData: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      try {
+        const mainImg = new Image()
+        const ratioImg = new Image()
+        let loadedCount = 0
+
+        const onImageLoad = () => {
+          loadedCount++
+          if (loadedCount === 2) {
+            // Both images loaded, combine them
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            
+            if (!ctx) {
+              reject(new Error('Could not get canvas context'))
+              return
+            }
+
+            // Set canvas dimensions with legend space
+            const legendHeight = 60
+            const totalWidth = Math.max(mainImg.width, ratioImg.width)
+            const totalHeight = mainImg.height + ratioImg.height + legendHeight
+            
+            canvas.width = totalWidth
+            canvas.height = totalHeight
+
+            // Fill with dark background to match chart theme
+            ctx.fillStyle = '#000000'
+            ctx.fillRect(0, 0, totalWidth, totalHeight)
+
+            // Draw legend at the top
+            ctx.fillStyle = '#ffffff'
+            ctx.font = '14px system-ui, -apple-system, sans-serif'
+            ctx.textAlign = 'center'
+            
+            const legendY = 35
+            const legendCenterX = totalWidth / 2
+            
+            // Draw legend items
+            const legendItems = [
+              { color: '#3b82f6', label: 'Price' },
+              { color: '#fbbf24', label: '200DMA' },
+              { color: '#10b981', label: 'Realized Price' },
+              { color: '#fb923c', label: 'True Market Mean' },
+              { color: '#ffffff', label: 'Mayer Ratio' },
+              { color: '#10b981', label: 'Price/Realized Price' },
+              { color: '#fb923c', label: 'Price/True Market Mean' }
+            ]
+            
+            const itemSpacing = 110
+            const startX = legendCenterX - (legendItems.length - 1) * itemSpacing / 2
+            
+            legendItems.forEach((item, index) => {
+              const x = startX + index * itemSpacing
+              
+              // Draw colored circle
+              ctx.fillStyle = item.color
+              ctx.beginPath()
+              ctx.arc(x - 30, legendY, 6, 0, 2 * Math.PI)
+              ctx.fill()
+              
+              // Draw label
+              ctx.fillStyle = '#ffffff'
+              ctx.fillText(item.label, x, legendY + 5)
+            })
+
+            // Draw main chart below legend
+            ctx.drawImage(mainImg, 0, legendHeight)
+            
+            // Draw ratio chart below main chart
+            ctx.drawImage(ratioImg, 0, legendHeight + mainImg.height)
+
+            // Return combined image as high-quality data URL
+            resolve(canvas.toDataURL('image/png', 0.95))
+          }
+        }
+
+        mainImg.onload = onImageLoad
+        ratioImg.onload = onImageLoad
+        mainImg.onerror = () => reject(new Error('Failed to load main chart image'))
+        ratioImg.onerror = () => reject(new Error('Failed to load ratio chart image'))
+        
+        mainImg.src = mainImageData
+        ratioImg.src = ratioImageData
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
   const analyzeChart = async () => {
-    if (!apiKey || !chartRef.current) return
+    if (!apiKey) return
 
     setIsAnalyzing(true)
     
     try {
-      // Capture chart image
-      const imageData = await chartRef.current.captureImage()
+      // Simple approach: wait for charts to exist and try capture with retries
+      let attempts = 0
+      let mainImageData: string | null = null
+      let ratioImageData: string | null = null
+      
+             while (attempts < 10 && (!mainImageData || !ratioImageData)) {
+         await new Promise(resolve => setTimeout(resolve, 1000))
+         
+         try {
+           if (chartRef.current && !mainImageData) {
+             console.log('Attempting to capture main chart...')
+             mainImageData = await chartRef.current.captureImage()
+             console.log('Main chart captured successfully')
+           }
+           if (ratioChartRef.current && !ratioImageData) {
+             console.log('Attempting to capture ratio chart...')
+             ratioImageData = await ratioChartRef.current.captureImage()
+             console.log('Ratio chart captured successfully')
+           }
+         } catch (error) {
+           console.log(`Capture attempt ${attempts + 1}:`, error)
+           console.log('Chart refs status:', {
+             mainChart: !!chartRef.current,
+             ratioChart: !!ratioChartRef.current,
+             mainCaptured: !!mainImageData,
+             ratioCaptured: !!ratioImageData
+           })
+         }
+         
+         attempts++
+       }
+      
+             if (!mainImageData) {
+         throw new Error('Unable to capture main chart. Please wait for the charts to fully load and try again.')
+       }
+       
+       // If we have both charts, combine them. Otherwise, use just the main chart
+       let finalImageData: string
+       if (ratioImageData) {
+         console.log('Combining both charts...')
+         finalImageData = await combineChartImages(mainImageData, ratioImageData)
+       } else {
+         console.log('Using main chart only (ratio chart not available)')
+         finalImageData = mainImageData
+       }
       
       // Send to API
       const response = await fetch('/api/analyze-chart', {
@@ -114,8 +257,9 @@ export default function AIAnalysisPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageData,
+          imageData: finalImageData,
           apiKey,
+          provider,
           prompt: "Analyze this Bitcoin on-chain chart and provide insights."
         }),
       })
@@ -154,7 +298,37 @@ export default function AIAnalysisPage() {
 
     try {
       // For follow-up questions, we can send the chart image again with the conversation context
-      const imageData = await chartRef.current?.captureImage()
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      if (!chartRef.current || !ratioChartRef.current) {
+        throw new Error('Charts are still loading. Please wait a moment and try again.')
+      }
+      
+      let mainImageData: string | null = null
+      let ratioImageData: string | null = null
+      
+      try {
+        mainImageData = await chartRef.current.captureImage()
+      } catch (error) {
+        console.log('Failed to capture main chart in follow-up:', error)
+      }
+      
+      try {
+        ratioImageData = await ratioChartRef.current.captureImage()
+      } catch (error) {
+        console.log('Failed to capture ratio chart in follow-up:', error)
+      }
+      
+      if (!mainImageData) {
+        throw new Error('Unable to capture main chart for follow-up question.')
+      }
+      
+      let finalImageData: string
+      if (ratioImageData) {
+        finalImageData = await combineChartImages(mainImageData, ratioImageData)
+      } else {
+        finalImageData = mainImageData
+      }
       
       const conversationContext = messages.map(m => `${m.role}: ${m.content}`).join('\n')
       const prompt = `Previous conversation:\n${conversationContext}\n\nUser's follow-up question: ${followUpInput}\n\nPlease respond to the follow-up question in the context of the chart and previous conversation.`
@@ -165,8 +339,9 @@ export default function AIAnalysisPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageData,
+          imageData: finalImageData,
           apiKey,
+          provider,
           prompt
         }),
       })
@@ -234,6 +409,7 @@ export default function AIAnalysisPage() {
                     <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
                     <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
                       <BitcoinChartJS 
+                        ref={ratioChartRef}
                         selectedMetric={selectedMetric} 
                         chartSection="ratio" 
                         range={range} 
@@ -294,12 +470,17 @@ export default function AIAnalysisPage() {
                       
                       <Button 
                         size="sm"
-                        disabled={!apiKey || isAnalyzing}
+                        disabled={!apiKey || isAnalyzing || !chartsReady}
                         onClick={analyzeChart}
                         className="h-7 px-3"
                       >
                         {isAnalyzing ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            Analyzing...
+                          </>
+                        ) : !chartsReady ? (
+                          "Loading Charts..."
                         ) : (
                           "Analyze"
                         )}
