@@ -92,28 +92,28 @@ class BRKClient {
 
   // Fetch daily close price history from the working endpoint
   async fetchDailyCloseHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=close&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-close`);
     if (!response.ok) throw new Error('Failed to fetch daily close price history');
     return await response.json();
   }
 
   // Fetch market cap history from the working endpoint
   async fetchMarketCapHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=marketcap&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-marketcap`);
     if (!response.ok) throw new Error('Failed to fetch market cap history');
     return await response.json();
   }
 
   // Fetch realized price history from the working endpoint
   async fetchRealizedPriceHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=realized-price&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-realized_price`);
     if (!response.ok) throw new Error('Failed to fetch realized price history');
     return await response.json();
   }
 
   // Fetch realized cap history from the working endpoint
   async fetchRealizedCapHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=realized-cap&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-realized_cap`);
     if (!response.ok) throw new Error('Failed to fetch realized cap history');
     return await response.json();
   }
@@ -196,7 +196,7 @@ class BRKClient {
 
   // Fetch true market mean history from the working endpoint
   async fetchTrueMarketMeanHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=true-market-mean&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-true_market_mean`);
     if (!response.ok) throw new Error('Failed to fetch true market mean history');
     return await response.json();
   }
