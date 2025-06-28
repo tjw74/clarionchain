@@ -35,6 +35,9 @@ import 'chartjs-adapter-date-fns';
 import type { ChartData } from 'chart.js';
 import { useCallback } from 'react';
 import * as Slider from '@radix-ui/react-slider';
+import { useRange } from 'react-use-range';
+import { getTrackBackground } from 'react-range';
+import { Range } from 'react-range';
 
 // Chart.js registration: only on client
 if (typeof window !== 'undefined') {
@@ -605,6 +608,9 @@ function getLatestNumberFromDataset(dataset: any): number | null {
   return null;
 }
 
+// Dynamically import PlotlyMVRVTemplate for dashboard use
+const PlotlyMVRVTemplateDashboard = dynamic(() => import('@/components/PlotlyMVRVTemplate'), { ssr: false });
+
 export default function Dashboard() {
   const { metric: multiSourceBTCMetric, last7dPrice: btcPrice7dAgo } = useMultiSourceBTCPrice();
   const realizedPriceCard = useRealizedPriceCard();
@@ -640,6 +646,13 @@ export default function Dashboard() {
 
   // STH MVRV Ratio panel state and effect
   const [sthMvrvChartData, setSthMvrvChartData] = useState<ChartData<'line'>>({ labels: [], datasets: [] });
+
+  // MVRV Ratio Plotly panel state
+  const [plotlyData, setPlotlyData] = useState<any[]>([]);
+  const [plotlyDates, setPlotlyDates] = useState<string[]>([]);
+  const [plotlyLoading, setPlotlyLoading] = useState(true);
+  const [plotlyError, setPlotlyError] = useState<string | null>(null);
+  const [plotlyRange, setPlotlyRange] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -737,6 +750,44 @@ export default function Dashboard() {
       }
     }
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPlotly() {
+      setPlotlyLoading(true);
+      setPlotlyError(null);
+      try {
+        const [marketArr, realizedArr] = await Promise.all([
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-marketcap?from=-10000').then(r => r.json()),
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-realized-cap?from=-10000').then(r => r.json()),
+        ]);
+        const n = Math.min(marketArr.length, realizedArr.length);
+        const genesisDate = new Date('2009-01-03');
+        const dateLabels = Array.from({ length: n }, (_, i) => {
+          const d = new Date(genesisDate);
+          d.setDate(d.getDate() + i);
+          return d.toISOString().slice(0, 10);
+        });
+        const jan2012Idx = dateLabels.findIndex(d => d >= '2012-01-01');
+        const mvrvArr = Array.from({ length: n }, (_, i) => {
+          const mv = marketArr[i];
+          const rv = realizedArr[i];
+          return (typeof mv === 'number' && typeof rv === 'number' && rv !== 0) ? mv / rv : null;
+        });
+        setPlotlyDates(dateLabels);
+        setPlotlyData([
+          { y: marketArr, name: 'Market Value', color: '#3b82f6' },
+          { y: realizedArr, name: 'Realized Value', color: '#fbbf24' },
+          { y: mvrvArr, name: 'MVRV Ratio', color: '#ffffff' },
+        ]);
+        setPlotlyRange([jan2012Idx !== -1 ? jan2012Idx : 0, n - 1]);
+        setPlotlyLoading(false);
+      } catch (e) {
+        setPlotlyError('Failed to load data');
+        setPlotlyLoading(false);
+      }
+    }
+    fetchPlotly();
   }, []);
 
   // Temporary debug state
@@ -1421,7 +1472,46 @@ export default function Dashboard() {
         </div>
 
         {/* Chart Section */}
+        {/* MVRV Ratio Template Panel: full width row by itself */}
+        <div className="w-full mb-8" style={{ background: '#000', border: '1px solid #1f78c1', borderRadius: 12 }}>
+          <div className="flex flex-row items-center mt-4 ml-8">
+            <img
+              src="/clarion_chain_logo.png"
+              alt="Brand Logo"
+              className="h-8 w-8 mr-3"
+              style={{ display: 'inline-block' }}
+            />
+            <span className="text-white text-xl font-semibold align-middle">Plotly : MVRV Ratio</span>
+          </div>
+          <div className="w-full" style={{ height: 800, minHeight: 0 }}>
+            {!plotlyLoading && !plotlyError && plotlyRange && plotlyDates.length > 0 && (
+              <PlotlyMVRVTemplateDashboard
+                height={800}
+                width="100%"
+                range={plotlyRange}
+                dates={plotlyDates}
+              />
+            )}
+            {plotlyLoading && <div className="w-full h-[400px] flex items-center justify-center text-white">Loading chart…</div>}
+            {plotlyError && <div className="w-full h-[400px] flex items-center justify-center text-red-400">{plotlyError}</div>}
+          </div>
+          {/* Slider at the bottom center of the parent panel */}
+          <div className="w-full flex flex-row justify-center pb-8">
+            {plotlyRange && plotlyDates.length > 0 && (
+              <TimeSliderWrapper
+                range={plotlyRange}
+                setRange={setPlotlyRange}
+                min={0}
+                max={plotlyDates.length - 1}
+                dates={plotlyDates}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* New row: Price Models and STH MVRV Ratio side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Price Models panel (existing code) */}
           <Card id="price-chart-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1450,7 +1540,7 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-          
+          {/* STH MVRV Ratio panel (existing code, assumed to be the next Card in the grid) */}
           <Card id="sth-chart-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -1563,4 +1653,62 @@ function TimeRangeSlider({ min, max, value, onChange }: { min: Date, max: Date, 
       </Slider.Root>
     </div>
   );
+}
+
+// Add the TimeSliderWrapper component at the bottom of the file
+function TimeSliderWrapper({ range, setRange, min, max, dates }: { range: [number, number], setRange: (r: [number, number]) => void, min: number, max: number, dates: string[] }) {
+  return (
+    <div className="w-full flex flex-col items-center justify-center mt-2 mb-2">
+      <div style={{ width: '90%' }}>
+        <Range
+          values={range}
+          step={1}
+          min={min}
+          max={max}
+          onChange={(vals: number[]) => setRange([vals[0], vals[1]])}
+          renderTrack={({ props, children }: { props: React.HTMLAttributes<HTMLDivElement>; children: React.ReactNode }) => (
+            <div
+              {...props}
+              style={{
+                ...props.style,
+                height: '1.44px',
+                width: '100%',
+                background: getTrackBackground({
+                  values: range,
+                  colors: ['#222', '#3b82f6', '#222'],
+                  min,
+                  max,
+                }),
+                borderRadius: '4px',
+              }}
+            >
+              {children}
+            </div>
+          )}
+          renderThumb={({ props }: { props: any }) => {
+            const { key, ...rest } = props;
+            return (
+              <div
+                key={key}
+                {...rest}
+                style={{
+                  ...rest.style,
+                  height: '13.2px',
+                  width: '13.2px',
+                  borderRadius: '50%',
+                  backgroundColor: '#3b82f6',
+                  border: 'none',
+                  boxShadow: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 3,
+                }}
+              />
+            );
+          }}
+        />
+      </div>
+    </div>
+  )
 }
