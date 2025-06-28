@@ -11,6 +11,14 @@ import * as Slider from '@radix-ui/react-slider'
 import { Brain, Settings, Send, Loader2 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-chartjs"
+
+// Define trace visibility types
+const TRACE_KEYS = [
+  'price', 'ma200', 'realizedPrice', 'trueMarketMean',
+  'mayer', 'priceRealized', 'priceTrueMean'
+] as const
+
+type TraceKey = typeof TRACE_KEYS[number]
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels'
 import dynamic from 'next/dynamic'
 import { getTrackBackground } from 'react-range';
@@ -32,6 +40,17 @@ export default function AIAnalysisPage() {
   const chartRef = useRef<BitcoinChartRef>(null)
   const [range, setRange] = useState<[number, number]>([0, 100])
   const [dataLength, setDataLength] = useState(0)
+  
+  // Shared trace visibility state for both chart instances
+  const [visibleTraces, setVisibleTraces] = useState<Record<TraceKey, boolean>>({
+    price: true,
+    ma200: true,
+    realizedPrice: true,
+    trueMarketMean: true,
+    mayer: true,
+    priceRealized: false,
+    priceTrueMean: false
+  })
 
   // MVRV Ratio Plotly panel state for AI Workbench
   const [plotlyDates, setPlotlyDates] = useState<string[]>([]);
@@ -70,6 +89,13 @@ export default function AIAnalysisPage() {
 
   const handleDataLengthChange = (len: number) => {
     setDataLength(len)
+  }
+  
+  const handleTraceToggle = (key: TraceKey) => {
+    setVisibleTraces(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }))
   }
 
   const analyzeChart = async () => {
@@ -195,11 +221,26 @@ export default function AIAnalysisPage() {
                 <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
                   <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
                     <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
-                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="main" range={range} onDataLengthChange={handleDataLengthChange} />
+                      <BitcoinChartJS 
+                        ref={chartRef} 
+                        selectedMetric={selectedMetric} 
+                        chartSection="main" 
+                        range={range} 
+                        onDataLengthChange={handleDataLengthChange}
+                        visibleTraces={visibleTraces}
+                        onTraceToggle={handleTraceToggle}
+                      />
                     </Panel>
                     <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
                     <Panel defaultSize={40} minSize={10} maxSize={80} className="flex flex-col min-h-0">
-                      <BitcoinChartJS ref={chartRef} selectedMetric={selectedMetric} chartSection="ratio" range={range} onDataLengthChange={handleDataLengthChange} />
+                      <BitcoinChartJS 
+                        selectedMetric={selectedMetric} 
+                        chartSection="ratio" 
+                        range={range} 
+                        onDataLengthChange={handleDataLengthChange}
+                        visibleTraces={visibleTraces}
+                        onTraceToggle={handleTraceToggle}
+                      />
                     </Panel>
                   </PanelGroup>
                   <div className="w-full flex justify-center items-center pb-2 pt-1">

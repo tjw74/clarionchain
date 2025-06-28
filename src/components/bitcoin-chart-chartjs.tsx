@@ -46,6 +46,8 @@ interface BitcoinChartProps {
   chartSection?: 'main' | 'ratio' | 'full'
   range?: [number, number]
   onDataLengthChange?: (len: number) => void
+  visibleTraces?: Record<TraceKey, boolean>
+  onTraceToggle?: (key: TraceKey) => void
 }
 
 // Add type for visibleTraces keys
@@ -61,7 +63,7 @@ const TRACE_KEYS = [
 
 type TraceKey = typeof TRACE_KEYS[number]
 
-const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv', chartSection = 'full', range: propRange, onDataLengthChange }, ref) => {
+const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selectedMetric = 'mvrv', chartSection = 'full', range: propRange, onDataLengthChange, visibleTraces: externalVisibleTraces, onTraceToggle }, ref) => {
   const [data, setData] = useState<ChartData | null>(null)
   const [isClient, setIsClient] = useState(false)
   const [chartReady, setChartReady] = useState(false)
@@ -73,8 +75,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   // Get sidebar state
   const { state: sidebarState } = useSidebar()
 
-  // Add state for trace visibility
-  const [visibleTraces, setVisibleTraces] = useState<Record<TraceKey, boolean>>({
+  // Add state for trace visibility (use external state if provided)
+  const [internalVisibleTraces, setInternalVisibleTraces] = useState<Record<TraceKey, boolean>>({
     price: true,
     ma200: true,
     realizedPrice: true,
@@ -83,6 +85,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     priceRealized: false,
     priceTrueMean: false
   })
+  
+  const visibleTraces = externalVisibleTraces || internalVisibleTraces
 
   // Use propRange if provided, otherwise use internal state
   const [range, setRange] = useState<[number, number]>([0, (data?.dates.length ?? 1) - 1])
@@ -99,10 +103,18 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
 
   // Helper to toggle traces
   const handleLegendClick = (key: TraceKey) => {
-    setVisibleTraces(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }))
+    if (onTraceToggle) {
+      // Use external callback if provided
+      onTraceToggle(key)
+    } else {
+      // Use internal state
+      setInternalVisibleTraces(prev => ({
+        ...prev,
+        [key]: !prev[key]
+      }))
+    }
+    // Force chart re-render when traces are toggled
+    setChartKey(prev => prev + 1)
   }
 
   // Register Chart.js components and plugins in useEffect (client-only)
@@ -745,7 +757,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           const activeIndex = elements[0].index
           // Set active elements for main chart (all visible datasets)
           chart.setActiveElements(mainChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })))
-          // Sync with ratio chart
+          // Sync with ratio chart (ratioChartDatasets is already filtered)
           ratioChartRef.current.setActiveElements(ratioChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })))
           ratioChartRef.current.tooltip?.setActiveElements(ratioChartDatasets.map((_, i) => ({ datasetIndex: i, index: activeIndex })), { x: event.x, y: event.y })
         } else {
@@ -1002,8 +1014,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               {legendItems.map((item) => (
                 <button
                   key={item.key}
-                  className={`flex items-center gap-1 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
-                  onClick={() => handleLegendClick(item.key)}
+                  className={`flex items-center gap-1 focus:outline-none hover:bg-gray-700 p-1 rounded ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleLegendClick(item.key)
+                  }}
                   type="button"
                   tabIndex={0}
                   aria-pressed={visibleTraces[item.key]}
@@ -1094,8 +1110,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             {legendItems.map((item) => (
               <button
                 key={item.key}
-                className={`flex items-center gap-1 focus:outline-none ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
-                onClick={() => handleLegendClick(item.key)}
+                className={`flex items-center gap-1 focus:outline-none hover:bg-gray-700 p-1 rounded ${visibleTraces[item.key] ? '' : 'opacity-40 grayscale'}`}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleLegendClick(item.key)
+                }}
                 type="button"
                 tabIndex={0}
                 aria-pressed={visibleTraces[item.key]}
