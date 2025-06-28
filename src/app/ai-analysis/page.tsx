@@ -269,43 +269,42 @@ export default function AIAnalysisPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                      <Brain className="h-5 w-5" />
+                      <Brain className="h-4 w-4 text-orange-500" />
                       <CardTitle>AI</CardTitle>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="provider" className="text-sm font-medium">Provider:</Label>
+                    <div className="flex items-center gap-3">
                       <Select value={provider} onValueChange={setProvider}>
-                        <SelectTrigger className="w-52">
-                          <SelectValue value={provider} placeholder="Select" />
+                        <SelectTrigger className="w-32 h-7 text-xs">
+                          <Settings className="h-3 w-3 mr-1" />
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="openai">OpenAI - GPT-4.1</SelectItem>
+                          <SelectItem value="openai">OpenAI GPT-4</SelectItem>
                           <SelectItem value="anthropic">Anthropic</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="apiKey" className="text-sm font-medium">API Key:</Label>
+                      
                       <Input
-                        id="apiKey"
                         type="password"
-                        placeholder="Enter key"
-                        className="w-40"
+                        placeholder="API Key"
+                        className="w-32 h-7 text-xs"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                       />
+                      
+                      <Button 
+                        size="sm"
+                        disabled={!apiKey || isAnalyzing}
+                        onClick={analyzeChart}
+                        className="h-7 px-3"
+                      >
+                        {isAnalyzing ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          "Analyze"
+                        )}
+                      </Button>
                     </div>
-                    <Button 
-                      disabled={!apiKey || isAnalyzing}
-                      onClick={analyzeChart}
-                    >
-                      {isAnalyzing ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      {isAnalyzing ? "Analyzing..." : "Analyze"}
-                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col min-h-0">

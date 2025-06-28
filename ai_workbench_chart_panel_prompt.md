@@ -39,6 +39,8 @@ interface BitcoinChartProps {
   chartSection?: 'main' | 'ratio' | 'full'
   range?: [number, number]
   onDataLengthChange?: (len: number) => void
+  visibleTraces?: Record<TraceKey, boolean>
+  onTraceToggle?: (key: TraceKey) => void
 }
 ```
 
@@ -258,6 +260,47 @@ callback: function(value) {
 2. **'ratio'**: Shows only the ratio chart
 3. **'full'**: Shows both charts stacked vertically with shared legend
 
+#### AI Workbench Multi-Instance Architecture
+**CRITICAL**: When using multiple chart instances (e.g., AI Workbench with separate main and ratio panels), you MUST implement shared state management:
+
+```typescript
+// Parent Component (AI Workbench Page)
+const [visibleTraces, setVisibleTraces] = useState<Record<TraceKey, boolean>>({
+  price: true,
+  ma200: true,
+  realizedPrice: true,
+  trueMarketMean: true,
+  mayer: true,
+  priceRealized: false,
+  priceTrueMean: false
+})
+
+const handleTraceToggle = (key: TraceKey) => {
+  setVisibleTraces(prev => ({
+    ...prev,
+    [key]: !prev[key]
+  }))
+}
+
+// Pass shared state to BOTH chart instances
+<BitcoinChartJS 
+  chartSection="main" 
+  visibleTraces={visibleTraces}
+  onTraceToggle={handleTraceToggle}
+/>
+<BitcoinChartJS 
+  chartSection="ratio" 
+  visibleTraces={visibleTraces}
+  onTraceToggle={handleTraceToggle}
+/>
+```
+
+**Why This Is Critical**:
+- Without shared state, each chart instance has independent trace visibility
+- Legend clicks in the main chart won't affect the ratio chart
+- This causes confusing UX where ratio legend items appear to do nothing
+- **Common Bug**: Spending hours debugging Chart.js when it's actually a state management issue
+
 #### Responsive Design
 - **Container**: Full width with min-width constraints
 - **Chart Heights**: Flexible with minimum height requirements
@@ -265,6 +308,52 @@ callback: function(value) {
 - **Background**: Dark theme with muted backgrounds
 
 ### 9. CRITICAL IMPLEMENTATION DETAILS
+
+#### Component State Management
+**ESSENTIAL**: The component must support both internal and external state management:
+
+```typescript
+const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ 
+  selectedMetric = 'mvrv', 
+  chartSection = 'full', 
+  range: propRange, 
+  onDataLengthChange, 
+  visibleTraces: externalVisibleTraces, 
+  onTraceToggle 
+}, ref) => {
+  // Internal state (fallback when no external state provided)
+  const [internalVisibleTraces, setInternalVisibleTraces] = useState<Record<TraceKey, boolean>>({
+    price: true,
+    ma200: true,
+    realizedPrice: true,
+    trueMarketMean: true,
+    mayer: true,
+    priceRealized: false,
+    priceTrueMean: false
+  })
+  
+  // Use external state if provided, otherwise use internal
+  const visibleTraces = externalVisibleTraces || internalVisibleTraces
+  
+  // Handle legend clicks
+  const handleLegendClick = (key: TraceKey) => {
+    if (onTraceToggle) {
+      // Use external callback if provided (multi-instance scenario)
+      onTraceToggle(key)
+    } else {
+      // Use internal state (single instance scenario)
+      setInternalVisibleTraces(prev => ({
+        ...prev,
+        [key]: !prev[key]
+      }))
+    }
+    // Force chart re-render
+    setChartKey(prev => prev + 1)
+  }
+  
+  // Rest of component logic...
+})
+```
 
 #### Chart.js Registration
 ```javascript
@@ -332,6 +421,9 @@ Before considering the implementation complete, verify:
 - [ ] All colors match the exact specification
 - [ ] Both logarithmic and linear scales work properly
 - [ ] Component handles all three section modes (main/ratio/full)
+- [ ] **CRITICAL**: Multi-instance setup (AI Workbench) has shared state management
+- [ ] **CRITICAL**: Ratio legend items properly toggle ratio chart traces
+- [ ] **CRITICAL**: Both internal and external state management work correctly
 
 ## SUCCESS CRITERIA
 
@@ -341,5 +433,22 @@ The implementation is successful when:
 3. **Performance**: Smooth rendering and responsive updates
 4. **Reliability**: Handles edge cases and API failures gracefully
 5. **Maintainability**: Clean, well-structured TypeScript code
+6. **State Management**: Supports both single-instance and multi-instance architectures
 
-This prompt contains every detail necessary to recreate the Bitcoin Chart Panel exactly. Follow each specification precisely to achieve pixel-perfect replication. 
+## COMMON PITFALLS TO AVOID
+
+### 1. Multi-Instance State Management Bug
+**Problem**: Using multiple chart instances without shared state causes ratio legend items to appear broken.
+**Solution**: Always implement shared state management when using multiple instances.
+**Debug Time Saved**: 2+ hours of Chart.js debugging
+
+### 2. Architecture Analysis First
+**Problem**: Debugging implementation details before understanding component architecture.
+**Solution**: Always start with: "How many chart instances? Where is state managed? How do they communicate?"
+**Debug Time Saved**: 1+ hours of unnecessary troubleshooting
+
+### 3. User Description Contains the Solution
+**Problem**: Ignoring user's behavioral description in favor of technical assumptions.
+**Solution**: Listen carefully to "Component A affects Component B" type descriptions - they indicate architectural issues.
+
+This prompt contains every detail necessary to recreate the Bitcoin Chart Panel exactly, including critical state management patterns for multi-instance scenarios. Follow each specification precisely to achieve pixel-perfect replication and avoid common architectural pitfalls. 
