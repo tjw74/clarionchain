@@ -264,12 +264,12 @@ function TimeSliderWrapper({ range, setRange, min, max, dates }: { range: [numbe
                 {...rest}
                 style={{
                   ...rest.style,
-                  height: '22px',
-                  width: '22px',
+                  height: '13.2px',
+                  width: '13.2px',
                   borderRadius: '50%',
-                  backgroundColor: '#fff',
-                  border: '2px solid #3b82f6',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  backgroundColor: '#3b82f6',
+                  border: 'none',
+                  boxShadow: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
