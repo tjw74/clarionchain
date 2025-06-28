@@ -86,8 +86,14 @@ export default function TemplatesPage() {
         <Card className="w-full max-w-7xl mb-8 h-[900px] shadow-lg border border-border flex flex-col justify-center items-center" style={{ background: '#000' }}>
           <CardContent className="flex flex-col w-full h-full relative bg-black">
             {/* Title, upper left */}
-            <div className="w-full flex flex-row">
-              <span className="text-white text-xl font-semibold mt-4 ml-8">Plotly : MVRV Ratio</span>
+            <div className="w-full flex flex-row items-center mt-4 ml-8">
+              <img
+                src="/clarion_chain_logo.png"
+                alt="Brand Logo"
+                className="h-8 w-8 mr-3"
+                style={{ display: 'inline-block' }}
+              />
+              <span className="text-white text-xl font-semibold align-middle">Plotly : MVRV Ratio</span>
             </div>
             {/* Chart takes all available space above */}
             <div className="w-full h-[800px] flex flex-col mt-4" style={{ minHeight: 0 }}>
