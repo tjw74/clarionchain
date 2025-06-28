@@ -917,14 +917,64 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             size: 12,
           },
           callback: function(value: any) {
-            return value.toString().padStart(10, ' ')
+            return value.toFixed(2).padStart(10, ' ')
           },
         },
         title: {
           display: false,
         },
-        min: currentConfig.ratioChart.yRange[0],
-        max: currentConfig.ratioChart.yRange[1],
+        min: (() => {
+          // Calculate dynamic Y-axis range based on ONLY visible ratio data
+          const visibleRatioValues = []
+          
+          // Only include ratios for traces that are currently visible
+          if (visibleTraces.mayer) {
+            visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          if (visibleTraces.priceRealized) {
+            visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          if (visibleTraces.priceTrueMean) {
+            visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          
+          if (visibleRatioValues.length === 0) return 0.5
+          
+          const minRatio = Math.min(...visibleRatioValues)
+          const maxRatio = Math.max(...visibleRatioValues)
+          
+          // Use tight padding (5%) for better space utilization
+          const range = maxRatio - minRatio
+          const paddedMin = Math.max(0, minRatio - range * 0.05)
+          
+          return paddedMin
+        })(),
+        max: (() => {
+          // Calculate dynamic Y-axis range based on ONLY visible ratio data
+          const visibleRatioValues = []
+          
+          // Only include ratios for traces that are currently visible
+          if (visibleTraces.mayer) {
+            visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          if (visibleTraces.priceRealized) {
+            visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          if (visibleTraces.priceTrueMean) {
+            visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+          }
+          
+          if (visibleRatioValues.length === 0) return 3.0
+          
+          const minRatio = Math.min(...visibleRatioValues)
+          const maxRatio = Math.max(...visibleRatioValues)
+          
+          // Use tight padding (5%) for better space utilization
+          const range = maxRatio - minRatio
+          const paddedMax = maxRatio + range * 0.05
+          
+          return paddedMax
+        })(),
       },
     },
   }
