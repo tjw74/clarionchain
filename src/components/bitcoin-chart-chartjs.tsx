@@ -552,8 +552,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     // MVRV Analysis: Use Market Value and Realized Value
     allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
   } else if (selectedMetric === 'price') {
-    // Price Analysis: Use Price, Realized Price, and 200DMA
-    allUSDValues = [...(priceValues || []), ...(priceMA200 || [])].filter(v => v > 0)
+    // Price Analysis: Use ONLY the visible/sliced data for tight Y-axis scaling
+    const visiblePriceValues = sliceArr(priceValues || [])
+    const visibleMA200 = sliceArr(priceMA200 || [])
+    const visibleRealizedPrice = sliceArr(realizedPrice || [])
+    const visibleTrueMarketMean = sliceArr(trueMarketMean || [])
+    allUSDValues = [...visiblePriceValues, ...visibleMA200, ...visibleRealizedPrice, ...visibleTrueMarketMean].filter(v => v > 0)
   } else {
     // Fallback
     allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
@@ -567,9 +571,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     logMin = Math.log10(minUSD)
     logMax = Math.log10(maxUSD)
     logRange = logMax - logMin
-    paddedLogMin = logMin - (logRange * 0.1) // 10% padding
-
-    // Find the next "nice" tick above maxUSD (next power of 10 or next major step)
+    
+    // Helper function for nice tick values
     const getNextNiceTick = (value: number) => {
       const logV = Math.log10(value)
       const base = Math.floor(logV)
@@ -579,8 +582,19 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       if (value <= 5 * pow10) return 5 * pow10
       return 10 * pow10
     }
-    const nextTick = getNextNiceTick(maxUSD)
-    paddedLogMax = Math.log10(nextTick)
+
+    // For price data, use a much tighter range
+    if (selectedMetric === 'price') {
+      // Set tight bounds around the actual data
+      const reasonableMin = minUSD * 0.8  // 20% below minimum
+      const reasonableMax = maxUSD * 1.2  // 20% above maximum
+      paddedLogMin = Math.log10(reasonableMin)
+      paddedLogMax = Math.log10(reasonableMax)
+    } else {
+      paddedLogMin = logMin - (logRange * 0.05)
+      const nextTick = getNextNiceTick(maxUSD * 1.1)
+      paddedLogMax = Math.log10(nextTick)
+    }
 
     // Generate evenly spaced logarithmic ticks
     const generateLogTicks = () => {
