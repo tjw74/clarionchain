@@ -12,8 +12,14 @@ import { Brain, Settings, Send, Loader2 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-chartjs"
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels'
+import dynamic from 'next/dynamic'
+import { getTrackBackground } from 'react-range';
+import { Range } from 'react-range';
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
+
+// Dynamically import PlotlyMVRVTemplate for AI Workbench use
+const PlotlyMVRVTemplateDashboard = dynamic(() => import('@/components/PlotlyMVRVTemplate'), { ssr: false })
 
 export default function AIAnalysisPage() {
   const [apiKey, setApiKey] = useState("")
@@ -26,6 +32,34 @@ export default function AIAnalysisPage() {
   const chartRef = useRef<BitcoinChartRef>(null)
   const [range, setRange] = useState<[number, number]>([0, 100])
   const [dataLength, setDataLength] = useState(0)
+
+  // MVRV Ratio Plotly panel state for AI Workbench
+  const [plotlyDates, setPlotlyDates] = useState<string[]>([]);
+  const [plotlyRange, setPlotlyRange] = useState<[number, number] | null>(null);
+  useEffect(() => {
+    async function fetchPlotly() {
+      try {
+        const [marketArr, realizedArr] = await Promise.all([
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-marketcap?from=-10000').then(r => r.json()),
+          fetch('https://brk.openonchain.dev/api/vecs/dateindex-to-realized-cap?from=-10000').then(r => r.json()),
+        ]);
+        const n = Math.min(marketArr.length, realizedArr.length);
+        const genesisDate = new Date('2009-01-03');
+        const dateLabels = Array.from({ length: n }, (_, i) => {
+          const d = new Date(genesisDate);
+          d.setDate(d.getDate() + i);
+          return d.toISOString().split('T')[0];
+        });
+        const jan2012Idx = dateLabels.findIndex(d => d >= '2012-01-01');
+        setPlotlyDates(dateLabels);
+        setPlotlyRange([jan2012Idx !== -1 ? jan2012Idx : 0, n - 1]);
+      } catch (e) {
+        setPlotlyDates([]);
+        setPlotlyRange(null);
+      }
+    }
+    fetchPlotly();
+  }, []);
 
   // Reset range when dataLength changes
   useEffect(() => {
@@ -308,6 +342,92 @@ export default function AIAnalysisPage() {
         <PanelResizeHandle className="bg-[#222] hover:bg-[#444] transition-colors duration-150 h-1 w-full cursor-row-resize" />
         <Panel defaultSize={10} minSize={0} maxSize={80} className="min-h-0" />
       </PanelGroup>
+      {/* Plotly MVRV Ratio Panel: full width below main workbench */}
+      <div className="w-full mb-8" style={{ background: '#000', border: '1px solid #1f78c1', borderRadius: 12 }}>
+        <div className="flex flex-row items-center mt-4 ml-8">
+          <img
+            src="/clarion_chain_logo.png"
+            alt="Brand Logo"
+            className="h-8 w-8 mr-3"
+            style={{ display: 'inline-block' }}
+          />
+          <span className="text-white text-xl font-semibold align-middle">Plotly : MVRV Ratio</span>
+        </div>
+        <div className="w-full" style={{ height: 800, minHeight: 0 }}>
+          {plotlyRange && plotlyDates.length > 0 && (
+            <PlotlyMVRVTemplateDashboard height={800} width="100%" range={plotlyRange} dates={plotlyDates} />
+          )}
+        </div>
+        {/* Slider at the bottom center of the parent panel */}
+        <div className="w-full flex flex-row justify-center pb-8">
+          {plotlyRange && plotlyDates.length > 0 && (
+            <TimeSliderWrapper
+              range={plotlyRange}
+              setRange={setPlotlyRange}
+              min={0}
+              max={plotlyDates.length - 1}
+              dates={plotlyDates}
+            />
+          )}
+        </div>
+      </div>
     </DashboardLayout>
+  )
+}
+
+function TimeSliderWrapper({ range, setRange, min, max, dates }: { range: [number, number], setRange: (r: [number, number]) => void, min: number, max: number, dates: string[] }) {
+  return (
+    <div className="w-full flex flex-col items-center justify-center mt-2 mb-2">
+      <div style={{ width: '90%' }}>
+        <Range
+          values={range}
+          step={1}
+          min={min}
+          max={max}
+          onChange={(vals: number[]) => setRange([vals[0], vals[1]])}
+          renderTrack={({ props, children }: { props: React.HTMLAttributes<HTMLDivElement>; children: React.ReactNode }) => (
+            <div
+              {...props}
+              style={{
+                ...props.style,
+                height: '1.44px',
+                width: '100%',
+                background: getTrackBackground({
+                  values: range,
+                  colors: ['#222', '#3b82f6', '#222'],
+                  min,
+                  max,
+                }),
+                borderRadius: '4px',
+              }}
+            >
+              {children}
+            </div>
+          )}
+          renderThumb={({ props }: { props: any }) => {
+            const { key, ...rest } = props;
+            return (
+              <div
+                key={key}
+                {...rest}
+                style={{
+                  ...rest.style,
+                  height: '13.2px',
+                  width: '13.2px',
+                  borderRadius: '50%',
+                  backgroundColor: '#3b82f6',
+                  border: 'none',
+                  boxShadow: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 3,
+                }}
+              />
+            );
+          }}
+        />
+      </div>
+    </div>
   )
 } 
