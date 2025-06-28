@@ -218,6 +218,22 @@ const PlotlyMVRVTemplate: React.FC<PlotlyMVRVTemplateProps> = ({
           },
           showlegend: false,
           dragmode: 'pan',
+          shapes: [
+            {
+              type: 'line',
+              xref: 'paper',
+              yref: 'y2',
+              x0: 0,
+              x1: 1,
+              y0: 1,
+              y1: 1,
+              line: {
+                color: '#ffffff',
+                width: 1,
+                dash: 'dot',
+              },
+            },
+          ],
         } as Partial<Layout>}
         config={{
           responsive: true,
