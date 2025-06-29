@@ -1058,15 +1058,19 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     },
   }
 
-  // Custom legend items for main and ratio traces
-  const legendItems: { key: TraceKey, color: string, label: string }[] = [
-    { key: 'price', color: '#3b82f6', label: 'Price' },
-    { key: 'ma200', color: '#fbbf24', label: '200DMA' },
-    { key: 'realizedPrice', color: '#10b981', label: 'Realized Price' },
-    { key: 'trueMarketMean', color: '#fb923c', label: 'True Market Mean' },
-    { key: 'mayer', color: '#ffffff', label: 'Mayer Ratio' },
-    { key: 'priceRealized', color: '#10b981', label: 'Price/Realized Price' },
-    { key: 'priceTrueMean', color: '#fb923c', label: 'Price/True Market Mean' }
+  // Custom legend items for main and ratio traces - conditional based on metric
+  const legendItems: { key: TraceKey, color: string, label: string }[] = selectedMetric === 'mvrv' ? [
+    { key: 'price' as TraceKey, color: '#3b82f6', label: 'Market Value' },
+    { key: 'ma200' as TraceKey, color: '#eab308', label: 'Realized Value' },
+    { key: 'mayer' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' }
+  ] : [
+    { key: 'price' as TraceKey, color: '#3b82f6', label: 'Price' },
+    { key: 'ma200' as TraceKey, color: '#fbbf24', label: '200DMA' },
+    { key: 'realizedPrice' as TraceKey, color: '#10b981', label: 'Realized Price' },
+    { key: 'trueMarketMean' as TraceKey, color: '#fb923c', label: 'True Market Mean' },
+    { key: 'mayer' as TraceKey, color: '#ffffff', label: 'Mayer Ratio' },
+    { key: 'priceRealized' as TraceKey, color: '#10b981', label: 'Price/Realized Price' },
+    { key: 'priceTrueMean' as TraceKey, color: '#fb923c', label: 'Price/True Market Mean' }
   ]
 
   // Main render logic
