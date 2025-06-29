@@ -1207,7 +1207,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         {/* Chart Container - styled to match AI component */}
         <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
           {/* Legend area - centered vertically with uniform spacing */}
-          <div className="flex justify-center items-center h-12 px-4 pt-2">
+          <div className="flex justify-center items-center h-8 px-4">
             <div className="flex items-center gap-4">
               {legendItems.map((item) => (
                 <button
@@ -1231,7 +1231,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           </div>
           {/* Main Chart area */}
           <div 
-            className="flex-1 min-h-0 px-4 pb-2"
+            className="flex-1 min-h-0 px-4 pb-1"
             onMouseLeave={() => {
               if (chartRef.current && ratioChartRef.current) {
                 chartRef.current.setActiveElements([])
@@ -1267,7 +1267,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
           {/* Ratio Chart area */}
           <div 
-            className="flex-1 min-h-0 px-4 pb-4"
+            className="flex-1 min-h-0 px-4 pb-2"
             onMouseLeave={() => {
               if (chartRef.current && ratioChartRef.current) {
                 chartRef.current.setActiveElements([])
@@ -1303,7 +1303,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       {/* Chart Container - styled to match AI component */}
       <div className="bg-muted/20 min-w-0 flex-1 min-h-0 flex flex-col">
         {/* Legend area - centered vertically with uniform spacing */}
-        <div className="flex justify-center items-center h-12 px-4 pt-2">
+        <div className="flex justify-center items-center h-8 px-4">
           <div className="flex items-center gap-4">
             {legendItems.map((item) => (
               <button
@@ -1327,7 +1327,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         </div>
         {/* Main Chart area */}
         <div 
-          className="flex-1 min-h-0 px-4 pb-2"
+          className="flex-1 min-h-0 px-4 pb-1"
           onMouseLeave={() => {
             if (chartRef.current && ratioChartRef.current) {
               chartRef.current.setActiveElements([])
@@ -1354,7 +1354,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         </div>
         {/* Ratio Chart area */}
         <div 
-          className="flex-1 min-h-0 px-4 pb-4"
+          className="flex-1 min-h-0 px-4 pb-2"
           onMouseLeave={() => {
             if (chartRef.current && ratioChartRef.current) {
               chartRef.current.setActiveElements([])

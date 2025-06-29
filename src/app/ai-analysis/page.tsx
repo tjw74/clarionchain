@@ -398,7 +398,7 @@ export default function AIAnalysisPage() {
                     </Select>
                   </div>
                 </CardHeader>
-                <CardContent className="p-6 min-w-0 flex-1 min-h-0 flex flex-col">
+                <CardContent className="px-6 py-3 min-w-0 flex-1 min-h-0 flex flex-col">
                   <PanelGroup direction="vertical" className="flex-1 min-h-0 w-full">
                     <Panel defaultSize={60} minSize={20} maxSize={90} className="flex flex-col min-h-0">
                       <BitcoinChartJS 
@@ -424,7 +424,7 @@ export default function AIAnalysisPage() {
                       />
                     </Panel>
                   </PanelGroup>
-                  <div className="w-full flex justify-center items-center pb-2 pt-1">
+                  <div className="w-full flex justify-center items-center py-1">
                     <Slider.Root
                       className="relative flex items-center w-[90%] h-4"
                       min={0}
