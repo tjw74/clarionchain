@@ -20,7 +20,9 @@ import {
   Calculator,
   Bot,
   Combine,
-  Gauge
+  Gauge,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -33,7 +35,8 @@ import {
   SidebarMenuButton, 
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger 
+  SidebarTrigger,
+  useSidebar
 } from "@/components/ui/sidebar"
 import { useUser } from "@/context/UserContext"
 
@@ -136,6 +139,26 @@ const navigation = [
   },
 ]
 
+// Border Arrow Trigger Component
+function BorderArrowTrigger() {
+  const { open, toggleSidebar } = useSidebar()
+  
+  return (
+    <div className="absolute top-4 -right-5 z-20 hidden md:flex">
+      <button
+        onClick={toggleSidebar}
+        className="bg-transparent hover:bg-transparent p-0 border-0 text-muted-foreground hover:text-foreground transition-colors duration-200"
+        aria-label="Toggle Sidebar"
+      >
+        <div className="flex items-center">
+          <ChevronLeft className="w-5 h-5" />
+          <ChevronRight className="w-5 h-5" />
+        </div>
+      </button>
+    </div>
+  )
+}
+
 export default function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   const pathname = usePathname()
   const { user, login, logout } = useUser()
@@ -143,7 +166,8 @@ export default function DashboardLayout({ children, title, description }: Dashbo
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-        <Sidebar variant="sidebar">
+        <div className="relative">
+          <Sidebar variant="sidebar">
           <SidebarHeader className="p-4">
             <div className="flex items-center gap-2">
               <Image
@@ -186,10 +210,13 @@ export default function DashboardLayout({ children, title, description }: Dashbo
           </SidebarFooter>
         </Sidebar>
         
+        {/* Border Arrow Trigger */}
+        <BorderArrowTrigger />
+        </div>
+        
         <div className="flex-1 flex flex-col min-w-0">
           <header className="flex h-16 items-center gap-4 border-b border-border px-6 justify-between">
             <div className="flex items-center gap-4">
-              <SidebarTrigger />
               {pathname === "/brk" ? (
                 <h1 className="text-2xl font-bold text-white">Bitcoin Research Kit</h1>
               ) : title ? (
