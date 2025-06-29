@@ -39,7 +39,7 @@ interface ChartData {
   trueMarketMean?: number[]
 }
 
-type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
+type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain' | 'profit-loss'
 
 interface BitcoinChartProps {
   selectedMetric?: MetricType
@@ -245,8 +245,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     // Fetch data based on selected metric
     const fetchData = async () => {
       try {
-        if (selectedMetric === 'mvrv') {
-          // Fetch MVRV data from BRK API (EXACT COPY OF PRICE PATTERN)
+        if (selectedMetric === 'mvrv' || selectedMetric === 'profit-loss') {
+          // Fetch MVRV Analysis data
           const [marketCapHistory, realizedCapHistory] = await Promise.all([
             brkClient.fetchMarketCapHistory(2920),
             brkClient.fetchRealizedCapHistory(2920)
@@ -433,7 +433,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     return (
       <div className="h-[500px] flex items-center justify-center bg-muted/50 rounded-md">
         <div className="text-center">
-          <p className="text-muted-foreground mb-2">Loading {selectedMetric === 'mvrv' ? 'MVRV Analysis' : selectedMetric === 'price' ? 'Price Analysis' : 'Chart'} Chart...</p>
+          <p className="text-muted-foreground mb-2">Loading {selectedMetric === 'mvrv' ? 'MVRV Analysis' : selectedMetric === 'price' ? 'Price Analysis' : selectedMetric === 'profit-loss' ? 'Profit & Loss Analysis' : 'Chart'} Chart...</p>
           <p className="text-sm text-muted-foreground">Fetching 8-year rolling window data</p>
         </div>
       </div>
@@ -445,6 +445,41 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   // Metric configuration
   const metricConfigs = {
     mvrv: {
+      mainChart: {
+        datasets: [
+          {
+            label: 'Market Value',
+            data: priceValues || [], // Using priceValues (Market Cap)
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          },
+          {
+            label: 'Realized Value', 
+            data: priceMA200 || [], // Using priceMA200 (Realized Cap)
+            borderColor: '#eab308',
+            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          }
+        ]
+      },
+      ratioChart: {
+        datasets: [
+          {
+            label: 'MVRV Ratio',
+            data: priceRatios || [], // Using priceRatios (MVRV Ratio)
+            borderColor: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          }
+        ],
+        centerLine: 1.0,
+        yRange: [0, 5]
+      },
+      legend: [
+        { color: '#3b82f6', label: 'Market Value' },
+        { color: '#eab308', label: 'Realized Value' },
+        { color: '#ffffff', label: 'MVRV Ratio' }
+      ]
+    },
+    'profit-loss': {
       mainChart: {
         datasets: [
           {
@@ -594,7 +629,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   let minUSD: number, maxUSD: number, logMin: number, logMax: number, logRange: number
   let paddedLogMin: number, paddedLogMax: number, usdLogTicks: number[]
   
-  if (selectedMetric === 'mvrv') {
+  if (selectedMetric === 'mvrv' || selectedMetric === 'profit-loss') {
     // MVRV Analysis: Use price data structure (EXACT COPY OF PRICE PATTERN)
     const visiblePriceValues = sliceArr(priceValues)
     const visibleMA200Values = sliceArr(priceMA200)
@@ -1059,7 +1094,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   }
 
   // Custom legend items for main and ratio traces - conditional based on metric
-  const legendItems: { key: TraceKey, color: string, label: string }[] = selectedMetric === 'mvrv' ? [
+  const legendItems: { key: TraceKey, color: string, label: string }[] = (selectedMetric === 'mvrv' || selectedMetric === 'profit-loss') ? [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Market Value' },
     { key: 'ma200' as TraceKey, color: '#eab308', label: 'Realized Value' },
     { key: 'mayer' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' }

@@ -24,7 +24,7 @@ import dynamic from 'next/dynamic'
 import { getTrackBackground } from 'react-range';
 import { Range } from 'react-range';
 
-type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain'
+type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain' | 'profit-loss'
 
 // Dynamically import PlotlyMVRVTemplate for AI Workbench use
 const PlotlyMVRVTemplateDashboard = dynamic(() => import('@/components/PlotlyMVRVTemplate'), { ssr: false })
@@ -391,6 +391,7 @@ export default function AIAnalysisPage() {
                       <SelectContent>
                         <SelectItem value="price">Price</SelectItem>
                         <SelectItem value="mvrv">MVRV</SelectItem>
+                        <SelectItem value="profit-loss">Profit & Loss</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
