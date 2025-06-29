@@ -40,6 +40,9 @@ interface ChartData {
   lthMarketValue?: number[]
   lthRealizedValue?: number[]
   lthMvrvRatios?: number[]
+  sthMarketValue?: number[]
+  sthRealizedValue?: number[]
+  sthMvrvRatios?: number[]
 }
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain' | 'profit-loss'
@@ -65,7 +68,10 @@ const TRACE_KEYS = [
   'lthMarketValue',
   'lthRealizedValue',
   'mvrv',
-  'lthMvrv'
+  'lthMvrv',
+  'sthMarketValue',
+  'sthRealizedValue',
+  'sthMvrv'
 ] as const
 
 type TraceKey = typeof TRACE_KEYS[number]
@@ -94,7 +100,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     lthMarketValue: false,
     lthRealizedValue: false,
     mvrv: true,
-    lthMvrv: false
+    lthMvrv: false,
+    sthMarketValue: false,
+    sthRealizedValue: false,
+    sthMvrv: false
   })
   
   const visibleTraces = externalVisibleTraces || internalVisibleTraces
@@ -298,20 +307,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               trueMarketMean: [], // Not used for mvrv
               lthMarketValue: [], // Not used for mvrv
               lthRealizedValue: [], // Not used for mvrv
-              lthMvrvRatios: [] // Not used for mvrv analysis
+              lthMvrvRatios: [], // Not used for mvrv analysis
+              sthMarketValue: [], // Not used for mvrv
+              sthRealizedValue: [], // Not used for mvrv
+              sthMvrvRatios: [] // Not used for mvrv analysis
             })
           }
         } else if (selectedMetric === 'profit-loss') {
-          // Fetch Profit & Loss Analysis data (includes LTH Market Value and LTH Realized Value)
-          const [marketCapHistory, realizedCapHistory, lthSupplyHistory, lthRealizedValueHistory, priceHistory] = await Promise.all([
+          // Fetch Profit & Loss Analysis data (includes LTH and STH Market Value and Realized Value)
+          const [marketCapHistory, realizedCapHistory, lthSupplyHistory, lthRealizedValueHistory, sthSupplyHistory, sthRealizedValueHistory, priceHistory] = await Promise.all([
             brkClient.fetchMarketCapHistory(2920),
             brkClient.fetchRealizedCapHistory(2920),
             brkClient.fetchLTHMarketValueHistory(2920),
             brkClient.fetchLTHRealizedValueHistory(2920),
+            brkClient.fetchSTHMarketValueHistory(2920),
+            brkClient.fetchSTHRealizedValueHistory(2920),
             brkClient.fetchDailyCloseHistory(2920)
           ])
 
-          if (marketCapHistory.length > 0 && realizedCapHistory.length > 0 && lthSupplyHistory.length > 0 && lthRealizedValueHistory.length > 0 && priceHistory.length > 0) {
+          if (marketCapHistory.length > 0 && realizedCapHistory.length > 0 && lthSupplyHistory.length > 0 && lthRealizedValueHistory.length > 0 && sthSupplyHistory.length > 0 && sthRealizedValueHistory.length > 0 && priceHistory.length > 0) {
             // Generate dates for the last 8 years
             const dates: string[] = []
             const endDate = new Date()
@@ -344,6 +358,19 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               return lthRv && lthRv !== 0 ? lthMv / lthRv : 0
             })
 
+            // Calculate STH Market Value (convert satoshis to BTC and multiply by price)
+            const sthMarketValueHistory = sthSupplyHistory.map((sthSupplySats, i) => {
+              const sthSupplyBTC = (sthSupplySats || 0) / 100000000 // Convert satoshis to BTC
+              const price = priceHistory[i] || 0
+              return sthSupplyBTC * price
+            })
+
+            // Calculate STH MVRV Ratio (STH Market Value / STH Realized Value)
+            const sthMvrvRatios = sthMarketValueHistory.map((sthMv, i) => {
+              const sthRv = sthRealizedValueHistory[i]
+              return sthRv && sthRv !== 0 ? sthMv / sthRv : 0
+            })
+
             setData({
               dates: dates.slice(skipZeros),
               marketValues: [], // Not used for profit-loss analysis  
@@ -356,7 +383,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               trueMarketMean: [], // Not used for profit-loss
               lthMarketValue: lthMarketValueHistory.slice(skipZeros), // LTH Market Value
               lthRealizedValue: lthRealizedValueHistory.slice(skipZeros), // LTH Realized Value
-              lthMvrvRatios: lthMvrvRatios.slice(skipZeros) // LTH MVRV Ratios
+              lthMvrvRatios: lthMvrvRatios.slice(skipZeros), // LTH MVRV Ratios
+              sthMarketValue: sthMarketValueHistory.slice(skipZeros), // STH Market Value
+              sthRealizedValue: sthRealizedValueHistory.slice(skipZeros), // STH Realized Value
+              sthMvrvRatios: sthMvrvRatios.slice(skipZeros) // STH MVRV Ratios
             })
           }
         } else if (selectedMetric === 'price') {
@@ -406,7 +436,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               trueMarketMean,
               lthMarketValue: [], // Not used for price analysis
               lthRealizedValue: [], // Not used for price analysis
-              lthMvrvRatios: [] // Not used for price analysis
+              lthMvrvRatios: [], // Not used for price analysis
+              sthMarketValue: [], // Not used for price analysis
+              sthRealizedValue: [], // Not used for price analysis
+              sthMvrvRatios: [] // Not used for price analysis
             })
           }
         }
@@ -517,7 +550,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     )
   }
 
-  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean, lthMarketValue, lthRealizedValue, lthMvrvRatios } = data
+  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean, lthMarketValue, lthRealizedValue, lthMvrvRatios, sthMarketValue, sthRealizedValue, sthMvrvRatios } = data
 
   // Metric configuration
   const metricConfigs = {
@@ -841,6 +874,22 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       borderColor: '#fb923c',
       backgroundColor: 'rgba(251, 146, 60, 0.1)',
       visible: visibleTraces.lthRealizedValue
+    },
+    {
+      key: 'sthMarketValue',
+      label: 'STH Market Value',
+      data: sliceArr(sthMarketValue),
+      borderColor: '#8b5cf6',
+      backgroundColor: 'rgba(139, 92, 246, 0.1)',
+      visible: visibleTraces.sthMarketValue
+    },
+    {
+      key: 'sthRealizedValue',
+      label: 'STH Realized Value',
+      data: sliceArr(sthRealizedValue),
+      borderColor: '#f59e0b',
+      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+      visible: visibleTraces.sthRealizedValue
     }
   ].filter(ds => ds.visible) : [
     {
@@ -906,6 +955,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       borderColor: '#ffffff',
       backgroundColor: 'rgba(255,255,255,0.1)',
       visible: visibleTraces.lthMvrv
+    },
+    {
+      key: 'sthMvrv',
+      label: 'STH MVRV Ratio',
+      data: sliceArr(sthMvrvRatios),
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      visible: visibleTraces.sthMvrv
     }
   ].filter(ds => ds.visible) : [
     {
@@ -1187,6 +1244,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             if (visibleTraces.lthMvrv) {
               visibleRatioValues.push(...sliceArr(lthMvrvRatios).filter(v => v > 0 && v < 100))
             }
+            if (visibleTraces.sthMvrv) {
+              visibleRatioValues.push(...sliceArr(sthMvrvRatios).filter(v => v > 0 && v < 100))
+            }
           } else {
             // Price analysis ratios
             if (visibleTraces.mayer) {
@@ -1227,6 +1287,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             if (visibleTraces.lthMvrv) {
               visibleRatioValues.push(...sliceArr(lthMvrvRatios).filter(v => v > 0 && v < 100))
             }
+            if (visibleTraces.sthMvrv) {
+              visibleRatioValues.push(...sliceArr(sthMvrvRatios).filter(v => v > 0 && v < 100))
+            }
           } else {
             // Price analysis ratios
             if (visibleTraces.mayer) {
@@ -1266,7 +1329,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     { key: 'mvrv' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' },
     { key: 'lthMarketValue' as TraceKey, color: '#10b981', label: 'LTH Market Value' },
     { key: 'lthRealizedValue' as TraceKey, color: '#fb923c', label: 'LTH Realized Value' },
-    { key: 'lthMvrv' as TraceKey, color: '#ffffff', label: 'LTH MVRV Ratio' }
+    { key: 'lthMvrv' as TraceKey, color: '#ffffff', label: 'LTH MVRV Ratio' },
+    { key: 'sthMarketValue' as TraceKey, color: '#8b5cf6', label: 'STH Market Value' },
+    { key: 'sthRealizedValue' as TraceKey, color: '#f59e0b', label: 'STH Realized Value' },
+    { key: 'sthMvrv' as TraceKey, color: '#ffffff', label: 'STH MVRV Ratio' }
   ] : [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Price' },
     { key: 'ma200' as TraceKey, color: '#fbbf24', label: '200DMA' },

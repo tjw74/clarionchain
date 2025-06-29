@@ -161,6 +161,21 @@ class BRKClient {
     return await response.json();
   }
 
+  // Fetch STH Market Value history (calculated from STH supply * price)
+  async fetchSTHMarketValueHistory(days: number = 2920): Promise<number[]> {
+    // STH Market Value = STH Supply (in satoshis) converted to BTC * Price
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-sth-supply`);
+    if (!response.ok) throw new Error('Failed to fetch STH supply for market value calculation');
+    return await response.json();
+  }
+
+  // Fetch STH Realized Value history
+  async fetchSTHRealizedValueHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-sth-realized-cap`);
+    if (!response.ok) throw new Error('Failed to fetch STH realized value history');
+    return await response.json();
+  }
+
   // Fetch price history with timestamps for Z-Score analysis
   async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
     const prices = await this.fetchDailyCloseHistory(days);
