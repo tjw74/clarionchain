@@ -15,7 +15,7 @@ import BitcoinChartJS, { BitcoinChartRef } from "@/components/bitcoin-chart-char
 // Define trace visibility types
 const TRACE_KEYS = [
   'price', 'ma200', 'realizedPrice', 'trueMarketMean',
-  'mayer', 'priceRealized', 'priceTrueMean', 'lthMarketValue'
+  'mayer', 'priceRealized', 'priceTrueMean', 'lthMarketValue', 'lthRealizedValue'
 ] as const
 
 type TraceKey = typeof TRACE_KEYS[number]
@@ -52,7 +52,8 @@ export default function AIAnalysisPage() {
     mayer: true,
     priceRealized: false,
     priceTrueMean: false,
-    lthMarketValue: false
+    lthMarketValue: false,
+    lthRealizedValue: false
   })
 
   // MVRV Ratio Plotly panel state for AI Workbench
@@ -157,6 +158,7 @@ export default function AIAnalysisPage() {
               { color: '#fb923c', label: 'True Market Mean' },
               { color: '#ffffff', label: 'Mayer Ratio' },
               { color: '#10b981', label: 'LTH Market Value' },
+              { color: '#fb923c', label: 'LTH Realized Value' },
               { color: '#10b981', label: 'Price/Realized Price' },
               { color: '#fb923c', label: 'Price/True Market Mean' }
             ]

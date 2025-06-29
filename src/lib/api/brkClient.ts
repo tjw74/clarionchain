@@ -154,6 +154,13 @@ class BRKClient {
     return await response.json();
   }
 
+  // Fetch LTH Realized Value history
+  async fetchLTHRealizedValueHistory(days: number = 2920): Promise<number[]> {
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-lth-realized-cap`);
+    if (!response.ok) throw new Error('Failed to fetch LTH realized value history');
+    return await response.json();
+  }
+
   // Fetch price history with timestamps for Z-Score analysis
   async fetchPriceHistory(days: number = 10000): Promise<Array<{timestamp: string, price: number}>> {
     const prices = await this.fetchDailyCloseHistory(days);
