@@ -86,7 +86,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     mayer: true,
     priceRealized: false,
     priceTrueMean: false,
-    lthMarketValue: true
+    lthMarketValue: false
   })
   
   const visibleTraces = externalVisibleTraces || internalVisibleTraces
@@ -204,8 +204,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           { key: 'ma200', color: '#fbbf24', label: '200DMA' },
           { key: 'realizedPrice', color: '#10b981', label: 'Realized Price' },
           { key: 'trueMarketMean', color: '#fb923c', label: 'True Market Mean' },
-          { key: 'lthMarketValue', color: '#10b981', label: 'LTH Market Value' },
           { key: 'mayer', color: '#ffffff', label: 'Mayer Ratio' },
+          { key: 'lthMarketValue', color: '#10b981', label: 'LTH Market Value' },
           { key: 'priceRealized', color: '#10b981', label: 'Price/Realized Price' },
           { key: 'priceTrueMean', color: '#fb923c', label: 'Price/True Market Mean' }
         ]
@@ -1188,8 +1188,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   ] : selectedMetric === 'profit-loss' ? [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Market Value' },
     { key: 'ma200' as TraceKey, color: '#eab308', label: 'Realized Value' },
-    { key: 'lthMarketValue' as TraceKey, color: '#10b981', label: 'LTH Market Value' },
-    { key: 'mayer' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' }
+    { key: 'mayer' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' },
+    { key: 'lthMarketValue' as TraceKey, color: '#10b981', label: 'LTH Market Value' }
   ] : [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Price' },
     { key: 'ma200' as TraceKey, color: '#fbbf24', label: '200DMA' },
