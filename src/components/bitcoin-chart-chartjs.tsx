@@ -37,6 +37,7 @@ interface ChartData {
   priceRatios?: number[]
   realizedPrice?: number[]
   trueMarketMean?: number[]
+  lthMarketValue?: number[]
 }
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain' | 'profit-loss'
@@ -58,7 +59,8 @@ const TRACE_KEYS = [
   'trueMarketMean',
   'mayer',
   'priceRealized',
-  'priceTrueMean'
+  'priceTrueMean',
+  'lthMarketValue'
 ] as const
 
 type TraceKey = typeof TRACE_KEYS[number]
@@ -83,7 +85,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     trueMarketMean: true,
     mayer: true,
     priceRealized: false,
-    priceTrueMean: false
+    priceTrueMean: false,
+    lthMarketValue: true
   })
   
   const visibleTraces = externalVisibleTraces || internalVisibleTraces
@@ -245,7 +248,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     // Fetch data based on selected metric
     const fetchData = async () => {
       try {
-        if (selectedMetric === 'mvrv' || selectedMetric === 'profit-loss') {
+        if (selectedMetric === 'mvrv') {
           // Fetch MVRV Analysis data
           const [marketCapHistory, realizedCapHistory] = await Promise.all([
             brkClient.fetchMarketCapHistory(2920),
@@ -282,7 +285,57 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               priceMA200: realizedCapHistory.slice(skipZeros), // Realized Cap = "MA200" equivalent  
               priceRatios: mvrvRatios.slice(skipZeros), // MVRV Ratio = "Price/MA200" equivalent
               realizedPrice: [], // Not used for mvrv
-              trueMarketMean: [] // Not used for mvrv
+              trueMarketMean: [], // Not used for mvrv
+              lthMarketValue: [] // Not used for mvrv
+            })
+          }
+        } else if (selectedMetric === 'profit-loss') {
+          // Fetch Profit & Loss Analysis data (includes LTH Market Value)
+          const [marketCapHistory, realizedCapHistory, lthSupplyHistory, priceHistory] = await Promise.all([
+            brkClient.fetchMarketCapHistory(2920),
+            brkClient.fetchRealizedCapHistory(2920),
+            brkClient.fetchLTHMarketValueHistory(2920),
+            brkClient.fetchDailyCloseHistory(2920)
+          ])
+
+          if (marketCapHistory.length > 0 && realizedCapHistory.length > 0 && lthSupplyHistory.length > 0 && priceHistory.length > 0) {
+            // Generate dates for the last 8 years
+            const dates: string[] = []
+            const endDate = new Date()
+            for (let i = marketCapHistory.length - 1; i >= 0; i--) {
+              const date = new Date(endDate)
+              date.setDate(date.getDate() - i)
+              dates.push(date.toISOString().split('T')[0])
+            }
+
+            // Calculate LTH Market Value (convert satoshis to BTC and multiply by price)
+            const lthMarketValueHistory = lthSupplyHistory.map((lthSupplySats, i) => {
+              const lthSupplyBTC = (lthSupplySats || 0) / 100000000 // Convert satoshis to BTC
+              const price = priceHistory[i] || 0
+              return lthSupplyBTC * price
+            })
+
+            // Find first non-zero index (skip leading zeros)
+            const firstNonZeroIndex = marketCapHistory.findIndex(val => val > 0)
+            const skipZeros = Math.max(0, firstNonZeroIndex)
+
+            // Calculate MVRV Ratio
+            const mvrvRatios = marketCapHistory.map((mv, i) => {
+              const rv = realizedCapHistory[i]
+              return rv && rv !== 0 ? mv / rv : 0
+            })
+
+            setData({
+              dates: dates.slice(skipZeros),
+              marketValues: [], // Not used for profit-loss analysis  
+              realizedValues: [], // Not used for profit-loss analysis
+              mvrvRatios: [], // Not used for profit-loss analysis
+              priceValues: marketCapHistory.slice(skipZeros), // Market Cap = "Price" equivalent
+              priceMA200: realizedCapHistory.slice(skipZeros), // Realized Cap = "MA200" equivalent  
+              priceRatios: mvrvRatios.slice(skipZeros), // MVRV Ratio = "Price/MA200" equivalent
+              realizedPrice: [], // Not used for profit-loss
+              trueMarketMean: [], // Not used for profit-loss
+              lthMarketValue: lthMarketValueHistory.slice(skipZeros) // LTH Market Value
             })
           }
         } else if (selectedMetric === 'price') {
@@ -329,7 +382,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               priceMA200,
               priceRatios,
               realizedPrice,
-              trueMarketMean
+              trueMarketMean,
+              lthMarketValue: [] // Not used for price analysis
             })
           }
         }
@@ -440,7 +494,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     )
   }
 
-  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean } = data
+  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean, lthMarketValue } = data
 
   // Metric configuration
   const metricConfigs = {
@@ -493,6 +547,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             data: priceMA200 || [], // Using priceMA200 (Realized Cap)
             borderColor: '#eab308',
             backgroundColor: 'rgba(234, 179, 8, 0.1)',
+          },
+          {
+            label: 'LTH Market Value',
+            data: lthMarketValue || [], // LTH Market Value
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
           }
         ]
       },
@@ -511,6 +571,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       legend: [
         { color: '#3b82f6', label: 'Market Value' },
         { color: '#eab308', label: 'Realized Value' },
+        { color: '#10b981', label: 'LTH Market Value' },
         { color: '#ffffff', label: 'MVRV Ratio' }
       ]
     },
@@ -724,6 +785,31 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       borderColor: '#eab308',
       backgroundColor: 'rgba(234, 179, 8, 0.1)',
       visible: visibleTraces.ma200
+    }
+  ].filter(ds => ds.visible) : selectedMetric === 'profit-loss' ? [
+    {
+      key: 'price',
+      label: 'Market Value',
+      data: sliceArr(priceValues),
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      visible: visibleTraces.price
+    },
+    {
+      key: 'ma200',
+      label: 'Realized Value',
+      data: sliceArr(priceMA200),
+      borderColor: '#eab308',
+      backgroundColor: 'rgba(234, 179, 8, 0.1)',
+      visible: visibleTraces.ma200
+    },
+    {
+      key: 'lthMarketValue',
+      label: 'LTH Market Value',
+      data: sliceArr(lthMarketValue),
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      visible: visibleTraces.lthMarketValue
     }
   ].filter(ds => ds.visible) : [
     {

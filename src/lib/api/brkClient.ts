@@ -141,8 +141,16 @@ class BRKClient {
 
   // Fetch LTH supply history from the working endpoint
   async fetchLTHSupplyHistory(days: number = 2920): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/api/query?index=dateindex&values=lth-supply&from=-${days}`);
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-lth-supply`);
     if (!response.ok) throw new Error('Failed to fetch LTH supply history');
+    return await response.json();
+  }
+
+  // Fetch LTH Market Value history (calculated from LTH supply * price)
+  async fetchLTHMarketValueHistory(days: number = 2920): Promise<number[]> {
+    // LTH Market Value = LTH Supply (in satoshis) converted to BTC * Price
+    const response = await fetch(`${this.baseUrl}/api/vecs/dateindex-to-lth-supply`);
+    if (!response.ok) throw new Error('Failed to fetch LTH supply for market value calculation');
     return await response.json();
   }
 
