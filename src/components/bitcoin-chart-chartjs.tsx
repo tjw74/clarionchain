@@ -246,14 +246,14 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     const fetchData = async () => {
       try {
         if (selectedMetric === 'mvrv') {
-          // Fetch MVRV data from BRK API
+          // Fetch MVRV data from BRK API (EXACT COPY OF PRICE PATTERN)
           const [marketCapHistory, realizedCapHistory] = await Promise.all([
             brkClient.fetchMarketCapHistory(2920),
             brkClient.fetchRealizedCapHistory(2920)
           ])
 
           if (marketCapHistory.length > 0 && realizedCapHistory.length > 0) {
-            // Generate dates for the last 8 years
+            // Generate dates for the last 8 years (EXACT COPY OF PRICE PATTERN)
             const dates: string[] = []
             const endDate = new Date()
             for (let i = marketCapHistory.length - 1; i >= 0; i--) {
@@ -262,17 +262,27 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               dates.push(date.toISOString().split('T')[0])
             }
 
-            // Calculate MVRV Ratio
+            // Find first non-zero index (skip leading zeros like price does with MA200)
+            const firstNonZeroIndex = marketCapHistory.findIndex(val => val > 0)
+            const skipZeros = Math.max(0, firstNonZeroIndex)
+
+            // Calculate MVRV Ratio (REPLACING PRICE/MA200 RATIO)
             const mvrvRatios = marketCapHistory.map((mv, i) => {
               const rv = realizedCapHistory[i]
               return rv && rv !== 0 ? mv / rv : 0
             })
 
+            // EXACT COPY OF PRICE setData PATTERN (skip leading zeros)
             setData({
-              dates,
-              marketValues: marketCapHistory,
-              realizedValues: realizedCapHistory,
-              mvrvRatios
+              dates: dates.slice(skipZeros), // Skip leading zeros like price skips first 199
+              marketValues: [], // Not used for mvrv analysis  
+              realizedValues: [], // Not used for mvrv analysis
+              mvrvRatios: [], // Not used for mvrv analysis
+              priceValues: marketCapHistory.slice(skipZeros), // Market Cap = "Price" equivalent
+              priceMA200: realizedCapHistory.slice(skipZeros), // Realized Cap = "MA200" equivalent  
+              priceRatios: mvrvRatios.slice(skipZeros), // MVRV Ratio = "Price/MA200" equivalent
+              realizedPrice: [], // Not used for mvrv
+              trueMarketMean: [] // Not used for mvrv
             })
           }
         } else if (selectedMetric === 'price') {
@@ -325,6 +335,11 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         }
       } catch (error) {
         console.error('Failed to fetch data:', error)
+        console.error('Error details:', {
+          message: (error as Error).message,
+          stack: (error as Error).stack,
+          selectedMetric
+        })
         setData(null)
       }
     }
@@ -434,13 +449,13 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         datasets: [
           {
             label: 'Market Value',
-            data: marketValues,
+            data: priceValues || [], // Using priceValues (Market Cap)
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
           },
           {
-            label: 'Realized Value',
-            data: realizedValues,
+            label: 'Realized Value', 
+            data: priceMA200 || [], // Using priceMA200 (Realized Cap)
             borderColor: '#eab308',
             backgroundColor: 'rgba(234, 179, 8, 0.1)',
           }
@@ -450,7 +465,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         datasets: [
           {
             label: 'MVRV Ratio',
-            data: mvrvRatios,
+            data: priceRatios || [], // Using priceRatios (MVRV Ratio)
             borderColor: '#ffffff',
             backgroundColor: 'rgba(255, 255, 255, 0.1)',
           }
@@ -580,8 +595,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   let paddedLogMin: number, paddedLogMax: number, usdLogTicks: number[]
   
   if (selectedMetric === 'mvrv') {
-    // MVRV Analysis: Use Market Value and Realized Value
-    allUSDValues = [...marketValues, ...realizedValues].filter(v => v > 0)
+    // MVRV Analysis: Use price data structure (EXACT COPY OF PRICE PATTERN)
+    const visiblePriceValues = sliceArr(priceValues)
+    const visibleMA200Values = sliceArr(priceMA200)
+    allUSDValues = [...visiblePriceValues, ...visibleMA200Values].filter(v => v > 0)
   } else if (selectedMetric === 'price') {
     // Price Analysis: Use ONLY the visible/sliced data for tight Y-axis scaling
     const visiblePriceValues = sliceArr(priceValues || [])
@@ -655,8 +672,25 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   const priceRealizedRatio = priceValues && realizedPrice ? priceValues.map((p, i) => (realizedPrice[i] ? p / realizedPrice[i] : 0)) : []
   const priceTrueMeanRatio = priceValues && trueMarketMean ? priceValues.map((p, i) => (trueMarketMean[i] ? p / trueMarketMean[i] : 0)) : []
 
-  // Sliced chart data
-  const mainChartDatasets = [
+  // Sliced chart data - conditional based on metric
+  const mainChartDatasets = selectedMetric === 'mvrv' ? [
+    {
+      key: 'price',
+      label: 'Market Value',
+      data: sliceArr(priceValues),
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      visible: visibleTraces.price
+    },
+    {
+      key: 'ma200',
+      label: 'Realized Value',
+      data: sliceArr(priceMA200),
+      borderColor: '#eab308',
+      backgroundColor: 'rgba(234, 179, 8, 0.1)',
+      visible: visibleTraces.ma200
+    }
+  ].filter(ds => ds.visible) : [
     {
       key: 'price',
       label: 'BTC Price',
@@ -695,7 +729,16 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   const priceRealizedRatioSliced = sliceArr(priceValues).map((p, i) => (sliceArr(realizedPrice)[i] ? p / sliceArr(realizedPrice)[i] : 0))
   const priceTrueMeanRatioSliced = sliceArr(priceValues).map((p, i) => (sliceArr(trueMarketMean)[i] ? p / sliceArr(trueMarketMean)[i] : 0))
 
-  const ratioChartDatasets = [
+  const ratioChartDatasets = selectedMetric === 'mvrv' ? [
+    {
+      key: 'mayer',
+      label: 'MVRV Ratio',
+      data: sliceArr(priceRatios),
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      visible: visibleTraces.mayer
+    }
+  ].filter(ds => ds.visible) : [
     {
       key: 'mayer',
       label: 'Mayer Ratio',
@@ -757,6 +800,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         pointHoverRadius: 0,
         yAxisID: 'y',
         showlegend: false,
+        skipTooltip: true, // Custom flag to skip in tooltip
       },
     ],
   }
@@ -906,6 +950,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
             return visibleDates[context[0].dataIndex]
           },
           label: function(context: any) {
+            // Skip center line in tooltip
+            if (context.dataset.skipTooltip || context.dataset.label === 'Center Line') {
+              return undefined
+            }
             const label = context.dataset.label || ''
             const value = context.parsed.y
             return `${label}: ${value.toFixed(2)}`
