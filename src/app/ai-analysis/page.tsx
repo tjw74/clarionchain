@@ -155,6 +155,7 @@ export default function AIAnalysisPage() {
               { color: '#fbbf24', label: '200DMA' },
               { color: '#10b981', label: 'Realized Price' },
               { color: '#fb923c', label: 'True Market Mean' },
+              { color: '#10b981', label: 'LTH Market Value' },
               { color: '#ffffff', label: 'Mayer Ratio' },
               { color: '#10b981', label: 'Price/Realized Price' },
               { color: '#fb923c', label: 'Price/True Market Mean' }
