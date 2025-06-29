@@ -85,7 +85,9 @@ export default function AIAnalysisPage() {
   // Reset range when dataLength changes
   useEffect(() => {
     if (dataLength > 0) {
-      setRange([0, dataLength - 1])
+      // Set default left position to approximately 2014 (about 31% through the data)
+      const startPosition = Math.floor(dataLength * 0.31)
+      setRange([startPosition, dataLength - 1])
     }
   }, [dataLength])
 
