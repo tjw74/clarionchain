@@ -39,6 +39,7 @@ interface ChartData {
   trueMarketMean?: number[]
   lthMarketValue?: number[]
   lthRealizedValue?: number[]
+  lthMvrvRatios?: number[]
 }
 
 type MetricType = 'mvrv' | 'price' | 'volume' | 'onchain' | 'profit-loss'
@@ -62,7 +63,9 @@ const TRACE_KEYS = [
   'priceRealized',
   'priceTrueMean',
   'lthMarketValue',
-  'lthRealizedValue'
+  'lthRealizedValue',
+  'mvrv',
+  'lthMvrv'
 ] as const
 
 type TraceKey = typeof TRACE_KEYS[number]
@@ -89,7 +92,9 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     priceRealized: false,
     priceTrueMean: false,
     lthMarketValue: false,
-    lthRealizedValue: false
+    lthRealizedValue: false,
+    mvrv: true,
+    lthMvrv: false
   })
   
   const visibleTraces = externalVisibleTraces || internalVisibleTraces
@@ -292,7 +297,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               realizedPrice: [], // Not used for mvrv
               trueMarketMean: [], // Not used for mvrv
               lthMarketValue: [], // Not used for mvrv
-              lthRealizedValue: [] // Not used for mvrv
+              lthRealizedValue: [], // Not used for mvrv
+              lthMvrvRatios: [] // Not used for mvrv analysis
             })
           }
         } else if (selectedMetric === 'profit-loss') {
@@ -332,6 +338,12 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               return rv && rv !== 0 ? mv / rv : 0
             })
 
+            // Calculate LTH MVRV Ratio (LTH Market Value / LTH Realized Value)
+            const lthMvrvRatios = lthMarketValueHistory.map((lthMv, i) => {
+              const lthRv = lthRealizedValueHistory[i]
+              return lthRv && lthRv !== 0 ? lthMv / lthRv : 0
+            })
+
             setData({
               dates: dates.slice(skipZeros),
               marketValues: [], // Not used for profit-loss analysis  
@@ -343,7 +355,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               realizedPrice: [], // Not used for profit-loss
               trueMarketMean: [], // Not used for profit-loss
               lthMarketValue: lthMarketValueHistory.slice(skipZeros), // LTH Market Value
-              lthRealizedValue: lthRealizedValueHistory.slice(skipZeros) // LTH Realized Value
+              lthRealizedValue: lthRealizedValueHistory.slice(skipZeros), // LTH Realized Value
+              lthMvrvRatios: lthMvrvRatios.slice(skipZeros) // LTH MVRV Ratios
             })
           }
         } else if (selectedMetric === 'price') {
@@ -392,7 +405,8 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
               realizedPrice,
               trueMarketMean,
               lthMarketValue: [], // Not used for price analysis
-              lthRealizedValue: [] // Not used for price analysis
+              lthRealizedValue: [], // Not used for price analysis
+              lthMvrvRatios: [] // Not used for price analysis
             })
           }
         }
@@ -503,7 +517,7 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
     )
   }
 
-  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean, lthMarketValue, lthRealizedValue } = data
+  const { dates, marketValues, realizedValues, mvrvRatios, priceValues, priceMA200, priceRatios, realizedPrice, trueMarketMean, lthMarketValue, lthRealizedValue, lthMvrvRatios } = data
 
   // Metric configuration
   const metricConfigs = {
@@ -876,6 +890,23 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
       backgroundColor: 'rgba(255,255,255,0.1)',
       visible: visibleTraces.mayer
     }
+  ].filter(ds => ds.visible) : selectedMetric === 'profit-loss' ? [
+    {
+      key: 'mvrv',
+      label: 'MVRV Ratio',
+      data: sliceArr(priceRatios), // Using priceRatios which contains MVRV data for profit-loss
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      visible: visibleTraces.mvrv
+    },
+    {
+      key: 'lthMvrv',
+      label: 'LTH MVRV Ratio',
+      data: sliceArr(lthMvrvRatios),
+      borderColor: '#ffffff',
+      backgroundColor: 'rgba(255,255,255,0.1)',
+      visible: visibleTraces.lthMvrv
+    }
   ].filter(ds => ds.visible) : [
     {
       key: 'mayer',
@@ -1144,15 +1175,29 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           // Calculate dynamic Y-axis range based on ONLY visible ratio data
           const visibleRatioValues = []
           
-          // Only include ratios for traces that are currently visible
-          if (visibleTraces.mayer) {
-            visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
-          }
-          if (visibleTraces.priceRealized) {
-            visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
-          }
-          if (visibleTraces.priceTrueMean) {
-            visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+          // Include ratios based on selected metric and visible traces
+          if (selectedMetric === 'mvrv') {
+            if (visibleTraces.mayer) {
+              visibleRatioValues.push(...sliceArr(priceRatios).filter(v => v > 0 && v < 100))
+            }
+          } else if (selectedMetric === 'profit-loss') {
+            if (visibleTraces.mvrv) {
+              visibleRatioValues.push(...sliceArr(priceRatios).filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.lthMvrv) {
+              visibleRatioValues.push(...sliceArr(lthMvrvRatios).filter(v => v > 0 && v < 100))
+            }
+          } else {
+            // Price analysis ratios
+            if (visibleTraces.mayer) {
+              visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.priceRealized) {
+              visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.priceTrueMean) {
+              visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+            }
           }
           
           if (visibleRatioValues.length === 0) return 0.5
@@ -1170,15 +1215,29 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
           // Calculate dynamic Y-axis range based on ONLY visible ratio data
           const visibleRatioValues = []
           
-          // Only include ratios for traces that are currently visible
-          if (visibleTraces.mayer) {
-            visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
-          }
-          if (visibleTraces.priceRealized) {
-            visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
-          }
-          if (visibleTraces.priceTrueMean) {
-            visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+          // Include ratios based on selected metric and visible traces
+          if (selectedMetric === 'mvrv') {
+            if (visibleTraces.mayer) {
+              visibleRatioValues.push(...sliceArr(priceRatios).filter(v => v > 0 && v < 100))
+            }
+          } else if (selectedMetric === 'profit-loss') {
+            if (visibleTraces.mvrv) {
+              visibleRatioValues.push(...sliceArr(priceRatios).filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.lthMvrv) {
+              visibleRatioValues.push(...sliceArr(lthMvrvRatios).filter(v => v > 0 && v < 100))
+            }
+          } else {
+            // Price analysis ratios
+            if (visibleTraces.mayer) {
+              visibleRatioValues.push(...mayerRatioSliced.filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.priceRealized) {
+              visibleRatioValues.push(...priceRealizedRatioSliced.filter(v => v > 0 && v < 100))
+            }
+            if (visibleTraces.priceTrueMean) {
+              visibleRatioValues.push(...priceTrueMeanRatioSliced.filter(v => v > 0 && v < 100))
+            }
           }
           
           if (visibleRatioValues.length === 0) return 3.0
@@ -1204,9 +1263,10 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
   ] : selectedMetric === 'profit-loss' ? [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Market Value' },
     { key: 'ma200' as TraceKey, color: '#eab308', label: 'Realized Value' },
-    { key: 'mayer' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' },
+    { key: 'mvrv' as TraceKey, color: '#ffffff', label: 'MVRV Ratio' },
     { key: 'lthMarketValue' as TraceKey, color: '#10b981', label: 'LTH Market Value' },
-    { key: 'lthRealizedValue' as TraceKey, color: '#fb923c', label: 'LTH Realized Value' }
+    { key: 'lthRealizedValue' as TraceKey, color: '#fb923c', label: 'LTH Realized Value' },
+    { key: 'lthMvrv' as TraceKey, color: '#ffffff', label: 'LTH MVRV Ratio' }
   ] : [
     { key: 'price' as TraceKey, color: '#3b82f6', label: 'Price' },
     { key: 'ma200' as TraceKey, color: '#fbbf24', label: '200DMA' },
