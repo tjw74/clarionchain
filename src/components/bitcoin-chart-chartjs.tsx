@@ -945,15 +945,15 @@ const BitcoinChartJS = forwardRef<BitcoinChartRef, BitcoinChartProps>(({ selecte
         position: 'nearest' as const,
         yAlign: 'bottom' as const,
         caretPadding: 10,
+        filter: function(tooltipItem: any) {
+          // Completely exclude center line from tooltips
+          return tooltipItem.dataset.label !== 'Center Line' && !tooltipItem.dataset.skipTooltip
+        },
         callbacks: {
           title: function(context: any) {
             return visibleDates[context[0].dataIndex]
           },
           label: function(context: any) {
-            // Skip center line in tooltip
-            if (context.dataset.skipTooltip || context.dataset.label === 'Center Line') {
-              return undefined
-            }
             const label = context.dataset.label || ''
             const value = context.parsed.y
             return `${label}: ${value.toFixed(2)}`
