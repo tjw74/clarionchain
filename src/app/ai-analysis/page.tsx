@@ -262,7 +262,7 @@ export default function AIAnalysisPage() {
           imageData: finalImageData,
           apiKey,
           provider,
-          prompt: "Analyze this Bitcoin on-chain chart and provide insights."
+          prompt: "ROLE: Elite Bitcoin on-chain analyst. Think like a quantitative hedge fund manager analyzing for position sizing.\n\nTASK: Extract actionable signals from this Bitcoin chart data.\n\nANALYSIS REQUIREMENTS:\n1. State current numerical values (price levels, MVRV ratio, timeframes)\n2. Compare to historical cycle extremes (2017: MVRV ~4.5, 2021: MVRV ~7)\n3. Identify specific support/resistance with exact price levels\n4. Quantify momentum using visible price action patterns\n\nOUTPUT FORMAT:\n• Signal Strength: X/10 (justify with 2 quantitative factors)\n• Current Levels: [specific numbers from chart]\n• Historical Context: [comparison to previous cycles]\n• Actionable Insight: [specific entry/exit consideration]\n• Immediate Risk: [specific price level or pattern breakdown]\n\nCONSTRAINTS: Use exact numbers. No generic statements. Justify all ratings. 120 words maximum."
         }),
       })
 
@@ -276,7 +276,7 @@ export default function AIAnalysisPage() {
       const userMessage = { role: 'user' as const, content: 'Analyze the current chart data' }
       const assistantMessage = { role: 'assistant' as const, content: result.analysis }
       
-      setMessages([userMessage, assistantMessage])
+      setMessages(prev => [...prev, userMessage, assistantMessage])
 
     } catch (error: unknown) {
       console.error('Analysis error:', error)
@@ -284,7 +284,7 @@ export default function AIAnalysisPage() {
         role: 'assistant' as const, 
         content: `Error: ${(error as Error).message || 'Failed to analyze chart. Please check your API key and try again.'}` 
       }
-      setMessages([{ role: 'user' as const, content: 'Analyze the current chart data' }, errorMessage])
+      setMessages(prev => [...prev, { role: 'user' as const, content: 'Analyze the current chart data' }, errorMessage])
     } finally {
       setIsAnalyzing(false)
     }
