@@ -1,6 +1,13 @@
 'use client';
 import { useState } from 'react';
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Chart.js to ensure SSR safety
+const PriceModelsChart = dynamic(() => import('@/components/PriceModelsChart'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-white">Loading chart...</div>
+});
 
 const metricGroups = [
   { name: 'Price Models' },
@@ -38,10 +45,15 @@ export default function AIWorkbench() {
           {/* Left side (vertical split) */}
           <ResizablePanel defaultSize={50} minSize={20} className="min-w-0">
             <ResizablePanelGroup direction="vertical" className="h-full min-h-0">
-              {/* Top Left */}
+              {/* Top Left - Price Models Chart */}
               <ResizablePanel defaultSize={50} minSize={20} className="min-h-0">
-                <div className="flex flex-col h-full w-full items-center justify-center p-2 bg-black border-b border-white/20">
-                  <span className="text-white text-lg font-semibold">Top Left ({metricGroups[selectedIndex].name})</span>
+                <div className="h-full w-full p-2 bg-black border-b border-white/20">
+                  {selectedIndex === 0 && <PriceModelsChart className="h-full w-full" />}
+                  {selectedIndex !== 0 && (
+                    <div className="flex flex-col h-full w-full items-center justify-center">
+                      <span className="text-white text-lg font-semibold">Top Left ({metricGroups[selectedIndex].name})</span>
+                    </div>
+                  )}
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle className="border border-white/20 border-[1px]" />
